@@ -97,6 +97,20 @@ class Segmenteur(object):
         """
         return self.lm.segment_corpus_with_preprocessing(text, engine=preproc, returnType=returnType, sep=sep).next()
 
+    def extractMultiTokens(self, text, preproc=None, threshold=0., sep="", target='unsegmented'):
+        """
+        Retourne une liste de «multi-mots» contenus dans un text avec leur score d'autonomie associé.
+        """
+        results = []
+        for tokseq in preproc.apply([text]):
+            for tok in tokseq:
+                if tok.category == target:
+                    for debut in xrange(len(tok.form)-1):
+                        for fin in xrange(min(len(tok.form), debut + self.order+1), debut,  -1):
+                            a = self.lm.autonomie(tok.form[debut:fin])
+                            if a >= threshold:
+                                results.append((sep.join(tok.form[debut:fin]),a))
+        return results
             
 
     def getWordList(self, threshold=0., sep="\t"):
