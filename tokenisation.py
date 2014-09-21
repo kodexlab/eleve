@@ -118,14 +118,14 @@ class Engine(object):
         for m in self.modules:
             regex = []
             for tok in m.regexp.split():
-                tok = tok.replace("(", "(?:")  # user grouping is non-capturing
+                tok = tok.replace("(", "(?:%s?" % (BOUNDARY,) )  # user grouping is non-capturing
                 #tok = tok.replace(")", BOUNDARY+"?)")  # allow for trailing BND
                 if "/" in tok:
                     left, right = tok.rsplit("/",1)
                     tok = FCSEP.join([left,right])  # set proper FCSEP
                 tok = tok.replace(".", "[^%s%s]" % (BOUNDARY, FCSEP))  # '.' will not match special chars
                 regex.append(tok)
-            regex =  BOUNDARY + "(" + ("%s" % (BOUNDARY,)).join(regex) + ")" + BOUNDARY
+            regex =  BOUNDARY + "(" + ("%s" % (BOUNDARY,)).join(regex) + ")"
             re_list.append(re.compile(regex, re.UNICODE))
         self.re_list = re_list
 
