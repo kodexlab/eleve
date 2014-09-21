@@ -37,7 +37,7 @@ def tokeniseOnWord(inputstream):
 
 
 def tokseq_to_str(tokseq):
-    return BOUNDARY.join([FCSEP.join(tok) for tok in tokseq])
+    return "%s%s%s" %(BOUNDARY, BOUNDARY.join([FCSEP.join(tok) for tok in tokseq]), BOUNDARY)
 
 def str_to_tokseq(inputstring):
     tokseq = []
@@ -119,13 +119,13 @@ class Engine(object):
             regex = []
             for tok in m.regexp.split():
                 tok = tok.replace("(", "(?:")  # user grouping is non-capturing
-                tok = tok.replace(")", BOUNDARY+"?)")  # allow for trailing BND
+                #tok = tok.replace(")", BOUNDARY+"?)")  # allow for trailing BND
                 if "/" in tok:
                     left, right = tok.rsplit("/",1)
                     tok = FCSEP.join([left,right])  # set proper FCSEP
                 tok = tok.replace(".", "[^%s%s]" % (BOUNDARY, FCSEP))  # '.' will not match special chars
                 regex.append(tok)
-            regex = "(" + ("%s?" % (BOUNDARY,)).join(regex) + ")"
+            regex =  BOUNDARY + "(" + ("%s" % (BOUNDARY,)).join(regex) + ")" + BOUNDARY
             re_list.append(re.compile(regex, re.UNICODE))
         self.re_list = re_list
 
