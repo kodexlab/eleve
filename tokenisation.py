@@ -8,9 +8,10 @@ import unicodedata as ud
 
 Token = namedtuple("Token", "form category")
 Module = namedtuple("Module", "regexp convertor")
-BOUNDARY = u"\ue000"
-FCSEP = u"\ue001"
-TOKSEP = u"\ue002"
+OBOUNDARY = u"\ue000"
+CBOUNDARY = u"\ue001"
+FCSEP = u"\ue002"
+TOKSEP = u"\ue003"
 
 UNIPUNCT = set(['SPACE',
                 'SEMICOLON',
@@ -37,15 +38,18 @@ def tokeniseOnWord(inputstream):
 
 
 def tokseq_to_str(tokseq):
-    return "%s%s%s" %(BOUNDARY, BOUNDARY.join([FCSEP.join(tok) for tok in tokseq]), BOUNDARY)
+    return "".join(["%s%s%s" % (OBOUNDARY, FCSEP.join(tok), CBOUNDARY) for tok in tokseq])
 
 def str_to_tokseq(inputstring):
-    tokseq = []
-    for tokstr in inputstring.split(BOUNDARY):
-        if tokstr and FCSEP in tokstr:
-            form, cat = tokstr.split(FCSEP)
-            tokseq.append(Token(form, cat))
-    return tokseq
+    """ Convert an unicode string to a token sequence
+
+    >>> Module.str_to_tokseq(u'bla\ue001WTOKEN\ue000bla\ue001WTOKEN')
+    [Token(form=u'bla', category=u'WTOKEN'), Token(form=u'bla', category=u'WTOKEN')]
+    """
+    inputstring = inputstring.replace(CBOUNDARY, "")
+    return [Token(*tokstr.split(FCSEP)) \
+           for tokstr in inputstring.split(OBOUNDARY) \
+            if (tokstr and FCSEP in tokstr)]
 
 def splitform(token):
     return Token(token.form.split(TOKSEP), token.category)
@@ -118,14 +122,31 @@ class Engine(object):
         for m in self.modules:
             regex = []
             for tok in m.regexp.split():
-                tok = tok.replace("(", "(?:%s?" % (BOUNDARY,) )  # user grouping is non-capturing
-                #tok = tok.replace(")", BOUNDARY+"?)")  # allow for trailing BND
+                if tok.startswith("("):
+                    left = "(?:"
+                    tok = tok[1:]
+                else:
+                    left = ""
+                if tok[-1] in "?+*" and (len(tok) >= 2 and tok[-2] == ")"):
+                    quantifier = tok[-1]
+                    tok = tok[:-1]
+                else:
+                    quantifier = ""
+                if tok.endswith(")"):
+                    right = tok[-1]
+                    tok = tok[:-1]
+                else:
+                    right = ""
                 if "/" in tok:
-                    left, right = tok.rsplit("/",1)
-                    tok = FCSEP.join([left,right])  # set proper FCSEP
-                tok = tok.replace(".", "[^%s%s]" % (BOUNDARY, FCSEP))  # '.' will not match special chars
+                    forme, tag = tok.rsplit("/", 1)
+                else:
+                    forme = tok
+                    tag = ".*"
+                tok = FCSEP.join([forme,tag])  # set proper FCSEP
+                tok = tok.replace(".", "[^%s%s%s]" % (CBOUNDARY, OBOUNDARY, FCSEP))  # '.' will not match special chars
+                tok = "%s%s%s%s%s%s" % (left, OBOUNDARY, tok, CBOUNDARY, right, quantifier)
                 regex.append(tok)
-            regex =  BOUNDARY + "(" + ("%s" % (BOUNDARY,)).join(regex) + ")"
+            regex = "(" + "".join(regex) + ")"
             re_list.append(re.compile(regex, re.UNICODE))
         self.re_list = re_list
 
