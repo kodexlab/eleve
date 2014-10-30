@@ -82,14 +82,19 @@ class Segmenteur(object):
         if not nonorm:
             self.lm.normalise_types(np.mean, np.std)
 
-    def segment_list(self, text, preproc=None, returnType="text", sep=""):
+    def segment_iter(self, text, preproc=None, returnType="text", sep=""):
         u"""
         segmente un fichier ou une liste de chaines
         retourne un iterateur sur les résultats
         """
         if preproc is None and self.training_preproc is not None:
             preproc = self.training_preproc
-        return self.lm.segment_corpus_with_preprocessing(text, engine=preproc, returnType=returnType, sep=sep)
+        if type(text) == str or type(text) == unicode:
+            with codecs.open(text, "r", "utf8") as stream:
+                return self.lm.segment_corpus_with_preprocessing(stream, engine=preproc, returnType=returnType, sep=sep)
+        else:
+            return self.lm.segment_corpus_with_preprocessing(text, engine=preproc, returnType=returnType, sep=sep)
+
 
     def segment_one(self, text, preproc=None, returnType="text", sep=""):
         u"""

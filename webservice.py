@@ -55,8 +55,8 @@ def segment():
         segmented = lm.segment_corpus_with_preprocessing(line, engine=tokenisation.engine_default, returnType='text').next()
         result.append(segmented)
     text = "\n".join(result)
-    # return jsonify(result=text)
-    return Response(text, mimetype="text/plain")
+    return jsonify(result=text)
+    #return Response(text, mimetype="text/plain")
 
 
 # RUN

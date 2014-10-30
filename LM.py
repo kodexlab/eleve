@@ -6,11 +6,16 @@ import os
 import numpy as np
 import codecs
 import cPickle as pickle
-#import SXTypes as SXT
-#import sxreader as SXR
+from collections import namedtuple
 
 from DTrie_sqlite import DTrie as DTrieSQL
 from DTrie import DTrie
+
+#atomic datatype for Binary Tree unsupervised parsing
+#left and right should contains a BTNode or a terminal token
+BNode = namedtuple("BTNode","form left right")
+
+
 
 
 class LanguageModel:
@@ -108,6 +113,77 @@ class LanguageModel:
 
     def prune(self):
         self.DT.prune()
+    
+    def parse_encoded_sequence(self, sequence, seg_init=None):
+        u"""
+        arborise une sequence de token en supprimant des coupures une par une
+        """
+        if seg_init is None:
+            segmentation = np.empty((len(sequence)-1,), dtype=bool)
+            segmentation.fill(True)  # segmentation à chaque token
+        else:
+            assert(len(sequence) == a.shape[0])
+            segmentation = seg_init
+        scores = np.zeros((len(sequence)-1,))
+        
+        def a(w):
+            l = len(w)
+            fwd = self.query_forward(w, failwith=np.nan)
+            bwd = self.query_backward(w, failwith=np.nan)
+            if np.isnan(bwd) or np.isnan(fwd):
+                return np.nan
+            else:
+                return (fwd + bwd) * l
+
+        def score(prefix,suffix): 
+            apref = a(prefix)
+            asuf = a(suffix)
+            aw = a(prefix + suffix)
+            if all([not np.isnan(x) for x in [apref,asuf,aw]]):
+                return aw - apref - asuf
+            else:
+                return np.float("-inf")
+
+        def get_bornes(i, seg):
+            debut = i
+            fin = i
+            while debut > 0:
+                debut -=1
+                if seg[debut]:
+                    break
+            while fin < len(seg):
+                fin += 1
+                if seg[fin]:
+                    break
+            return (debut, fin)
+
+        def score_line(segmentation, segref):
+            for i in xrange(len(segmentation)):
+                if not segmentation[i]:
+                    scores[i] = np.nan
+                else:
+                    debut, fin = get_bornes(i, segref)
+                    pfx = sequence[debut:i]
+                    sfx = sequence[i:fin]
+                    scores[i] = score(pfx, sfx)
+
+
+
+        nboundaries = np.sum(segmentation)
+        while nboundaries > 0:
+            score_line(segmentation, segmentation)
+            if all([np.isneginf(x) for x in scores]):
+                score_line(segmentation, segmentation_origine)
+            iscores = np.argsort(scores)
+            pos = iscores[-1]
+
+
+
+
+
+
+
+    
 
     def segmente_encoded_sequence(self, sequence, af=lambda x, y: x+y):
         u"""

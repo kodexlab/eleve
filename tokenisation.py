@@ -277,8 +277,8 @@ merge_others = Module(u"(.*/WTOKEN)+", joinForms("unsegmented"))
 #  default engines (also serve as exemple)
 
 engine_nothing = Engine([donothing])
-engine_default = Engine([charTagger, datetime, numbers, latin_words, hanzi_sequence])
-#engine_default = Engine([charTagger, numbers, latin_words, hanzi_sequence])
+#engine_default = Engine([charTagger, datetime, numbers, latin_words, hanzi_sequence])
+engine_default = Engine([charTagger, numbers, latin_words, hanzi_sequence])
 engine_basic = Engine([charTagger, numbers])
 engine_test = Engine([charTagger, datetime, numbers, zhnum, hanzi_sequence,  latin_words, ordinals, url])
 
