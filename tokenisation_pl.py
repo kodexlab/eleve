@@ -381,10 +381,10 @@ datetime_vars = {
         'n12': u'(([０0]/DIGIT)? ./DIGIT | 十/CJK ([一二]/CJK)? | [１1]/DIGIT [012０１２]/DIGIT | {digit}/CJK)'.format(digit=var_zhdigits),
         'n60': u'(([0-5０-５]/DIGIT)? ./DIGIT | ([一二三四五]/CJK)? (十/CJK)? {digit}/CJK)'.format(digit=var_zhdigits)}
 
-re_date = ur"({n12} {month})? ({n31} {day})".format(**datetime_vars)
+re_date = ur"({n12} {month})? ({n31} {day})?".format(**datetime_vars)
 re_time = ur"({dayperiod})? ({n24} {hour})? ({n60} {minute})? ({n60} {second})?".format(**datetime_vars)
 
-datetime = Module(" ".join([re_date]), joinForms("DATETIME", 1))
+datetime = Module(" ".join([re_date, re_time]), joinForms("DATETIME", 1))
 
 mini_datetime = Module(ur"{n12} {month} {n31} {day}".format(**datetime_vars), joinForms("DATETIME"))
 
