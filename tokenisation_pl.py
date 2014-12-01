@@ -33,10 +33,10 @@ from nlptypes import Token, Wordform, WordformSequence
 
 
 # Token sequence processing modules
-O_BOUNDARY = u"=" #u"\ue000"    # separator between tokens
-C_BOUNDARY = u"-" #u"\ue001"    # separator between tokens
-FCSEP = u"/" #u"\ue002"       # separator between token form and token category
-TOKSEP = u"_" #u"\ue003"      # separator used inside a token form
+O_BOUNDARY = u"\ue000"    # separator between tokens
+C_BOUNDARY = u"\ue001"    # separator between tokens
+FCSEP = u"\ue002"       # separator between token form and token category
+TOKSEP = u"\ue003"      # separator used inside a token form
 
 
 UNIPUNCT = set(['SPACE',
@@ -344,7 +344,6 @@ def joinForms(category, minlength=1, sep=TOKSEP):
     [Token(form=u'bla\\ue003bla', category='MERGED')]
     """
     def fct(seq):
-        print category, seq
         if len(seq) < minlength:
             return seq
         else:
@@ -494,7 +493,7 @@ class Engine(Composable):
 
 engine_basic = Engine([TokenCategorizer(), TokenToWordform(), Module("(A/LATIN)+ B/LATIN", joinForms("AAB")), Module("([a-zA-Z]*/AAB)+", joinForms("2AB"))])
 
-engine_nothing = Engine([TokenToWordform()])
+engine_nothing = Engine([TokenToWordform(), donothing])
 engine_default = Engine([TokenCategorizer(), TokenToWordform(), datetime, numbers, latin_words, hanzi_sequence])
 #engine_default = Engine([tokenCategorizer(), numbers, latin_words, hanzi_sequence])
 #engine_basic = Engine([TokenCategorizer(), numbers])

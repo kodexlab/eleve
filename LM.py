@@ -11,6 +11,9 @@ from collections import namedtuple
 from DTrie_sqlite import DTrie as DTrieSQL
 from DTrie import DTrie
 
+
+import tokenisation_pl as tokenisation
+
 #atomic datatype for Binary Tree unsupervised parsing
 #left and right should contains a BTNode or a terminal token
 BNode = namedtuple("BTNode","form left right")
@@ -225,14 +228,14 @@ class LanguageModel:
         for tokseq in engine.apply(text):
             result = []
             for tok in tokseq:
-                if tok.category == "unsegmented":
+                if tok.pos == "unsegmented":
                     result.extend(self.segmente(tok.form))
                 else:
                     result.append(tok)
             if returnType == "text":
                 yield " ".join([sep.join(t.form) for t in result])
             elif returnType == "tagged":
-                yield " ".join(["%s/%s" % (sep.join(t.form), t.category) for t in result])
+                yield " ".join(["%s/%s" % (sep.join(t.form), t.pos) for t in result])
             else:
                 yield result
 
@@ -320,12 +323,11 @@ class LanguageModel:
         load_one(bwd, True)
     
     def read_iterator(self, iterator, engine=None, target="unsegmented"):
-        import tokenisation
         if engine is None:
             engine = tokenisation.engine_nothing
         for tokseq in engine.apply(iterator):
             for tok in tokseq:
-                if tok.category != target:
+                if tok.pos != target:
                     pass
                 else:
                     self.add_ngram(tok.form)
@@ -341,7 +343,7 @@ class LanguageModel:
         infile = codecs.open(path, "r", enc)
         for tokseq in engine.apply(infile):
             for tok in tokseq:
-                if tok.category != target:
+                if tok.pos != target:
                     pass
                 else:
                     self.add_ngram(tok.form)

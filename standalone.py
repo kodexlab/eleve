@@ -11,7 +11,7 @@ import numpy as np
 
 import kenleve
 import LM
-import tokenisation
+import tokenisation_pl as tokenisation
 
 class Segmenteur(object):
     def __init__(self, order=6, tmpdir=None):
