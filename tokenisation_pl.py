@@ -167,9 +167,9 @@ class Module(Composable):
                 tag = ".*"
             tok = FCSEP.join([forme,tag])  # set proper FCSEP
             tok = tok.replace(".", "[^%s%s%s]" % (C_BOUNDARY, O_BOUNDARY, FCSEP))  # '.' will not match special chars
-            tok = "%s%s%s%s%s%s" % (left, O_BOUNDARY, tok, C_BOUNDARY, right, quantifier)
+            tok = ur"%s%s%s%s%s%s" % (left, O_BOUNDARY, tok, C_BOUNDARY, right, quantifier)
             regex.append(tok)
-        regex = "(" + "".join(regex) + ")"
+        regex = ur"(" + "".join(regex) + ")"
         return re.compile(regex, re.UNICODE)
 
     #TODO: cytonize it !
@@ -393,6 +393,26 @@ re_url = u" http/WLATIN :/.* //.* //.* (.*/WLATIN ./.*)* .+/WLATIN (//.* .+/WLAT
 
 url = Module(re_url, joinForms("URL"))
 
+addr_vars = {
+        'province': u"省/CJK",
+        'county': u"[縣县]/CJK",
+        'village': u"[鄉乡]/CJK",
+        'department': u"部/CJK",
+        'city': u"[是市]/CJK",
+        'bourg': u"村/CJK",
+        'district': u'(區/CJK | 区/CJK)',
+        'street': u"(街/CJK | 路/CJK | 大/CJK 道/CJK)",
+        'section': u"段/CJK",
+        'alley': u"巷/CJK",
+        'lane': u"弄/CJK",
+        'number': u"(號/CJK | 号/CJK)",
+        'floor': u"(樓/CJK | 楼/CJK)",
+        'num': u"(([一二三四五六七八九十百]/CJK)+ | .*/NUM)"
+        }
+        
+re_addr = ur"((./CJK) (./CJK)? {province})? ((./CJK) (./CJK)? {county})? ((./CJK) (./CJK)? {village})? ((./CJK) (./CJK)? {department})? ((./CJK) (./CJK)? {city})? ((./CJK) (./CJK)? {bourg})? ((./CJK) (./CJK)? {district})? ((./CJK) (./CJK)? {street})? ({num} {section})? ({num} {alley})? ({num} {lane})? ({num} {number})? ({num} {floor})?".format(**addr_vars)
+
+addresses = Module(re_addr, joinForms("ADDR", 2))
 
 donothing = Module(u"(.*/.*)+", joinForms("unsegmented"))
 
@@ -494,12 +514,9 @@ class Engine(Composable):
 engine_basic = Engine([TokenCategorizer(), TokenToWordform(), Module("(A/LATIN)+ B/LATIN", joinForms("AAB")), Module("([a-zA-Z]*/AAB)+", joinForms("2AB"))])
 
 engine_nothing = Engine([TokenToWordform(), donothing])
-engine_default = Engine([TokenCategorizer(), TokenToWordform(), datetime, numbers, latin_words, hanzi_sequence])
-#engine_default = Engine([tokenCategorizer(), numbers, latin_words, hanzi_sequence])
-#engine_basic = Engine([TokenCategorizer(), numbers])
-engine_test = Engine([TokenCategorizer(), TokenToWordform() ])
+engine_default = Engine([TokenCategorizer(), TokenToWordform(), datetime, numbers, addresses, latin_words, hanzi_sequence])
+engine_test = Engine([TokenCategorizer(), TokenToWordform()]) # datetime, numbers, addresses, latin_words, hanzi_sequence])
 
-# datetime, numbers, zhnum, hanzi_sequence, latin_words, ordinals, url])
 
 engine_words = Engine([TokenToWordform(), merge_others], WordAsToken())
 engine_words_punct = Engine([TokenToWordform(), mark_punct, merge_others], WordAsToken())
