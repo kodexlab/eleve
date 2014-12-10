@@ -12,6 +12,9 @@ import numpy as np
 import kenleve
 import LM
 import tokenisation_pl as tokenisation
+import nlptypes
+
+from postproc import PKU
 
 class Segmenteur(object):
     def __init__(self, order=6, tmpdir=None):
@@ -50,6 +53,7 @@ class Segmenteur(object):
             self.lm.read_iterator(training_data, engine=preproc)
         self.lm.compute_entropy_variation()
         self.lm.normalise_types(np.mean, np.std)
+        #self.lm.normalise_types(np.mean)
 
     def train_arpa(self, path, inMemory=True, engine=None, nmax=6, target = "unsegmented", nonorm=False):
         """
@@ -91,16 +95,18 @@ class Segmenteur(object):
             preproc = self.training_preproc
         if type(text) == str or type(text) == unicode:
             with codecs.open(text, "r", "utf8") as stream:
-                return self.lm.segment_corpus_with_preprocessing(stream, engine=preproc, returnType=returnType, sep=sep)
+                return (self.lm.segment_corpus_with_preprocessing(stream, engine=preproc, returnType=returnType, sep=sep))
         else:
-            return self.lm.segment_corpus_with_preprocessing(text, engine=preproc, returnType=returnType, sep=sep)
+            return (self.lm.segment_corpus_with_preprocessing(text, engine=preproc, returnType=returnType, sep=sep))
 
 
     def segment_one(self, text, preproc=None, returnType="text", sep=""):
         u"""
         segmente une unique chaine de caractères
         """
-        return self.lm.segment_corpus_with_preprocessing(text, engine=preproc, returnType=returnType, sep=sep).next()
+        if preproc is None and self.training_preproc is not None:
+            preproc = self.training_preproc
+        return self.lm.segment_corpus_with_preprocessing([text], engine=preproc, returnType=returnType, sep=sep).next()
 
     def extractMultiTokens(self, text, preproc=None, threshold=0., sep="", target='unsegmented'):
         """

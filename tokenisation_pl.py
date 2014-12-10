@@ -47,7 +47,8 @@ UNIPUNCT = set(['SPACE',
                 'COLON',
                 'PARENTHESIS',
                 'APOSTROPHE',
-                'COMMA'])
+                'COMMA',
+                'DASH'])
 
 
 # Basic Token object
@@ -359,37 +360,42 @@ numbers = Module("(./DIGIT)+", joinForms("NUM"))
 
 latin_words = Module("(./LATIN)+", joinForms("WLATIN"))
 
-hanzi_sequence = Module("(./CJK)+", joinForms("unsegmented", 2))
+hanzi_sequence = Module("(./CJK)+", joinForms("unsegmented"))
+
+punct_sequence = Module(u"([—]/PUNCT)+", joinForms("PUNCT",2))
 
 ordinals = Module(u"第/.* .*/NUM", joinForms("ORDINAL"))
 
-var_zhdigits = u"[零一二三四五六七八九十〇]"
-var_zhordinals = u"[十百千萬億]"
+var_zhdigits = u"[零一二三四五六七八九十〇○]"
+var_zhordinals = u"[十百千萬万億亿]"
 var_point = u"[點]"
 
 datetime_vars = {
-        'year':  u'年/CJK',
-        'month': u'月/CJK',
-        'day':   u'[日號]/CJK',
-        'hour':  u'[時點]/CJK',
-        'minute': u'分/.* (鐘/.*)?',
+        'year':  u'(年/CJK)',
+        'month': u'(月/CJK)',
+        'day':   u'([日號]/CJK)',
+        'hour':  u'[時时點]/CJK',
+        'minute': u'分/CJK (鐘/CJK)?',
         'second': u'秒/CJK',
         'dayperiod': u'(凌/CJK 晨/CJK | 早/CJK 上/CJK | 上/CJK 午/CJK | 中/CJK 午/CJK | 下/CJK 午/CJK | 晚/CJK 上/CJK)',
         'n24': u'((十/CJK)? {digit}/CJK | ([1１]/DIGIT)? ./DIGIT | 二/CJK 十/CJK [一二三四]/CJK | [２2]/CJK [0-4０-４]/CJK)'.format(digit=var_zhdigits),
         'n31': u'((二/CJK)? (十/CJK)? {digit}/CJK | ([012０１２]/DIGIT)? ./DIGIT | 三/CJK 十/CJK (一/CJK)? | [３3]/DIGIT [01０１]/DIGIT)'.format(digit=var_zhdigits),
         'n12': u'(([０0]/DIGIT)? ./DIGIT | 十/CJK ([一二]/CJK)? | [１1]/DIGIT [012０１２]/DIGIT | {digit}/CJK)'.format(digit=var_zhdigits),
-        'n60': u'(([0-5０-５]/DIGIT)? ./DIGIT | ([一二三四五]/CJK)? (十/CJK)? {digit}/CJK)'.format(digit=var_zhdigits)}
+        'n60': u'(([0-5０-５]/DIGIT)? ./DIGIT | ([一二三四五]/CJK)? (十/CJK)? {digit}/CJK)'.format(digit=var_zhdigits),
+        'numy': u'(./DIGIT (./DIGIT)+ | {zhdigit}/CJK ({zhdigit}/CJK)+)'.format(zhdigit=var_zhdigits)}
 
-re_date = ur"({n12} {month})? ({n31} {day})?".format(**datetime_vars)
+re_date = ur"({numy} {year})? ({n12} {month})? ({n31} {day})?".format(**datetime_vars)
 re_time = ur"({dayperiod})? ({n24} {hour})? ({n60} {minute})? ({n60} {second})?".format(**datetime_vars)
 
-datetime = Module(" ".join([re_date, re_time]), joinForms("DATETIME", 1))
+datetime = Module(" ".join([re_date, re_time]), joinForms("DATETIME", 4))
 
-mini_datetime = Module(ur"{n12} {month} {n31} {day}".format(**datetime_vars), joinForms("DATETIME"))
-
-zhnum = Module(u"({digit}/CJK) (({ord}/CJK)? ({digit}/CJK)?)+ ({point}/.* (({digit}/.*)? ({ord}/.*)?)+)".format(point=var_point, digit=var_zhdigits, ord=var_zhordinals), joinForms("NUM"))
+zhnum = Module(u"({digit}/.*) (({ord}/CJK)? ({digit}/.*)?)+ ({point}/.* (({digit}/.*)? ({ord}/.*)?)+)? ([多几幾]/CJK)?".format(point=var_point, digit=var_zhdigits, ord=var_zhordinals), joinForms("NUM"))
 
 re_url = u" http/WLATIN :/.* //.* //.* (.*/WLATIN ./.*)* .+/WLATIN (//.* .+/WLATIN)*"
+
+re_percent = u".*/NUM [\%％]/.*"
+
+percentages = Module(re_percent, joinForms("PERCENT"))
 
 url = Module(re_url, joinForms("URL"))
 
@@ -398,7 +404,7 @@ addr_vars = {
         'county': u"[縣县]/CJK",
         'village': u"[鄉乡]/CJK",
         'department': u"部/CJK",
-        'city': u"[是市]/CJK",
+        'city': u"[市]/CJK",
         'bourg': u"村/CJK",
         'district': u'(區/CJK | 区/CJK)',
         'street': u"(街/CJK | 路/CJK | 大/CJK 道/CJK)",
@@ -412,7 +418,7 @@ addr_vars = {
         
 re_addr = ur"((./CJK) (./CJK)? {province})? ((./CJK) (./CJK)? {county})? ((./CJK) (./CJK)? {village})? ((./CJK) (./CJK)? {department})? ((./CJK) (./CJK)? {city})? ((./CJK) (./CJK)? {bourg})? ((./CJK) (./CJK)? {district})? ((./CJK) (./CJK)? {street})? ({num} {section})? ({num} {alley})? ({num} {lane})? ({num} {number})? ({num} {floor})?".format(**addr_vars)
 
-addresses = Module(re_addr, joinForms("ADDR", 2))
+addresses = Module(re_addr, joinForms("ADDR", 4))
 
 donothing = Module(u"(.*/.*)+", joinForms("unsegmented"))
 
@@ -474,8 +480,9 @@ class Engine(Composable):
         :returns: iterator of lists of Tokens (one list by line)
         """
         #TODO: this may be done in // as each line may be processed independently
-        for line in input_lines:
-            yield self.apply_on_string(line)
+        return self.apply_on_string(input_lines)
+        #for line in input_lines:
+            #yield self.apply_on_string(line)
 
     def preprocess_string(self, input_str):
         return self.apply_on_string(input_str)
@@ -514,7 +521,8 @@ class Engine(Composable):
 engine_basic = Engine([TokenCategorizer(), TokenToWordform(), Module("(A/LATIN)+ B/LATIN", joinForms("AAB")), Module("([a-zA-Z]*/AAB)+", joinForms("2AB"))])
 
 engine_nothing = Engine([TokenToWordform(), donothing])
-engine_default = Engine([TokenCategorizer(), TokenToWordform(), datetime, numbers, addresses, latin_words, hanzi_sequence])
+engine_basic =   Engine([TokenCategorizer(), TokenToWordform(), numbers, latin_words, zhnum, punct_sequence, percentages, hanzi_sequence])
+engine_default = Engine([TokenCategorizer(), TokenToWordform(), datetime, numbers, addresses, latin_words, zhnum, punct_sequence, percentages, hanzi_sequence])
 engine_test = Engine([TokenCategorizer(), TokenToWordform()]) # datetime, numbers, addresses, latin_words, hanzi_sequence])
 
 

@@ -222,7 +222,6 @@ class LanguageModel:
         return [b in table[-1, 0] for b in xrange(len(sequence)+1)]
 
     def segment_corpus_with_preprocessing(self, text, engine=None, returnType="text", sep=""):
-        import tokenisation
         if engine is None:
             engine = tokenisation.engine_nothing
         for tokseq in engine.apply(text):
@@ -240,14 +239,13 @@ class LanguageModel:
                 yield result
 
     def segmente(self, sequence, af=lambda x, y: x+y):
-        import tokenisation
         encseq = self.encode_ngram_with_boundaries(sequence)
         seg = self.segmente_encoded_sequence(encseq, af=af)
         result = []
         cursor = 0
         for i in xrange(1, len(sequence)+1):
             if seg[i + 1]:
-                result.append(tokenisation.Token(sequence[cursor:i], "Word"))
+                result.append(tokenisation.Wordform(u"".join(sequence[cursor:i]), "Word", tokens=sequence[cursor:i]))
                 cursor = i
         return result
 
@@ -336,7 +334,6 @@ class LanguageModel:
         self._read_builtin(infile, enc, engine=preproc, nline=nline)
 
     def _read_builtin(self, path, enc, engine=None, nline=None, target="unsegmented",sep="\t"):
-        import tokenisation 
         if engine is None:
             engine = tokenisation.engine_nothing
         nl = 0
