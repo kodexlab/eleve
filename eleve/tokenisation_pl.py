@@ -37,6 +37,7 @@ O_BOUNDARY = u"\ue000"    # separator between tokens
 C_BOUNDARY = u"\ue001"    # separator between tokens
 FCSEP = u"\ue002"       # separator between token form and token category
 TOKSEP = u"\ue003"      # separator used inside a token form
+POINT = u"\ue004"
 
 
 UNIPUNCT = set(['SPACE',
@@ -48,7 +49,9 @@ UNIPUNCT = set(['SPACE',
                 'PARENTHESIS',
                 'APOSTROPHE',
                 'COMMA',
-                'DASH'])
+                'DASH',
+                'ELLIPSIS',
+                'ASTERISK'])
 
 
 # Basic Token object
@@ -167,7 +170,9 @@ class Module(Composable):
                 forme = tok
                 tag = ".*"
             tok = FCSEP.join([forme,tag])  # set proper FCSEP
+            tok = tok.replace(r"\.","\\"+POINT) # prevent replace of escaped points
             tok = tok.replace(".", "[^%s%s%s]" % (C_BOUNDARY, O_BOUNDARY, FCSEP))  # '.' will not match special chars
+            tok = tok.replace(POINT, ".")
             tok = ur"%s%s%s%s%s%s" % (left, O_BOUNDARY, tok, C_BOUNDARY, right, quantifier)
             regex.append(tok)
         regex = ur"(" + "".join(regex) + ")"
@@ -356,13 +361,13 @@ def joinForms(category, minlength=1, sep=TOKSEP):
 
 #TokenCategorizer = Module("./.*", TokenCategorizer)
 
-numbers = Module("(./DIGIT)+", joinForms("NUM"))
+numbers = Module(r"(./DIGIT)+ ((\./.*) (./DIGIT)+)?", joinForms("NUM"))
 
 latin_words = Module("(./LATIN)+", joinForms("WLATIN"))
 
 hanzi_sequence = Module("(./CJK)+", joinForms("unsegmented"))
 
-punct_sequence = Module(u"([—]/PUNCT)+", joinForms("PUNCT",2))
+punct_sequence = Module(ur"([—…＊]/PUNCT)+", joinForms("PUNCT",2))
 
 ordinals = Module(u"第/.* .*/NUM", joinForms("ORDINAL"))
 
@@ -382,14 +387,16 @@ datetime_vars = {
         'n31': u'((二/CJK)? (十/CJK)? {digit}/CJK | ([012０１２]/DIGIT)? ./DIGIT | 三/CJK 十/CJK (一/CJK)? | [３3]/DIGIT [01０１]/DIGIT)'.format(digit=var_zhdigits),
         'n12': u'(([０0]/DIGIT)? ./DIGIT | 十/CJK ([一二]/CJK)? | [１1]/DIGIT [012０１２]/DIGIT | {digit}/CJK)'.format(digit=var_zhdigits),
         'n60': u'(([0-5０-５]/DIGIT)? ./DIGIT | ([一二三四五]/CJK)? (十/CJK)? {digit}/CJK)'.format(digit=var_zhdigits),
-        'numy': u'(./DIGIT (./DIGIT)+ | {zhdigit}/CJK ({zhdigit}/CJK)+)'.format(zhdigit=var_zhdigits)}
+        'numy': u'(./DIGIT (./DIGIT)+ | {zhdigit}/.* ({zhdigit}/.*)+)'.format(zhdigit=var_zhdigits)}
 
-re_date = ur"({numy} {year})? ({n12} {month})? ({n31} {day})?".format(**datetime_vars)
+re_date = ur"({numy} {year})?( {n12} {month})?( {n31} {day})?".format(**datetime_vars)
 re_time = ur"({dayperiod})? ({n24} {hour})? ({n60} {minute})? ({n60} {second})?".format(**datetime_vars)
 
 datetime = Module(" ".join([re_date, re_time]), joinForms("DATETIME", 4))
 
-zhnum = Module(u"({digit}/.*) (({ord}/CJK)? ({digit}/.*)?)+ ({point}/.* (({digit}/.*)? ({ord}/.*)?)+)? ([多几幾]/CJK)?".format(point=var_point, digit=var_zhdigits, ord=var_zhordinals), joinForms("NUM"))
+zhnum = Module(u"({digit}/.*)(( {ord}/.*)?( {digit}/.*)?)+( {point}/.* (({digit}/.*)? ({ord}/.*)?)+)?( [多几幾]/CJK)?".format(point=var_point, digit=var_zhdigits, ord=var_zhordinals), joinForms("NUM"))
+
+complex_num = Module(ur"([-－]/.*)? .*/NUM ({order}/CJK)*".format(order=var_zhordinals) , joinForms("NUM",2))
 
 re_url = u" http/WLATIN :/.* //.* //.* (.*/WLATIN ./.*)* .+/WLATIN (//.* .+/WLATIN)*"
 
@@ -471,7 +478,8 @@ class Engine(Composable):
     def apply(self, input_lines):
         u""" Same as :func:`call`, backward compatibility
         """
-        return self(input_lines)
+        for line in input_lines:
+            yield self.apply_on_string(line)
 
     def __call__(self, input_lines):
         u""" Apply the tokenisation engine to a sequence (generator) of lines
@@ -521,8 +529,8 @@ class Engine(Composable):
 engine_basic = Engine([TokenCategorizer(), TokenToWordform(), Module("(A/LATIN)+ B/LATIN", joinForms("AAB")), Module("([a-zA-Z]*/AAB)+", joinForms("2AB"))])
 
 engine_nothing = Engine([TokenToWordform(), donothing])
-engine_basic =   Engine([TokenCategorizer(), TokenToWordform(), numbers, latin_words, zhnum, punct_sequence, percentages, hanzi_sequence])
-engine_default = Engine([TokenCategorizer(), TokenToWordform(), datetime, numbers, addresses, latin_words, zhnum, punct_sequence, percentages, hanzi_sequence])
+engine_basic =   Engine([TokenCategorizer(), TokenToWordform(), numbers, latin_words, zhnum, punct_sequence, percentages, complex_num, hanzi_sequence])
+engine_default = Engine([TokenCategorizer(), TokenToWordform(), datetime, numbers, addresses, latin_words, zhnum, punct_sequence, percentages, complex_num, ordinals, hanzi_sequence])
 engine_test = Engine([TokenCategorizer(), TokenToWordform()]) # datetime, numbers, addresses, latin_words, hanzi_sequence])
 
 

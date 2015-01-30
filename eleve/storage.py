@@ -113,10 +113,10 @@ class MemoryStorage(Storage):
     def read_ngram(self, ngram):
         ngram = self.encode_ngram_with_boundaries(ngram)
         for left in range(0, len(ngram)):
-            right = min(left + self.nmax, len(ngram))
+            right = min(left + self.nmax+1, len(ngram))
             self.DT.add(ngram[left:right+1])
         for right in range(1, len(ngram)):
-            left = max(0, right - self.nmax)
+            left = max(0, right - self.nmax-1)
             self.DT.add(ngram[left:right+1], doBackward=True)
 
     def estimate_probabilities(self):
@@ -128,7 +128,7 @@ class MemoryStorage(Storage):
         raise NotImplementedError
 
     def compute_entropies(self):
-        self.DT.compute_entropy()
+        #self.DT.compute_entropy()
         self.DT.compute_entropy_variation()
 
     def normalise(self):
@@ -137,15 +137,15 @@ class MemoryStorage(Storage):
     def query(self, what, ngram, failwith=None):
         coded = [self.encode(tok) for tok in ngram]
         if what == AUTONOMY:
-            try:
-                nRVBE = self.DT.query_backward(coded)
-                nLVBE = self.DT.query_forward(coded)
-                return nRVBE + nLVBE
-            except:
-                if failwith:
+            nRVBE = self.DT.query_backward(coded)
+            nLVBE = self.DT.query_forward(coded)
+            if nRVBE is None or nLVBE is None:
+                if failwith is not None:
                     return failwith
                 else:
                     raise ValueError
+            else:
+                return nRVBE + nLVBE
         elif what == FORWARD_VBE:
             return self.DT.query_forward(coded)
         elif what == BACKWARD_VBE:
@@ -153,23 +153,8 @@ class MemoryStorage(Storage):
         raise NotImplementedError
 
     def save(self, outfile):
-        f = open(outfile, "w")
-        pickle.dump((self.encodeur,
-                     self.decodeur,
-                     self.nmax,
-                     self.DT,
-                     self.last_punct,
-                     self.ntypes), f, pickle.HIGHEST_PROTOCOL)
-        f.close()
+        raise NotImplementedError
 
     def load(self, infile):
-        print "loading", infile
-        f = open(infile, "r")
-        (self.encodeur,
-         self.decodeur,
-         self.nmax,
-         self.DT,
-         self.last_punct,
-         self.ntypes) = pickle.load(f)
-        f.close()
+        raise NotImplementedError
 

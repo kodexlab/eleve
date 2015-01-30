@@ -19,7 +19,7 @@ def segmente(sequence, model, nmax=6):
         a = model.query(storage.AUTONOMY, w, failwith=np.float("-inf"))
         return a * l
     if len(sequence) == 1:
-        return [True, True]
+        return sequence
     table = np.empty((len(sequence)+1, 2), dtype=object)
     table[0, 0] = [0]  # segmentation
     table[0, 1] = 0.  # score
@@ -54,7 +54,7 @@ def preprocess_segment(sentence, engine, model):
     result = []
     for tok in engine(sentence):
         if tok.pos == "unsegmented":
-            result.extend([ NLP.Wordform("".join(w),"Word", w)  for w in segmente(tok.form, m, m.nmax)])
+            result.extend([ NLP.Wordform("".join(w),"Word", w)  for w in segmente(tok.tokens, model, model.nmax)])
         else:
             result.append(tok)
     return result

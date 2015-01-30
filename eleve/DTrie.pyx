@@ -292,7 +292,7 @@ cdef class DTrie:
     def query_forward(self,ngram, failwith=None):
         cdef Trie t
         t = self.fwd.find(ngram)
-        if not t:
+        if not t or np.isnan(t.entropy):
             return failwith
         return t.entropy
 
@@ -307,7 +307,7 @@ cdef class DTrie:
         cdef Trie t
         ngram = list(reversed(ngram))
         t = self.bwd.find(ngram)
-        if not t:
+        if not t or np.isnan(t.entropy):
             return failwith
         return t.entropy
 
