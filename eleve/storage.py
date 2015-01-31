@@ -4,7 +4,7 @@ from abc import ABCMeta, abstractmethod
 import numpy as np
 import pickle
 
-from DTrie import DTrie
+from eleve.DTrie import DTrie
 
 
 # constant for faster access to info type

@@ -8,11 +8,11 @@ import codecs
 import cPickle as pickle
 from collections import namedtuple
 
-from DTrie_sqlite import DTrie as DTrieSQL
-from DTrie import DTrie
+from eleve.DTrie_sqlite import DTrie as DTrieSQL
+from eleve.DTrie import DTrie
 
 
-import tokenisation_pl as tokenisation
+from . import tokenisation
 
 #atomic datatype for Binary Tree unsupervised parsing
 #left and right should contains a BTNode or a terminal token

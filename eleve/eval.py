@@ -2,8 +2,8 @@
 import codecs
 
 
-from libeleve import standalone
-import tokenisation 
+from . import segmentation
+from . import tokenisation 
 
 
 
@@ -41,22 +41,22 @@ def boundaries_positions(tokens_test, tokens_gold, typed=False):
 
 
 def config_no_preproc(train_path):
-    segmenteur = standalone.Segmenteur()
+    segmenteur = segmentation.Segmenteur()
     segmenteur.train(train_path, True, preproc=tokenisation.engine_nothing)
     return segmenteur
 
 def config_no_preproc(train_path):
-    segmenteur = standalone.Segmenteur()
+    segmenteur = segmentation.Segmenteur()
     segmenteur.train(train_path, True, preproc=tokenisation.engine_default)
     return segmenteur
 
 def config_rnn(train_path):
-    segmenteur = standalone.Segmenteur()
+    segmenteur = segmentation.Segmenteur()
     segmenteur.train_arpa(train_path, True, engine=tokenisation.engine_nothing)
     return segmenteur
 
 def config_rnn_preproc(train_path):
-    segmenteur = standalone.Segmenteur()
+    segmenteur = segmentation.Segmenteur()
     segmenteur.train_arpa(train_path, True, engine=tokenisation.engine_default)
     return segmenteur
 

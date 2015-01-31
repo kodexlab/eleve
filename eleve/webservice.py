@@ -12,8 +12,8 @@ from flask import Flask, Response
 from flask import abort, request, jsonify
 from flask import g
 
-import LM
-import tokenisation
+import eleve.LM as LM
+import eleve.tokenisation as tokenisation
 
 # loading language model
 CONFIG = json.load(open("eleve-webservice.cfg"))

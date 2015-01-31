@@ -9,25 +9,25 @@ import tempfile
 
 import numpy as np
 
-import kenleve
-import LM
-import tokenisation_pl as tokenisation
-import nlptypes
+from . import kenleve
+from . import LM
+from . import tokenisation
+from . import nlptypes
 
-from postproc import PKU
 
 class Segmenteur(object):
-    def __init__(self, order=6, tmpdir=None):
+    def __init__(self, order=6, default_preproc=None, tmpdir=None):
         """Segmenteur "boite noire"
         argument optionel:
         order -- longueur maximale de n-grammes considérés (6)
+        default_preproc -- tokeniseur utilisé par défaut
         tmpdir -- dossier à utiliser pour les fichiers temporaires 
         de préférence vers un SSD
         """
         self.order = order
         self.lm = None
         self.db = None
-        self.training_preproc = tokenisation.engine_nothing
+        self.preproc = tokenisation.engine_nothing if not default_preproc else default_preproc
         self.tmpdir = tmpdir
 
     def train(self, training_data, inMemory=False, preproc=None):
@@ -47,10 +47,12 @@ class Segmenteur(object):
             self.lm = LM.LanguageModel(self.order, self.basename)
         if preproc is not None:
             self.training_preproc = preproc
-        if type(training_data) == str or type(training_data) == unicode:
-            self.lm.read_corpus(training_data, preproc=preproc)
         else:
-            self.lm.read_iterator(training_data, engine=preproc)
+            self.training_preproc = self.preproc
+        if type(training_data) == str or type(training_data) == unicode:
+            self.lm.read_corpus(training_data, preproc=self.training_preproc)
+        else:
+            self.lm.read_iterator(training_data, engine=self.training_preproc)
         self.lm.compute_entropy_variation()
         self.lm.normalise_types(np.mean, np.std)
         #self.lm.normalise_types(np.mean)
@@ -71,6 +73,8 @@ class Segmenteur(object):
             self.lm = LM.LanguageModel(nmax, self.basename)
         if engine is not None:
             self.training_preproc = engine
+        else:
+            self.training_preproc = self.preproc
         def iter_corpus_biread(p):
             f = codecs.open(p,"r","utf8")
             for tokseq in engine.apply(f):
@@ -113,6 +117,8 @@ class Segmenteur(object):
         Retourne une liste de «multi-mots» contenus dans un text avec leur score d'autonomie associé.
         """
         results = []
+        if preproc is None and self.training_preproc is not None:
+            preproc = self.training_preproc
         for tokseq in preproc.apply([text]):
             for tok in tokseq:
                 if tok.category == target:

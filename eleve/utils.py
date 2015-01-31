@@ -3,9 +3,9 @@
 import numpy as np
 import codecs
 
-import storage
-import tokenisation_pl as tokenisation
-import nlptypes as NLP
+import eleve.storage as storage
+from . import tokenisation
+import eleve.nlptypes as NLP
 
 
 def segmente(sequence, model, nmax=6):

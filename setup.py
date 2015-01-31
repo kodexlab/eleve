@@ -3,6 +3,11 @@
 import os
 from setuptools import setup, find_packages
 from eleve import __version__
+from distutils.core import setup
+from distutils.extension import Extension
+from Cython.Distutils import build_ext
+from Cython.Build import cythonize
+
 
 cwd = os.path.abspath(os.path.dirname(__file__))
 readme = open(os.path.join(cwd, 'README.md')).read()
@@ -15,7 +20,9 @@ setup(
     author='Pierre Magistry',
     author_email='pierre@magistry.fr',
     url='http://kodexlab.com/eleve/',
-    packages=['eleve'] + ['reliure.%s' % submod for submod in find_packages('reliure')],
+    install_requires=['reliure','cython'],
+    ext_modules=cythonize(['eleve/DTrie.pyx']),
+    packages=['eleve'] + ['eleve.%s' % submod for submod in find_packages('eleve')],
     classifiers=[
         "Programming Language :: Python",
         "Programming Language :: Cython", 

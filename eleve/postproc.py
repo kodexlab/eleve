@@ -1,7 +1,7 @@
 # -*- coding:utf8 -*-
 import re
 
-import nlptypes as NLP
+import eleve.nlptypes as NLP
 
 re_timedate = re.compile(ur"([年月日號号時时點点鍾种分秒午]|早上|晚上|凌晨)")
 re_adresses = re.compile(ur"([省縣县鄉乡部市村區区街路段巷弄]|大道)")
