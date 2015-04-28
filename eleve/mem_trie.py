@@ -3,8 +3,8 @@ import pickle
 import collections
 import math
 
-from trie_storage import TrieStorage
-from storage import Storage
+from eleve.trie_storage import TrieStorage
+from eleve.storage import Storage
 
 class MemNode(object):
     """ Node used by :class:`MemTrie`

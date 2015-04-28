@@ -24,7 +24,7 @@ BNode = namedtuple("BTNode","form left right")
 class LanguageModel:
     def __init__(self, nmax=6, dbpath=None, boundaryToken="$$$"):
         if dbpath is None:
-            print "inmem"
+            print("inmem")
             self.DT = DTrie(nmax)
         if dbpath and os.path.exists(dbpath + ".lm"):
             self.load(dbpath + ".lm")
@@ -55,7 +55,7 @@ class LanguageModel:
         if not add:
             if failwith:
                 return failwith
-            print "pb avec", token
+            print("pb avec", token)
             raise ValueError
         self.encodeur[token] = self.ntypes
         self.decodeur.append(token)
@@ -109,7 +109,7 @@ class LanguageModel:
         self.DT.compute_entropy_variation_from_pcond()
 
     def compute_entropy(self, boundaryMode="unique"):
-        print self.DT.compute_entropy(boundaryMode, self.last_punct)
+        print(self.DT.compute_entropy(boundaryMode, self.last_punct))
 
     def normalise_types(self, centralf=np.mean, spreadf=lambda x: 1.):
         self.DT.normalise_types(self.nmax, centralf=np.mean, spreadf=spreadf)
@@ -281,7 +281,7 @@ class LanguageModel:
         f.close()
 
     def load(self, infile):
-        print "loading", infile
+        print("loading", infile)
         f = open(infile, "r")
         (self.encodeur,
          self.decodeur,
@@ -295,9 +295,9 @@ class LanguageModel:
         def load_one(data, backward):
             l = data.next().strip()
             if l != "\\data\\":
-                print 1, l
-                print "error: not in arpa format", l
-                print "\n".join(data)
+                print(1, l)
+                print("error: not in arpa format", l)
+                print("\n".join(data))
                 sys.exit(1)
             l = data.next().strip()
             while l != "":
@@ -306,8 +306,8 @@ class LanguageModel:
             for o in range(1, self.nmax+2):
                 l = data.next().strip()
                 if not (l == "\\%d-grams:" % (o,)):
-                    print 3, l
-                    print "error: not in arpa format", l
+                    print(3, l)
+                    print("error: not in arpa format", l)
                     sys.exit(1)
                 l = data.next().strip()
                 while l != "":

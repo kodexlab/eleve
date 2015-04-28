@@ -1,5 +1,8 @@
 # -*- coding:utf8 -*-
-""" Storage interface for LM
+""" :mod:`eleve.storage`
+========================
+
+Storage interfaces and abstract class for LM
 """
 
 from abc import ABCMeta, abstractmethod
