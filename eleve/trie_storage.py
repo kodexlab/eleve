@@ -1,6 +1,10 @@
-from storage import Storage
+from eleve.storage import Storage
 
+#RMQ: Peut etre cela peut etre direct dans storage.py pour ne pas multiplié les .py
+# ca reste une implémenation abstract de Storage (un peu moins que Storage)
 class TrieStorage(Storage):
+    """ Abstract :class:`.Storage` that use two trees (for forward and backward)
+    """
     trie_class = None
 
     def __init__(self, path):

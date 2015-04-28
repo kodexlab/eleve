@@ -1,11 +1,14 @@
 from __future__ import division
-from trie_storage import TrieStorage
-from storage import Storage
 import pickle
 import collections
 import math
 
+from trie_storage import TrieStorage
+from storage import Storage
+
 class MemNode(object):
+    """ Node used by :class:`MemTrie`
+    """
     def __init__(self):
         self.count = 0
         self.entropy_psum = 0
@@ -17,9 +20,9 @@ class MemNode(object):
             return None
         return math.log2(self.count) - self.entropy_psum / self.count
 
+#RMQ: si structure de MemTrie est pertinante alors peut-etre on peut faire une version abstract/interface dans storage.py
 class MemTrie(Storage):
-    """
-    Memory tree.
+    """ Memory tree.
 
     >>> m = MemTrie(None, 3)
     >>> m.add_ngram((0,1,2))
@@ -28,15 +31,15 @@ class MemTrie(Storage):
     """
 
     def __init__(self, path, depth):
-        assert path is None
-
-        self.normalization = [(0,0,0)]*depth
+        """
+        :param depth: Maximum lenght of stored ngrams
+        """
+        assert path is None ##RMQ: cf dans Storage, je pense que path peu titler
         self.depth = depth
-
         self.root = MemNode()
-
-        #with open(path, 'rb') as f:
-        #    self.root = pickle.load(f)
+        self.normalization = [(0,0,0)] * depth #normalization params
+        # one for each level
+        # on each level : count, mean, variance_psum
 
     def add_ngram(self, ngram):
         assert len(ngram) <= self.depth
@@ -52,7 +55,6 @@ class MemTrie(Storage):
             return # ngram is empty (nothing left)
 
         # calculate entropy
-
         try:
             child = node.childs[token]
             node.entropy_psum -= child.count * math.log2(child.count)
@@ -62,8 +64,7 @@ class MemTrie(Storage):
 
         node.entropy_psum += (child.count + 1) * math.log2(child.count + 1)
 
-        # recurse
-
+        # recurse, add the end of the ngram
         self._add_ngram(child, parents + [node], ngram[1:])
 
         depth = len(parents)
@@ -71,7 +72,6 @@ class MemTrie(Storage):
             return
 
         # update normalization stats
-        
         ve = node.entropy - parents[-1].entropy
         count, mean, variance_psum = self.normalization[depth - 1]
 
@@ -101,6 +101,7 @@ class MemTrie(Storage):
         variance = math.sqrt(variance_psum / variance_count)
         nev = (self.query_ev(ngram) - mean) / spreadf(variance)
         return nev
+
 
 class MemStorage(TrieStorage):
     trie_class = MemTrie

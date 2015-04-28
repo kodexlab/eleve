@@ -1,5 +1,5 @@
-#!/usr/bin/env python
 # -*- coding:utf8 -*-
+#RMQ: Ce fichier est amené a disparaitre a priori ? remplacer par les Storage, non ?
 
 import sys
 import os
