@@ -42,8 +42,8 @@ class MemoryTrie(Storage):
         You can specify the number of times you add (or substract) that ngram by using the `freq` argument.
         """
 
-        if not 0 < len(ngram) <= self.depth:
-            raise ValueError("The size of the ngram parameter is incorrect. Must be between 1 and depth ({})".format(self.depth))
+        if len(ngram) != self.depth:
+            raise ValueError("The size of the ngram parameter must be depth ({})".format(self.depth))
 
         if self.root.count + freq < 0:
             raise ValueError("Can't remove a non-existent ngram.")
@@ -53,6 +53,8 @@ class MemoryTrie(Storage):
     def _add_ngram(self, node, depth, ngram, freq):
         """ Recursive function used to add an ngram.
         """
+        old_entropy = node.entropy
+
         node.count += freq
         try:
             token = ngram[0]
@@ -60,19 +62,21 @@ class MemoryTrie(Storage):
             return # ngram is empty (nothing left)
 
         # calculate entropy
-        child_created = False
         try:
             child = node.childs[token]
             node.entropy_psum -= child.count * math.log2(child.count)
         except KeyError:
             child = MemoryNode()
             node.childs[token] = child
-            child_created = True
 
         if child.count + freq < 0:
             raise ValueError("Can't remove a non-existent ngram.")
 
-        old_child_entropy = child.entropy
+        try:
+            old_ev = child.entropy - old_entropy
+        except TypeError:
+            # child.entropy is None: can't calculate EV
+            old_ev = None
 
         # recurse, add the end of the ngram
         self._add_ngram(child, depth + 1, ngram[1:], freq)
@@ -90,13 +94,13 @@ class MemoryTrie(Storage):
         count, mean, variance_psum = self.normalization[depth]
 
         old_mean = mean
-        if child_created: # first seen
+        if old_ev is None: # first seen
             count += 1
             mean += (ev - mean) / count
             variance_psum += (ev - old_mean) * (ev - mean)
         else:
-            mean += (ev - old_child_entropy) / count
-            variance_psum += (ev - old_mean) * (ev - mean) - (old_child_entropy - old_mean) * (old_child_entropy - mean)
+            mean += (ev - old_ev) / count
+            variance_psum += (ev - old_mean) * (ev - mean) - (old_ev - old_mean) * (old_ev - mean)
 
         self.normalization[depth] = (count, mean, variance_psum)
 
@@ -140,7 +144,7 @@ class MemoryTrie(Storage):
         """ Return the autonomy (normalized entropy variation) for the ngram.
         """
         variance_count, mean, variance_psum = self.normalization[len(ngram) - 1]
-        variance = math.sqrt(variance_psum / variance_count)
+        variance = math.sqrt(abs(variance_psum / variance_count))
         nev = (self.query_ev(ngram) - mean) / spreadf(variance)
         return nev
 
