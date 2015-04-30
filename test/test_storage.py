@@ -30,6 +30,13 @@ def test_integrity(memtrie):
             for k, child in root.childs.items():
                 yield from ngrams_size(child, size - 1, path + [k])
 
+    mvl_cache = {}
+    def mv_level(s):
+        if s in mvl_cache:
+            return mvl_cache[s]
+        mvl_cache[s] = mean_variance(map(memtrie.query_ev, ngrams_size(memtrie.root, s)))
+        return mvl_cache[s]
+
     def rec_integrity(node, ngram):
         # counts
         count_childs = list(map(operator.attrgetter('count'), node.childs.values()))
@@ -44,9 +51,8 @@ def test_integrity(memtrie):
             ev = memtrie.query_ev(ngram)
             assert ev == node.entropy - memtrie.query_node(ngram[:-1])[1]
 
-            mean, variance = mean_variance(map(memtrie.query_ev, ngrams_size(memtrie.root, len(ngram))))
-            print('mv', mean, variance)
-            print('norm', memtrie.normalization[len(ngram) - 1])
+            mean, variance = mv_level(len(ngram))
+            l = len(list(ngrams_size(memtrie.root, len(ngram))))
 
             autonomy = (ev - mean) / 1
             assert abs(autonomy - memtrie.query_autonomy(ngram)) < 1e-6, (autonomy, memtrie.query_autonomy(ngram))

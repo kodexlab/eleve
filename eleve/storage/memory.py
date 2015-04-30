@@ -102,6 +102,9 @@ class MemoryTrie(Storage):
             mean += (ev - old_ev) / count
             variance_psum += (ev - old_mean) * (ev - mean) - (old_ev - old_mean) * (old_ev - mean)
 
+        if old_entropy is not None:
+            mean -= (node.entropy - old_entropy) * (len(node.childs) - 1) / count
+
         self.normalization[depth] = (count, mean, variance_psum)
 
     def query_node(self, ngram):
