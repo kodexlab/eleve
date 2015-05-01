@@ -1,4 +1,5 @@
 import random
+import pytest
 
 from eleve.storage.memory import MemoryTrie
 from eleve.storage.incremental_memory import IncrementalMemoryTrie
@@ -19,6 +20,7 @@ def generate_random_ngrams():
     random.shuffle(m)
     return (depth, m)
 
+@pytest.mark.parametrize("trie_class", [IncrementalMemoryTrie])
 def test_trie_class(trie_class, reference_class=MemoryTrie):
     depth, ngrams = generate_random_ngrams()
     test_trie = trie_class(depth)
@@ -42,6 +44,7 @@ def test_trie_class(trie_class, reference_class=MemoryTrie):
         autonomy_test = test_trie.query_autonomy(ngram)
         assert abs(autonomy_ref - autonomy_test) < 1e-6, (autonomy_ref, autonomy_test)
 
+@pytest.mark.parametrize("trie_class", [MemoryTrie, IncrementalMemoryTrie])
 def test_basic_trie(trie_class):
     m = trie_class(3)
     m.add_ngram(('le','petit','chat'))
@@ -55,7 +58,3 @@ def test_basic_trie(trie_class):
     m.update_stats()
     assert m.query_node(('le', 'petit')) == m.query_node(('le', 'gros'))
 
-if __name__ == '__main__':
-    test_basic_trie(MemoryTrie)
-    test_basic_trie(IncrementalMemoryTrie)
-    test_trie_class(IncrementalMemoryTrie)
