@@ -95,4 +95,3 @@ class DualStorage(Storage):
     def save(self, path):
         self.fwd_trie.save(path + ".fwd")
         self.bwd_trie.save(path + ".bwd")
-

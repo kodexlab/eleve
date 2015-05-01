@@ -143,26 +143,11 @@ class MemoryTrie(Storage):
     def query_node(self, ngram):
         """ Return a tuple with the main node data : (count, entropy).
         Count is the number of ngrams starting with the ``ngram`` parameter, entropy the entropy after the ngram.
-
-        >>> m = MemoryTrie(3)
-        >>> m.add_ngram(('le','petit','chat'))
-        >>> m.add_ngram(('le','petit','chien'))
-        >>> m.add_ngram(('le','gros','chien'))
-        >>> m.update_stats()
-        >>> m.query_node(('le', 'petit'))
-        (2, 1.0)
-        >>> m.query_node(None)[0] # None is for the root
-        3
-        >>> m.query_node(('le', 'petit')) == m.query_node(('le', 'gros'))
-        False
-        >>> m.add_ngram(('le','petit','chat'), -1)
-        >>> m.update_stats()
-        >>> m.query_node(('le', 'petit')) == m.query_node(('le', 'gros'))
-        True
         """
         self.check_dirty()
         node = self.root
         while ngram:
+            # FIXME: KeyError ?
             node = node.childs[ngram[0]]
             ngram = ngram[1:]
         return (node.count, node.entropy)
@@ -175,6 +160,7 @@ class MemoryTrie(Storage):
         last_node = node
         while ngram:
             last_node = node
+            # FIXME: KeyError ?
             node = node.childs[ngram[0]]
             ngram = ngram[1:]
 
@@ -193,14 +179,6 @@ class MemoryStorage(DualStorage):
     """ Memory storage, that functions by adding ngrams and querying in both
     left-to-right and right-to-left order.
     It will do the mean of both result for each function.
-
-    >>> m = MemoryStorage(3)
-    >>> m.add_ngram(('le','petit','chat'))
-    >>> m.add_ngram(('le','petit','chien'))
-    >>> m.add_ngram(('pour','le','petit'), freq=2)
-    >>> m.update_stats()
-    >>> m.query_node(('le', 'petit'))
-    (2.0, 0.5)
     """
 
     trie_class = MemoryTrie
