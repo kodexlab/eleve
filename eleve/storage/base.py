@@ -31,6 +31,12 @@ class Storage(object):
         """
         pass
 
+    @abstractmethod
+    def update_stats(self):
+        """ Update the statistics of the tree. May be needed before doing queries.
+        """
+        pass
+
     def rm_ngram(self, ngram, freq=1):
         return self.add_ngram(ngram, -freq)
 
@@ -81,6 +87,10 @@ class DualStorage(Storage):
         result_fwd = self.fwd_trie.query_node(ngram, *args, **kwargs)
         result_bwd = self.bwd_trie.query_node(ngram[::-1], *args, **kwargs)
         return tuple((i + j) / 2. for i, j in zip(result_fwd, result_bwd))
+
+    def update_stats(self, *args, **kwargs):
+        self.fwd_trie.update_stats(*args, **kwargs)
+        self.bwd_trie.update_stats(*args, **kwargs)
 
     def save(self, path):
         self.fwd_trie.save(path + ".fwd")
