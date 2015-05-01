@@ -1,30 +1,58 @@
 from __future__ import division
 import math
+import operator
 
 from eleve.storage.base import Storage, DualStorage
+
+def entropy(counts):
+    """ Calculate entropy from a list of counts.
+    >>> entropy([1,1])
+    1.0
+    >>> entropy([1])
+    0.0
+    >>> print('{:.4f}'.format(entropy([1,1,0,5,2])))
+    1.6577
+    """
+    c = 0
+    psum = 0
+    for i in counts:
+        c += i
+        psum += i * math.log2(i or 1)
+    if c == 0:
+        return 0
+    return math.log2(c) - psum / c
+
+def mean_variance(values):
+    """ Calculate mean and variance from values of an iterator
+    >>> mean_variance([1,3])
+    (2.0, 1.0)
+    >>> mean_variance([2,2])
+    (2.0, 0.0)
+    """
+    a = 0
+    q = 0
+    k = 0
+    for v in values:
+        k += 1
+        old_a = a
+        a += (v - a) / k
+        q += (v - old_a)*(v - a)
+    return (a, math.sqrt(q / k))
 
 class MemoryNode(object):
     """ Node used by :class:`MemoryTrie`
     """
     
     # to take a little less memory
-    __slots__ = ['count', 'entropy_psum', 'childs']
+    __slots__ = ['count', 'entropy', 'childs']
 
     def __init__(self):
         self.count = 0
-        self.entropy_psum = 0
+        self.entropy = 0
         self.childs = {}
 
-    @property
-    def entropy(self):
-        if self.count == 0:
-            return None
-        if self.entropy_psum == 0 and not self.childs:
-            return 0.
-        return math.log2(self.count) - self.entropy_psum / self.count
-
 class MemoryTrie(Storage):
-    """ Memory tree.
+    """ In-memory tree (made to be simple, no specific optimizations)
     """
 
     def __init__(self, depth):
@@ -36,26 +64,63 @@ class MemoryTrie(Storage):
 
         # normalization params :
         # one for each level
-        # on each level : count, mean, variance_psum (partial sum used to calculate the variance)
-        self.normalization = [(0,0,0)] * depth
+        # on each level : mean, variance
+        self.normalization = [(0,0)] * depth
+
+        self.dirty = False
+
+    def __iter__(self):
+        def _rec(ngram, node):
+            for k, c in node.childs.items():
+                yield ngram + [k]
+                yield from _rec(ngram + [k], c)
+
+        yield from _rec([], self.root)
+
+    def update_stats(self):
+        if not self.dirty:
+            return
+
+        def update_entropy(node):
+            node.entropy = entropy(map(operator.attrgetter('count'), node.childs.values()))
+            for child in node.childs.values():
+                update_entropy(child)
+
+        update_entropy(self.root)
+
+        def ve_for_depth(node, parent, depth):
+            if depth == 0:
+                yield node.entropy - parent.entropy
+            else:
+                for child in node.childs.values():
+                    yield from ve_for_depth(child, node, depth - 1)
+
+        for i in range(self.depth):
+            self.normalization[i] = mean_variance(ve_for_depth(self.root, None, i + 1))
+
+        self.dirty = False
+
+    def check_dirty(self):
+        if self.dirty:
+            raise RuntimeError("You must update the tree stats before doing a query.")
 
     def add_ngram(self, ngram, freq=1):
         """ Add a ngram to the tree.
         You can specify the number of times you add (or substract) that ngram by using the `freq` argument.
         """
 
-        if len(ngram) != self.depth:
+        if not 1 <= len(ngram) <= self.depth:
             raise ValueError("The size of the ngram parameter must be depth ({})".format(self.depth))
 
         if self.root.count + freq < 0:
             raise ValueError("Can't remove a non-existent ngram.")
 
-        self._add_ngram(self.root, 0, ngram, freq)
+        self._add_ngram(self.root, ngram, freq)
+        self.dirty = True
 
-    def _add_ngram(self, node, depth, ngram, freq):
-        """ Recursive function used to add an ngram.
+    def _add_ngram(self, node, ngram, freq):
+        """ Recursive function used to add a ngram.
         """
-        old_entropy = node.entropy
 
         node.count += freq
         try:
@@ -63,10 +128,8 @@ class MemoryTrie(Storage):
         except IndexError:
             return # ngram is empty (nothing left)
 
-        # calculate entropy
         try:
             child = node.childs[token]
-            node.entropy_psum -= child.count * math.log2(child.count)
         except KeyError:
             child = MemoryNode()
             node.childs[token] = child
@@ -74,40 +137,8 @@ class MemoryTrie(Storage):
         if child.count + freq < 0:
             raise ValueError("Can't remove a non-existent ngram.")
 
-        try:
-            old_ev = child.entropy - old_entropy
-        except TypeError:
-            # child.entropy is None: can't calculate EV
-            old_ev = None
-
         # recurse, add the end of the ngram
-        self._add_ngram(child, depth + 1, ngram[1:], freq)
-
-        node.entropy_psum += child.count * math.log2(child.count or 1)
-
-        # update normalization stats
-
-        try:
-            ev = child.entropy - node.entropy
-        except TypeError:
-            # child.entropy is None: can't calculate EV
-            return
-
-        count, mean, variance_psum = self.normalization[depth]
-
-        old_mean = mean
-        if old_ev is None: # first seen
-            count += 1
-            mean += (ev - mean) / count
-            variance_psum += (ev - old_mean) * (ev - mean)
-        else:
-            mean += (ev - old_ev) / count
-            variance_psum += (ev - old_mean) * (ev - mean) - (old_ev - old_mean) * (old_ev - mean)
-
-        if old_entropy is not None:
-            mean -= (node.entropy - old_entropy) * (len(node.childs) - 1) / count
-
-        self.normalization[depth] = (count, mean, variance_psum)
+        self._add_ngram(child, ngram[1:], freq)
 
     def query_node(self, ngram):
         """ Return a tuple with the main node data : (count, entropy).
@@ -117,6 +148,7 @@ class MemoryTrie(Storage):
         >>> m.add_ngram(('le','petit','chat'))
         >>> m.add_ngram(('le','petit','chien'))
         >>> m.add_ngram(('le','gros','chien'))
+        >>> m.update_stats()
         >>> m.query_node(('le', 'petit'))
         (2, 1.0)
         >>> m.query_node(None)[0] # None is for the root
@@ -124,9 +156,11 @@ class MemoryTrie(Storage):
         >>> m.query_node(('le', 'petit')) == m.query_node(('le', 'gros'))
         False
         >>> m.add_ngram(('le','petit','chat'), -1)
+        >>> m.update_stats()
         >>> m.query_node(('le', 'petit')) == m.query_node(('le', 'gros'))
         True
         """
+        self.check_dirty()
         node = self.root
         while ngram:
             node = node.childs[ngram[0]]
@@ -136,6 +170,7 @@ class MemoryTrie(Storage):
     def query_ev(self, ngram):
         """ Return the entropy variation for the ngram.
         """
+        self.check_dirty()
         node = self.root
         last_node = node
         while ngram:
@@ -148,8 +183,8 @@ class MemoryTrie(Storage):
     def query_autonomy(self, ngram, spreadf = lambda x: 1):
         """ Return the autonomy (normalized entropy variation) for the ngram.
         """
-        variance_count, mean, variance_psum = self.normalization[len(ngram) - 1]
-        variance = math.sqrt(abs(variance_psum / variance_count))
+        self.check_dirty()
+        mean, variance = self.normalization[len(ngram) - 1]
         nev = (self.query_ev(ngram) - mean) / spreadf(variance)
         return nev
 
@@ -163,6 +198,7 @@ class MemoryStorage(DualStorage):
     >>> m.add_ngram(('le','petit','chat'))
     >>> m.add_ngram(('le','petit','chien'))
     >>> m.add_ngram(('pour','le','petit'), freq=2)
+    >>> m.update_stats()
     >>> m.query_node(('le', 'petit'))
     (2.0, 0.5)
     """

@@ -2,7 +2,7 @@ import random
 import datetime
 
 from eleve.storage.memory import MemoryTrie
-from eleve.storage.trivial import TrivialTrie
+from eleve.storage.incremental_memory import IncrementalMemoryTrie
 
 def generate_random_ngrams():
     depth = random.randint(2,5)
@@ -23,7 +23,7 @@ def generate_random_ngrams():
 def test_trie_class(trie_class):
     depth, ngrams = generate_random_ngrams()
     test_trie = trie_class(depth)
-    ref_trie = TrivialTrie(depth)
+    ref_trie = MemoryTrie(depth)
     for n in ngrams:
         test_trie.add_ngram(n)
         ref_trie.add_ngram(n)
@@ -47,7 +47,7 @@ def benchmark_trie_class(trie_class):
     depth, ngrams = generate_random_ngrams()
     print('{} ngrams.'.format(len(ngrams)))
     test_trie = trie_class(depth)
-    ref_trie = TrivialTrie(depth)
+    ref_trie = MemoryTrie(depth)
 
     t = datetime.datetime.now()
     for n in ngrams:
@@ -84,5 +84,5 @@ def benchmark_trie_class(trie_class):
     print('Time to query test : {}'.format(time_query_test))
 
 if __name__ == '__main__':
-    test_trie_class(MemoryTrie)
-    benchmark_trie_class(MemoryTrie)
+    test_trie_class(IncrementalMemoryTrie)
+    benchmark_trie_class(IncrementalMemoryTrie)
