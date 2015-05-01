@@ -4,13 +4,6 @@
 
 from abc import ABCMeta, abstractmethod
 
-# constant for faster access to info type
-AUTONOMY = 0
-FORWARD_VBE = 1
-BACKWARD_VBE = 2
-FORWARD_SURPRISE = 3
-BACKWARD_SURPRISE = 4
-
 class Storage(object):
     """ Abstract class for LM storage
     """

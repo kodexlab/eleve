@@ -5,7 +5,9 @@ import operator
 from eleve.storage.base import Storage, DualStorage
 
 def entropy(counts):
-    """ Calculate entropy from a list of counts.
+    """ Calculate entropy from an iterator containing
+    count of occurence for each value.
+
     >>> entropy([1,1])
     1.0
     >>> entropy([1])
@@ -23,7 +25,8 @@ def entropy(counts):
     return math.log2(c) - psum / c
 
 def mean_variance(values):
-    """ Calculate mean and variance from values of an iterator
+    """ Calculate mean and variance from values of an iterator.
+
     >>> mean_variance([1,3])
     (2.0, 1.0)
     >>> mean_variance([2,2])
@@ -70,6 +73,9 @@ class MemoryTrie(Storage):
         self.dirty = False
 
     def __iter__(self):
+        """ Iterator on all the ngrams in the trie.
+        Including partial ngrams (not leafs). So it gives a ngram for every node.
+        """
         def _rec(ngram, node):
             for k, c in node.childs.items():
                 yield ngram + [k]
@@ -78,6 +84,8 @@ class MemoryTrie(Storage):
         yield from _rec([], self.root)
 
     def update_stats(self):
+        """ Update the internal statistics (like entropy, and variance & means
+        for the entropy variations. """
         if not self.dirty:
             return
 
@@ -100,7 +108,7 @@ class MemoryTrie(Storage):
 
         self.dirty = False
 
-    def check_dirty(self):
+    def _check_dirty(self):
         if self.dirty:
             raise RuntimeError("You must update the tree stats before doing a query.")
 
@@ -109,7 +117,7 @@ class MemoryTrie(Storage):
         You can specify the number of times you add (or substract) that ngram by using the `freq` argument.
         """
 
-        if not 1 <= len(ngram) <= self.depth:
+        if len(ngram) != self.depth:
             raise ValueError("The size of the ngram parameter must be depth ({})".format(self.depth))
 
         if self.root.count + freq < 0:
@@ -144,7 +152,7 @@ class MemoryTrie(Storage):
         """ Return a tuple with the main node data : (count, entropy).
         Count is the number of ngrams starting with the ``ngram`` parameter, entropy the entropy after the ngram.
         """
-        self.check_dirty()
+        self._check_dirty()
         node = self.root
         while ngram:
             # FIXME: KeyError ?
@@ -155,7 +163,7 @@ class MemoryTrie(Storage):
     def query_ev(self, ngram):
         """ Return the entropy variation for the ngram.
         """
-        self.check_dirty()
+        self._check_dirty()
         node = self.root
         last_node = node
         while ngram:
@@ -169,7 +177,7 @@ class MemoryTrie(Storage):
     def query_autonomy(self, ngram, spreadf = lambda x: 1):
         """ Return the autonomy (normalized entropy variation) for the ngram.
         """
-        self.check_dirty()
+        self._check_dirty()
         mean, variance = self.normalization[len(ngram) - 1]
         nev = (self.query_ev(ngram) - mean) / spreadf(variance)
         return nev
