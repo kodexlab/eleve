@@ -18,8 +18,8 @@ class Storage(object):
         pass
 
     @abstractmethod
-    def add_phrase(self, phrase, freq=1):
-        """ Add a phrase.
+    def add_sentence(self, sentence, freq=1):
+        """ Add a sentence.
         """
         pass
 
@@ -62,7 +62,7 @@ class DualStorage(Storage):
         self.fwd_trie = self.trie_class(depth, *args, **kwargs)
         self.bwd_trie = self.trie_class(depth, *args, **kwargs)
 
-    def add_phrase(self, token_list, *args, **kwargs):
+    def add_sentence(self, token_list, *args, **kwargs):
         token_list = [None] + token_list + [None]
         for i in range(len(token_list) - 1):
             ngram = token_list[i:i+self.depth]
