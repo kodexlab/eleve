@@ -70,7 +70,7 @@ class DualStorage(Storage):
         token_list = token_list[::-1]
         for i in range(len(token_list) - 1):
             ngram = token_list[i:i+self.depth]
-            self.bwd_trie.add_ngram(ngram[::-1], *args, **kwargs)
+            self.bwd_trie.add_ngram(ngram, *args, **kwargs)
     
     def query_autonomy(self, ngram, *args, **kwargs):
         result_fwd = self.fwd_trie.query_autonomy(ngram, *args, **kwargs)

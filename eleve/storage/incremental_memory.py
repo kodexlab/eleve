@@ -44,8 +44,8 @@ class IncrementalMemoryTrie(Storage):
         You can specify the number of times you add (or substract) that ngram by using the `freq` argument.
         """
 
-        if len(ngram) != self.depth:
-            raise ValueError("The size of the ngram parameter must be depth ({})".format(self.depth))
+        if len(ngram) > self.depth:
+            raise ValueError("The size of the ngram parameter must be less than depth ({})".format(self.depth))
 
         if self.root.count + freq < 0:
             raise ValueError("Can't remove a non-existent ngram.")
@@ -60,8 +60,12 @@ class IncrementalMemoryTrie(Storage):
         node.count += freq
         try:
             token = ngram[0]
-        except IndexError:
-            return # ngram is empty (nothing left)
+        except IndexError: # ngram is empty (nothing left)
+            # that assert is an important point : the count of the node should
+            # be equal to the sum of the count of its child. If it is not, our
+            # incremental entropy calculation is flawed.
+            assert not node.childs, "Can't add a \"partial\" ngram in an incremental tree."
+            return
 
         # calculate entropy
         try:
