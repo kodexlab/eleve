@@ -129,7 +129,11 @@ class IncrementalMemoryTrie(Storage):
         """
         node = self.root
         while ngram:
-            node = node.childs[ngram[0]]
+            try:
+                node = node.childs[ngram[0]]
+            except KeyError:
+                # FIXME: If both are zero, I should return NaN ?
+                return (0, 0.)
             ngram = ngram[1:]
         return (node.count, node.entropy)
 
@@ -140,7 +144,10 @@ class IncrementalMemoryTrie(Storage):
         last_node = node
         while ngram:
             last_node = node
-            node = node.childs[ngram[0]]
+            try:
+                node = node.childs[ngram[0]]
+            except KeyError:
+                return -last_node.entropy
             ngram = ngram[1:]
 
         return node.entropy - last_node.entropy

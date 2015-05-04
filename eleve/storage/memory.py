@@ -1,6 +1,7 @@
 from __future__ import division
 import math
 import operator
+import logging
 
 from eleve.storage.base import Storage, DualStorage
 
@@ -110,15 +111,16 @@ class MemoryTrie(Storage):
 
     def _check_dirty(self):
         if self.dirty:
-            raise RuntimeError("You must update the tree stats before doing a query.")
+            logging.warning("Updating the tree statistics (update_stats method), as we query it while dirty. This is a slow operation.")
+            self.update_stats()
 
     def add_ngram(self, ngram, freq=1):
         """ Add a ngram to the tree.
         You can specify the number of times you add (or substract) that ngram by using the `freq` argument.
         """
 
-        if len(ngram) != self.depth:
-            raise ValueError("The size of the ngram parameter must be depth ({})".format(self.depth))
+        if len(ngram) > self.depth:
+            raise ValueError("The size of the ngram parameter must be less or equal than depth ({})".format(self.depth))
 
         if self.root.count + freq < 0:
             raise ValueError("Can't remove a non-existent ngram.")
@@ -155,8 +157,10 @@ class MemoryTrie(Storage):
         self._check_dirty()
         node = self.root
         while ngram:
-            # FIXME: KeyError ?
-            node = node.childs[ngram[0]]
+            try:
+                node = node.childs[ngram[0]]
+            except KeyError:
+                return (0, 0.)
             ngram = ngram[1:]
         return (node.count, node.entropy)
 
@@ -168,8 +172,11 @@ class MemoryTrie(Storage):
         last_node = node
         while ngram:
             last_node = node
-            # FIXME: KeyError ?
-            node = node.childs[ngram[0]]
+            try:
+                node = node.childs[ngram[0]]
+            except KeyError:
+                # FIXME: If both are zero, I should return NaN ?
+                return -last_node.entropy
             ngram = ngram[1:]
 
         return node.entropy - last_node.entropy

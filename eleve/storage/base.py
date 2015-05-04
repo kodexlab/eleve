@@ -18,9 +18,8 @@ class Storage(object):
         pass
 
     @abstractmethod
-    def add_ngram(self, ngram, freq=1):
-        """ Add a newly read ngram to the model's counts
-        (will count every (n-k)-grams
+    def add_phrase(self, phrase, freq=1):
+        """ Add a phrase.
         """
         pass
 
@@ -58,13 +57,20 @@ class DualStorage(Storage):
     """
     trie_class = None
 
-    def __init__(self, *args, **kwargs):
-        self.fwd_trie = self.trie_class(*args, **kwargs)
-        self.bwd_trie = self.trie_class(*args, **kwargs)
+    def __init__(self, depth, *args, **kwargs):
+        self.depth = depth
+        self.fwd_trie = self.trie_class(depth, *args, **kwargs)
+        self.bwd_trie = self.trie_class(depth, *args, **kwargs)
 
-    def add_ngram(self, ngram, *args, **kwargs):
-        self.fwd_trie.add_ngram(ngram, *args, **kwargs)
-        self.bwd_trie.add_ngram(ngram[::-1], *args, **kwargs)
+    def add_phrase(self, token_list, *args, **kwargs):
+        token_list = [None] + token_list + [None]
+        for i in range(len(token_list) - 1):
+            ngram = token_list[i:i+self.depth]
+            self.fwd_trie.add_ngram(ngram, *args, **kwargs)
+        token_list = token_list[::-1]
+        for i in range(len(token_list) - 1):
+            ngram = token_list[i:i+self.depth]
+            self.bwd_trie.add_ngram(ngram[::-1], *args, **kwargs)
     
     def query_autonomy(self, ngram, *args, **kwargs):
         result_fwd = self.fwd_trie.query_autonomy(ngram, *args, **kwargs)
