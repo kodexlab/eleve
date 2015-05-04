@@ -36,7 +36,7 @@ class IncrementalMemoryTrie(Storage):
 
         # normalization params :
         # one for each level
-        # on each level : count, mean, variance_psum (partial sum used to calculate the variance)
+        # on each level : count, mean, variance
         self.normalization = [(0,0,0)] * depth
 
     def add_ngram(self, ngram, freq=1):
@@ -97,21 +97,18 @@ class IncrementalMemoryTrie(Storage):
             # child.entropy is None: can't calculate EV
             return
 
-        count, mean, variance_psum = self.normalization[depth]
+        count, mean, variance = self.normalization[depth]
 
-        old_mean = mean
         if old_ev is None: # first seen
             count += 1
             mean += (ev - mean) / count
-            variance_psum += (ev - old_mean) * (ev - mean)
         else:
             mean += (ev - old_ev) / count
-            variance_psum += (ev - old_mean) * (ev - mean) - (old_ev - old_mean) * (old_ev - mean)
 
         if old_entropy is not None:
             mean -= (node.entropy - old_entropy) * (len(node.childs) - 1) / count
 
-        self.normalization[depth] = (count, mean, variance_psum)
+        self.normalization[depth] = (count, mean, variance)
 
     def query_node(self, ngram):
         """ Return a tuple with the main node data : (count, entropy).
@@ -159,8 +156,11 @@ class IncrementalMemoryTrie(Storage):
     def query_autonomy(self, ngram, spreadf = lambda x: 1):
         """ Return the autonomy (normalized entropy variation) for the ngram.
         """
-        variance_count, mean, variance_psum = self.normalization[len(ngram) - 1]
-        variance = math.sqrt(abs(variance_psum / variance_count))
+        _, mean, variance = self.normalization[len(ngram) - 1]
+
+        assert spreadf(variance) == spreadf(variance*2) == spreadf(variance + 1), \
+            "Spreadf must be a constant function. Incremental variance not implemented."
+
         nev = (self.query_ev(ngram) - mean) / spreadf(variance)
         return nev
 

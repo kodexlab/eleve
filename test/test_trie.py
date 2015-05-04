@@ -44,6 +44,13 @@ def test_trie_class(trie_class, reference_class=MemoryTrie):
         autonomy_test = test_trie.query_autonomy(ngram)
         assert abs(autonomy_ref - autonomy_test) < 1e-6, (autonomy_ref, autonomy_test)
 
+        # FIXME
+        """
+        autonomy_ref = ref_trie.query_autonomy(ngram, lambda x: x)
+        autonomy_test = test_trie.query_autonomy(ngram, lambda x: x)
+        assert abs(autonomy_ref - autonomy_test) < 1e-6, (autonomy_ref, autonomy_test)
+        """
+
 @pytest.mark.parametrize("trie_class", [MemoryTrie, IncrementalMemoryTrie])
 def test_basic_trie(trie_class):
     m = trie_class(3)
@@ -57,4 +64,3 @@ def test_basic_trie(trie_class):
     m.add_ngram(('le','petit','chat'), -1)
     m.update_stats()
     assert m.query_node(('le', 'petit')) == m.query_node(('le', 'gros'))
-
