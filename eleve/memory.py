@@ -2,8 +2,10 @@ from __future__ import division
 import math
 import operator
 import logging
+import pickle
+import gzip
 
-from eleve.storage.base import Storage, DualStorage
+from eleve.storage import Storage
 
 def entropy(counts):
     """ Calculate entropy from an iterator containing
@@ -16,8 +18,7 @@ def entropy(counts):
     >>> print('{:.4f}'.format(entropy([1,1,0,5,2])))
     1.6577
     """
-    c = 0
-    psum = 0
+    c, psum = 0, 0
     for i in counts:
         c += i
         psum += i * math.log2(i or 1)
@@ -33,9 +34,7 @@ def mean_variance(values):
     >>> mean_variance([2,2])
     (2.0, 0.0)
     """
-    a = 0
-    q = 0
-    k = 0
+    a, q, k = 0, 0, 0
     for v in values:
         k += 1
         old_a = a
@@ -44,7 +43,7 @@ def mean_variance(values):
     return (a, math.sqrt(q / k))
 
 class MemoryNode(object):
-    """ Node used by :class:`MemoryTrie`
+    """ Node used by :class:`MemoryStorage`
     """
     
     # to take a little less memory
@@ -55,7 +54,7 @@ class MemoryNode(object):
         self.entropy = 0
         self.childs = {}
 
-class MemoryTrie(Storage):
+class MemoryStorage(Storage):
     """ In-memory tree (made to be simple, no specific optimizations)
     """
 
@@ -72,6 +71,20 @@ class MemoryTrie(Storage):
         self.normalization = [(0,0)] * depth
 
         self.dirty = False
+
+    @classmethod
+    def load(cls, path):
+        depth, root, normalization = pickle.load(gzip.GzipFile(path, 'rb'))
+        s = cls(depth)
+        s.root = root
+        s.normalization = normalization
+        return s
+
+    def save(self, path):
+        self.update_stats()
+        o = (self.depth, self.root, self.normalization)
+        with gzip.GzipFile(path, 'wb') as f:
+            pickle.dump(o, f)
 
     def __iter__(self):
         """ Iterator on all the ngrams in the trie.
@@ -188,15 +201,6 @@ class MemoryTrie(Storage):
         mean, variance = self.normalization[len(ngram) - 1]
         nev = (self.query_ev(ngram) - mean) / spreadf(variance)
         return nev
-
-
-class MemoryStorage(DualStorage):
-    """ Memory storage, that functions by adding ngrams and querying in both
-    left-to-right and right-to-left order.
-    It will do the mean of both result for each function.
-    """
-
-    trie_class = MemoryTrie
 
 if __name__ == '__main__':
     import doctest

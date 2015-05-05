@@ -1,7 +1,9 @@
 from __future__ import division
 import math
+import pickle
+import gzip
 
-from eleve.storage.base import Storage, DualStorage
+from eleve.storage import Storage
 
 class IncrementalMemoryNode(object):
     """ Node used by :class:`IncrementalMemoryTrie`
@@ -23,7 +25,7 @@ class IncrementalMemoryNode(object):
             return 0.
         return math.log2(self.count) - self.entropy_psum / self.count
 
-class IncrementalMemoryTrie(Storage):
+class IncrementalMemoryStorage(Storage):
     """ IncrementalMemory tree.
     """
 
@@ -38,6 +40,19 @@ class IncrementalMemoryTrie(Storage):
         # one for each level
         # on each level : count, mean, variance
         self.normalization = [(0,0,0)] * depth
+    
+    @classmethod
+    def load(cls, path):
+        depth, root, normalization = pickle.load(gzip.GzipFile(path, 'rb'))
+        s = cls(depth)
+        s.root = root
+        s.normalization = normalization
+        return s
+
+    def save(self, path):
+        o = (self.depth, self.root, self.normalization)
+        with gzip.GzipFile(path, 'wb') as f:
+            pickle.dump(o, f)
 
     def add_ngram(self, ngram, freq=1):
         """ Add a ngram to the tree.
@@ -114,7 +129,7 @@ class IncrementalMemoryTrie(Storage):
         """ Return a tuple with the main node data : (count, entropy).
         Count is the number of ngrams starting with the ``ngram`` parameter, entropy the entropy after the ngram.
 
-        >>> m = IncrementalMemoryTrie(3)
+        >>> m = IncrementalMemoryStorage(3)
         >>> m.add_ngram(('le','petit','chat'))
         >>> m.add_ngram(('le','petit','chien'))
         >>> m.add_ngram(('le','gros','chien'))
@@ -163,22 +178,6 @@ class IncrementalMemoryTrie(Storage):
 
         nev = (self.query_ev(ngram) - mean) / spreadf(variance)
         return nev
-
-
-class IncrementalMemoryStorage(DualStorage):
-    """ IncrementalMemory storage, that functions by adding ngrams and querying in both
-    left-to-right and right-to-left order.
-    It will do the mean of both result for each function.
-
-    >>> m = IncrementalMemoryStorage(3)
-    >>> m.add_ngram(('le','petit','chat'))
-    >>> m.add_ngram(('le','petit','chien'))
-    >>> m.add_ngram(('pour','le','petit'), freq=2)
-    >>> m.query_node(('le', 'petit'))
-    (2.0, 0.5)
-    """
-
-    trie_class = IncrementalMemoryTrie
 
 if __name__ == '__main__':
     import doctest
