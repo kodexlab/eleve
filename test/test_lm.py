@@ -1,4 +1,4 @@
-from lm import LM
+from eleve.lm import LM
 
 def test_basic_segmentation():
     l = LM(2)

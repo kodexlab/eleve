@@ -4,11 +4,9 @@
 
 from abc import ABCMeta, abstractmethod
 
-class Storage(object):
+class Storage(metaclass=ABCMeta):
     """ Abstract class for LM storage
     """
-    __metaclass__ = ABCMeta
-
     depth = None
 
     @abstractmethod
