@@ -30,7 +30,7 @@ class Storage(metaclass=ABCMeta):
         return self.add_ngram(ngram, -freq)
 
     @abstractmethod
-    def query_autonomy(self, ngram):
+    def query_autonomy(self, ngram, z_score):
         """ Retrieve the autonomy of the ngram
         """
         pass

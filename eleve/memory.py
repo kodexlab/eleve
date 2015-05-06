@@ -194,12 +194,14 @@ class MemoryStorage(Storage):
 
         return node.entropy - last_node.entropy
 
-    def query_autonomy(self, ngram, spreadf = lambda x: 1):
+    def query_autonomy(self, ngram, z_score=True):
         """ Return the autonomy (normalized entropy variation) for the ngram.
         """
         self._check_dirty()
         mean, variance = self.normalization[len(ngram) - 1]
-        nev = (self.query_ev(ngram) - mean) / spreadf(variance)
+        nev = self.query_ev(ngram) - mean
+        if z_score:
+            nev /= variance
         return nev
 
 if __name__ == '__main__':

@@ -168,15 +168,17 @@ class IncrementalMemoryStorage(Storage):
 
         return node.entropy - last_node.entropy
 
-    def query_autonomy(self, ngram, spreadf = lambda x: 1):
+    def query_autonomy(self, ngram, z_score=True):
         """ Return the autonomy (normalized entropy variation) for the ngram.
         """
         _, mean, variance = self.normalization[len(ngram) - 1]
 
-        assert spreadf(variance) == spreadf(variance*2) == spreadf(variance + 1), \
-            "Spreadf must be a constant function. Incremental variance not implemented."
+        assert not z_score, \
+            "Can't use z-score. Incremental variance not implemented."
 
-        nev = (self.query_ev(ngram) - mean) / spreadf(variance)
+        nev = self.query_ev(ngram) - mean
+        if z_score:
+            nev /= variance
         return nev
 
 if __name__ == '__main__':

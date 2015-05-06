@@ -1,11 +1,11 @@
 import re
 
-from lm import LM
+from eleve import Eleve
 
 RE_WORD = re.compile(r"\w+", re.IGNORECASE)
 
 def test_basic_segmentation():
-    l = LM(5)
+    l = Eleve(5)
 
     doc = open('fixtures/btree.txt').read()
     sentences = doc.split('.')

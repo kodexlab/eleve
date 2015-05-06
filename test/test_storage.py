@@ -38,20 +38,20 @@ def compare_tries(ref_trie, test_trie):
         ev_test = test_trie.query_ev(ngram)
         assert abs(ev_ref - ev_test) < 1e-6, (ev_ref, ev_test)
 
-        autonomy_ref = ref_trie.query_autonomy(ngram)
-        autonomy_test = test_trie.query_autonomy(ngram)
+        autonomy_ref = ref_trie.query_autonomy(ngram, z_score=False)
+        autonomy_test = test_trie.query_autonomy(ngram, z_score=False)
         assert abs(autonomy_ref - autonomy_test) < 1e-6, (autonomy_ref, autonomy_test)
 
-        # FIXME: test avec normalosatin par la variance
+        # FIXME: test avec normalisation par la variance
         """
-        autonomy_ref = ref_trie.query_autonomy(ngram, lambda x: x)
-        autonomy_test = test_trie.query_autonomy(ngram, lambda x: x)
+        autonomy_ref = ref_trie.query_autonomy(ngram, z_score=True)
+        autonomy_test = test_trie.query_autonomy(ngram, z_score=True)
         assert abs(autonomy_ref - autonomy_test) < 1e-6, (autonomy_ref, autonomy_test)
         """
 
 @pytest.mark.parametrize("storage_class", [IncrementalMemoryStorage])
 def test_storage_class(storage_class, reference_class=MemoryStorage):
-    """ Copare implementation agains reference class (on random ngrams lists)
+    """ Compare implementation against reference class (on random ngrams lists)
     """
     depth, ngrams = generate_random_ngrams()
     test_trie = storage_class(depth)
@@ -84,12 +84,10 @@ def test_basic_storage(storage_class):
     m.add_ngram(('le','petit','chat'))
     m.add_ngram(('le','petit','chien'))
     m.add_ngram(('le','gros','chien'))
-    m.update_stats()
     assert m.query_node(('le', 'petit')) == (2, 1.0)
     assert m.query_node(None)[0] == 3
     assert m.query_node(('le', 'petit')) != m.query_node(('le', 'gros'))
     m.add_ngram(('le','petit','chat'), -1)
-    m.update_stats()
     assert m.query_node(('le', 'petit')) == m.query_node(('le', 'gros'))
 
 
