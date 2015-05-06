@@ -1,3 +1,6 @@
+# FIXME: Unmaintened.
+# Missing support for docid.
+
 from __future__ import division
 import math
 import pickle

@@ -9,13 +9,13 @@ class Eleve:
 
     # SENTENCE LEVEL
 
-    def add_sentence(self, sentence, freq=1):
+    def add_sentence(self, sentence, docid, freq=1):
         token_list = [None] + sentence + [None]
         for i in range(len(token_list) - 1):
-            self.fwd.add_ngram(token_list[i:i+self.order+1], freq)
+            self.fwd.add_ngram(token_list[i:i+self.order+1], docid, freq)
         token_list = token_list[::-1]
         for i in range(len(token_list) - 1):
-            self.bwd.add_ngram(token_list[i:i+self.order+1], freq)
+            self.bwd.add_ngram(token_list[i:i+self.order+1], docid, freq)
 
     def segment(self, sentence): 
         sentence = [None] + sentence + [None]

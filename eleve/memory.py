@@ -47,12 +47,13 @@ class MemoryNode(object):
     """
     
     # to take a little less memory
-    __slots__ = ['count', 'entropy', 'childs']
+    __slots__ = ['count', 'entropy', 'childs', 'postings']
 
     def __init__(self):
         self.count = 0
         self.entropy = 0
         self.childs = {}
+        self.postings = {}
 
 class MemoryStorage(Storage):
     """ In-memory tree (made to be simple, no specific optimizations)
@@ -127,7 +128,7 @@ class MemoryStorage(Storage):
             logging.warning("Updating the tree statistics (update_stats method), as we query it while dirty. This is a slow operation.")
             self.update_stats()
 
-    def add_ngram(self, ngram, freq=1):
+    def add_ngram(self, ngram, docid, freq=1):
         """ Add a ngram to the tree.
         You can specify the number of times you add (or substract) that ngram by using the `freq` argument.
         """
@@ -138,10 +139,10 @@ class MemoryStorage(Storage):
         if self.root.count + freq < 0:
             raise ValueError("Can't remove a non-existent ngram.")
 
-        self._add_ngram(self.root, ngram, freq)
+        self._add_ngram(self.root, ngram, docid, freq)
         self.dirty = True
 
-    def _add_ngram(self, node, ngram, freq):
+    def _add_ngram(self, node, ngram, docid, freq):
         """ Recursive function used to add a ngram.
         """
 
@@ -149,6 +150,10 @@ class MemoryStorage(Storage):
         try:
             token = ngram[0]
         except IndexError:
+            try:
+                node.postings[docid] += freq
+            except KeyError:
+                node.postings[docid] = freq
             return # ngram is empty (nothing left)
 
         try:
@@ -161,7 +166,7 @@ class MemoryStorage(Storage):
             raise ValueError("Can't remove a non-existent ngram.")
 
         # recurse, add the end of the ngram
-        self._add_ngram(child, ngram[1:], freq)
+        self._add_ngram(child, ngram[1:], docid, freq)
 
     def query_node(self, ngram):
         """ Return a tuple with the main node data : (count, entropy).
