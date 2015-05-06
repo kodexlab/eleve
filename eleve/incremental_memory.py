@@ -41,6 +41,17 @@ class IncrementalMemoryStorage(Storage):
         # on each level : count, mean, variance
         self.normalization = [(0,0,0)] * depth
     
+    def __iter__(self):
+        """ Iterator on all the ngrams in the trie.
+        Including partial ngrams (not leafs). So it gives a ngram for every node.
+        """
+        def _rec(ngram, node):
+            for k, c in node.childs.items():
+                yield ngram + [k]
+                yield from _rec(ngram + [k], c)
+
+        yield from _rec([], self.root)
+
     @classmethod
     def load(cls, path):
         depth, root, normalization = pickle.load(gzip.GzipFile(path, 'rb'))
