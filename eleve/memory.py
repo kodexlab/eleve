@@ -26,12 +26,12 @@ def entropy(counts):
         return 0
     return math.log2(c) - psum / c
 
-def mean_variance(values):
-    """ Calculate mean and variance from values of an iterator.
+def mean_stdev(values):
+    """ Calculate mean and standard deviation from values of an iterator.
 
-    >>> mean_variance([1,3])
+    >>> mean_stdev([1,3])
     (2.0, 1.0)
-    >>> mean_variance([2,2])
+    >>> mean_stdev([2,2])
     (2.0, 0.0)
     """
     a, q, k = 0, 0, 0
@@ -68,7 +68,7 @@ class MemoryStorage(Storage):
 
         # normalization params :
         # one for each level
-        # on each level : mean, variance
+        # on each level : mean, stdev
         self.normalization = [(0,0)] * depth
 
         self.dirty = False
@@ -99,7 +99,7 @@ class MemoryStorage(Storage):
         yield from _rec([], self.root)
 
     def update_stats(self):
-        """ Update the internal statistics (like entropy, and variance & means
+        """ Update the internal statistics (like entropy, and stdev & means
         for the entropy variations. """
         if not self.dirty:
             return
@@ -119,7 +119,7 @@ class MemoryStorage(Storage):
                     yield from ve_for_depth(child, node, depth - 1)
 
         for i in range(self.depth):
-            self.normalization[i] = mean_variance(ve_for_depth(self.root, None, i + 1))
+            self.normalization[i] = mean_stdev(ve_for_depth(self.root, None, i + 1))
 
         self.dirty = False
 
@@ -203,10 +203,10 @@ class MemoryStorage(Storage):
         """ Return the autonomy (normalized entropy variation) for the ngram.
         """
         self._check_dirty()
-        mean, variance = self.normalization[len(ngram) - 1]
+        mean, stdev = self.normalization[len(ngram) - 1]
         nev = self.query_ev(ngram) - mean
         if z_score:
-            nev /= variance
+            nev /= stdev
         return nev
 
 if __name__ == '__main__':
