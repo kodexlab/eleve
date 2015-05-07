@@ -18,6 +18,9 @@ class Neo4jStorage(Storage):
         """
         self.graph = Graph()
 
+        # delete everything
+        self.graph.cypher.execute("MATCH (n) OPTIONAL MATCH (n)-[r]-() DELETE n,r")
+
         self.root = self.graph.cypher.execute("MATCH (r:RootNode) RETURN ID(r)")[0][0]
         if not self.root:
             logging.info("Unable to find the root of the trie, creating it.")
@@ -41,8 +44,8 @@ class Neo4jStorage(Storage):
         Including partial ngrams (not leafs). So it gives a ngram for every node.
         """
         def _rec(node, ngram):
-            r = self.graph.cypher.execute("MATCH nodeid(%s)-[{token: t}]->(c) RETURN t, ID(c)")
             yield ngram
+            r = self.graph.cypher.execute("MATCH (s)-[{token: t}]->(c) WHERE id(s) = %s RETURN t, ID(c)" % node)
             for token, child in r:
                 yield from _rec(child, ngram + [token])
         _rec(self.root, [])
@@ -90,9 +93,11 @@ class Neo4jStorage(Storage):
         try:
             token = ngram[0]
         except IndexError:
-            # FIXME
-            self.graph.cypher.execute("MATCH (s)-[{docid: %s}]->(r) WHERE id(s) = %s SET r.freq = r.freq + %s" % (docid, node, freq))
-            self.graph.cypher.execute("MATCH (n) WHERE id(n) = %s CREATE n-[:RELTYPE {docid: %s}]->(r {freq: %s})" % (node, docid, freq))
+            r = self.graph.cypher.execute("MATCH (s)-[{docid: %s}]->(r) WHERE id(s) = %s SET r.freq = r.freq + %s RETURN r" % (docid, node, freq))
+            if len(r):
+                assert len(r) == 1
+            else:
+                self.graph.cypher.execute("MATCH (n) WHERE id(n) = %s CREATE n-[:RELTYPE {docid: %s}]->(r {freq: %s})" % (node, docid, freq))
             return
 
         try:
