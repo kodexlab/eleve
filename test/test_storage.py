@@ -4,6 +4,7 @@ import tempfile
 import os
 
 from eleve.memory import MemoryStorage
+from eleve.neo4j import Neo4jStorage
 
 def generate_random_ngrams():
     """ Generate list of random n-grams (of int)
@@ -41,25 +42,21 @@ def compare_tries(ref_trie, test_trie):
         autonomy_test = test_trie.query_autonomy(ngram, z_score=False)
         assert abs(autonomy_ref - autonomy_test) < 1e-6, (autonomy_ref, autonomy_test)
 
-        # FIXME: test avec normalisation par la variance
-        """
         autonomy_ref = ref_trie.query_autonomy(ngram, z_score=True)
         autonomy_test = test_trie.query_autonomy(ngram, z_score=True)
         assert abs(autonomy_ref - autonomy_test) < 1e-6, (autonomy_ref, autonomy_test)
-        """
 
-# TODO: Use it when we have more than one backend.
-#@pytest.mark.parametrize("storage_class", [IncrementalMemoryStorage])
-#def test_storage_class(storage_class, reference_class=MemoryStorage):
-#    """ Compare implementation against reference class (on random ngrams lists)
-#    """
-#    depth, ngrams = generate_random_ngrams()
-#    test_trie = storage_class(depth)
-#    ref_trie = reference_class(depth)
-#    for n in ngrams:
-#        test_trie.add_ngram(n, 1)
-#        ref_trie.add_ngram(n, 1)
-#    compare_tries(ref_trie, test_trie)
+@pytest.mark.parametrize("storage_class", [Neo4jStorage])
+def test_storage_class(storage_class, reference_class=MemoryStorage):
+    """ Compare implementation against reference class (on random ngrams lists)
+    """
+    depth, ngrams = generate_random_ngrams()
+    test_trie = storage_class(depth)
+    ref_trie = reference_class(depth)
+    for n in ngrams:
+        test_trie.add_ngram(n, 1)
+        ref_trie.add_ngram(n, 1)
+    compare_tries(ref_trie, test_trie)
 
 @pytest.mark.parametrize("storage_class", [MemoryStorage])
 def test_save_load_trie(storage_class):
@@ -76,7 +73,7 @@ def test_save_load_trie(storage_class):
         reloaded_trie = storage_class.load(fn)
     compare_tries(test_trie, reloaded_trie)
 
-@pytest.mark.parametrize("storage_class", [MemoryStorage])
+@pytest.mark.parametrize("storage_class", [MemoryStorage, Neo4jStorage])
 def test_basic_storage(storage_class):
     """ Minimal test on simple example
     """
