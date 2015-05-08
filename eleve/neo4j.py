@@ -24,7 +24,7 @@ class Neo4jStorage(Storage):
         try:
             self.root = self.graph.cypher.execute("MATCH (r:RootNode) RETURN ID(r)")[0][0]
         except IndexError:
-            self.root = self.graph.cypher.execute("CREATE (r:RootNode) RETURN ID(r)")[0][0]
+            self.root = self.graph.cypher.execute("CREATE (r:RootNode {count: 0}) RETURN ID(r)")[0][0]
 
         self.depth = depth
 
@@ -56,14 +56,19 @@ class Neo4jStorage(Storage):
         if not self.dirty:
             return
 
-        for i in range(self.depth, -1, -1):
-            for r, s in self.graph.cypher.execute("MATCH (:RootNode)-[r:Child*%i]->(s) RETURN r, ID(s)" % i if i else "MATCH (:RootNode)-[r:Child]->(s) RETURN r, ID(s)"):
+        for i in range(self.depth - 1, -1, -1):
+            for s, in self.graph.cypher.execute("MATCH (:RootNode)-[:Child*%i]->(s) RETURN ID(s)" % i if i else "MATCH (s:RootNode) RETURN ID(s)"):
                 e = entropy(j[0] for j in self.graph.cypher.execute("MATCH (s)-[:Child]->(c) WHERE ID(s) = %i RETURN c.count" % s))
                 self.graph.cypher.execute("MATCH (s) WHERE id(s) = %i SET s.entropy = %s" % (s, e))
 
         for i in range(self.depth):
-            mean = self.graph.cypher.execute("MATCH (:RootNode)-[r:Child*%s]->(s) RETURN avg(s.entropy - last(r).entropy)" % (i + 1))
-            stdev = self.graph.cypher.execute("MATCH (:RootNode)-[r:Child*%s]->(s) RETURN stdev(s.entropy - last(r).entropy)" % (i + 1))
+            if i == 0:
+                mean = self.graph.cypher.execute("MATCH (r:RootNode)-[:Child]->(s) RETURN avg(s.entropy - r.entropy)")[0][0]
+                stdev = self.graph.cypher.execute("MATCH (r:RootNode)-[:Child]->(s) RETURN stdev(s.entropy - r.entropy)")[0][0]
+            else:
+                q = 'MATCH (:RootNode)' + '-[:Child]->()' * (i - 1) + '-[:Child]->(r)-[:Child]->(s)'
+                mean = self.graph.cypher.execute(q + "RETURN avg(s.entropy - r.entropy)")[0][0]
+                stdev = self.graph.cypher.execute(q + "RETURN stdev(s.entropy - r.entropy)")[0][0]
             self.normalization[i] = (mean, stdev)
 
         self.dirty = False
@@ -114,7 +119,10 @@ class Neo4jStorage(Storage):
         """
         self._check_dirty()
 
-        q = "(:RootNode)" + '()'.join("-[:Child {token: '%s'}]->" % token for token in ngram) + "(leaf)"
+        if ngram:
+            q = "(:RootNode)" + '()'.join("-[:Child {token: '%s'}]->" % token for token in ngram) + "(leaf)"
+        else:
+            q = "(leaf:RootNode)"
         count, entropy = self.graph.cypher.execute("MATCH %s RETURN leaf.count, leaf.entropy" % q)[0]
 
         return (count, entropy)
