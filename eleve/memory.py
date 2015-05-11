@@ -4,6 +4,7 @@ import operator
 import logging
 import pickle
 import gzip
+import sys
 
 from eleve.storage import Storage
 
@@ -122,6 +123,7 @@ class MemoryStorage(Storage):
             self.normalization[i] = mean_stdev(ve_for_depth(self.root, None, i + 1))
 
         self.dirty = False
+        print('memtree %s' % self.normalization, file=sys.stderr)
 
     def _check_dirty(self):
         if self.dirty:
