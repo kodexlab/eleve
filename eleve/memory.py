@@ -4,7 +4,6 @@ import operator
 import logging
 import pickle
 import gzip
-import sys
 
 from eleve.storage import Storage
 
@@ -123,7 +122,6 @@ class MemoryStorage(Storage):
             self.normalization[i] = mean_stdev(ve_for_depth(self.root, None, i + 1))
 
         self.dirty = False
-        print('memtree %s' % self.normalization, file=sys.stderr)
 
     def _check_dirty(self):
         if self.dirty:
@@ -196,7 +194,7 @@ class MemoryStorage(Storage):
                 node = node.childs[ngram[0]]
             except KeyError:
                 # FIXME: If both are zero, I should return NaN ?
-                return -last_node.entropy
+                return -last_node.entropy if len(ngram) == 1 else 0.
             ngram = ngram[1:]
 
         return node.entropy - last_node.entropy

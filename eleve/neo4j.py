@@ -1,7 +1,8 @@
 from __future__ import division
-import sys
 import logging
+import sys
 from py2neo import Graph
+import random
 
 from eleve.storage import Storage
 from eleve.memory import entropy
@@ -10,7 +11,7 @@ class Neo4jStorage(Storage):
     """ Neo4j storage
     """
 
-    def __init__(self, depth):
+    def __init__(self, depth, gid=None, existing=False):
         """
         :param depth: Maximum length of stored ngrams
 
@@ -18,23 +19,31 @@ class Neo4jStorage(Storage):
         """
         self.graph = Graph()
 
-        # delete everything
-        self.graph.cypher.execute("MATCH (n) OPTIONAL MATCH (n)-[r]-() DELETE n,r")
+        self.gid = gid if gid is not None else random.randint(0,1000000000)
 
-        try:
-            self.root = self.graph.cypher.execute("MATCH (r:RootNode) RETURN ID(r)")[0][0]
-        except IndexError:
-            self.root = self.graph.cypher.execute("CREATE (r:RootNode {count: 0}) RETURN ID(r)")[0][0]
+        self.root = self.graph.cypher.execute_one("MATCH (r:RootNode:Root%s) RETURN ID(r)" % self.gid)
+        if existing:
+            if self.root is None:
+                raise ValueError("Root doesn't exists.")
+        else:
+            if self.root is not None:
+                raise ValueError("Found existing root.")
+            self.root = self.graph.cypher.execute_one("CREATE (r:RootNode:Root%s {count: 0}) RETURN ID(r)" % self.gid)
 
         self.depth = depth
 
         self.normalization = [(0,0)] * depth
 
-        self.dirty = False
+        self.dirty = True
 
     @classmethod
-    def load(cls, path):
+    def load(cls, gid):
         raise NotImplementedError()
+
+    @classmethod
+    def delete(cls, gid):
+        # delete everything
+        Graph().cypher.execute("MATCH (n:RootNode:Root%s) OPTIONAL MATCH (n)-[r]-() DELETE n,r" % gid)
 
     def save(self, path):
         raise NotImplementedError()
@@ -45,10 +54,10 @@ class Neo4jStorage(Storage):
         """
         def _rec(node, ngram):
             yield ngram
-            r = self.graph.cypher.execute("MATCH (s)-[:Child {token: t}]->(c) WHERE id(s) = %i RETURN t, ID(c)" % node)
+            r = self.graph.cypher.stream("MATCH (s)-[r:Child]->(c) WHERE id(s) = %i RETURN r.token, ID(c)" % node)
             for token, child in r:
                 yield from _rec(child, ngram + [token])
-        _rec(self.root, [])
+        yield from _rec(self.root, [])
 
     def update_stats(self):
         """ Update the internal statistics (like entropy, and variance & means
@@ -56,23 +65,20 @@ class Neo4jStorage(Storage):
         if not self.dirty:
             return
 
-        for s, in self.graph.cypher.execute("MATCH (:RootNode)-[:Child*0..]->(s) RETURN ID(s)"):
-            e = entropy(j[0] for j in self.graph.cypher.execute("MATCH (s)-[:Child]->(c) WHERE ID(s) = %i RETURN c.count" % s))
+        for s, in self.graph.cypher.stream("MATCH (r)-[:Child*0..]->(s) WHERE ID(r) = %i RETURN ID(s)" % self.root):
+            e = entropy(j[0] for j in self.graph.cypher.stream("MATCH (s)-[:Child]->(c) WHERE ID(s) = %i RETURN c.count" % s))
             self.graph.cypher.execute("MATCH (s) WHERE id(s) = %i SET s.entropy = %s" % (s, e))
 
         for i in range(self.depth):
             if i == 0:
-                mean = self.graph.cypher.execute("MATCH (r:RootNode)-[:Child]->(s) RETURN avg(s.entropy - r.entropy)")[0][0]
-                stdev = self.graph.cypher.execute("MATCH (r:RootNode)-[:Child]->(s) RETURN stdev(s.entropy - r.entropy)")[0][0]
+                mean, stdev = self.graph.cypher.execute("MATCH (r)-[:Child]->(s) WHERE ID(r) = %i RETURN avg(s.entropy - r.entropy), stdevp(s.entropy - r.entropy)" % self.root)[0]
             else:
-                q = 'MATCH (:RootNode)' + '-[:Child]->()' * (i - 1) + '-[:Child]->(r)-[:Child]->(s)'
-                mean = self.graph.cypher.execute(q + "RETURN avg(s.entropy - r.entropy)")[0][0]
-                stdev = self.graph.cypher.execute(q + "RETURN stdev(s.entropy - r.entropy)")[0][0]
-            print('updating %s' % i, file=sys.stderr)
+                q = 'MATCH (root)' + '-[:Child]->()' * (i - 1) + '-[:Child]->(r)-[:Child]->(s) WHERE ID(root) = %i' % self.root
+                mean, stdev = self.graph.cypher.execute(q + " RETURN avg(s.entropy - r.entropy), stdevp(s.entropy - r.entropy)")[0]
+            assert mean is not None and stdev is not None
             self.normalization[i] = (mean, stdev)
 
         self.dirty = False
-        print('neotree %s' % self.normalization, file=sys.stderr)
 
     def _check_dirty(self):
         if self.dirty:
@@ -105,7 +111,7 @@ class Neo4jStorage(Storage):
             else:
                 self.graph.cypher.execute("MATCH (n) WHERE id(n) = %i CREATE n-[:Document {docid: %s}]->(r {count: %s})" % (node, docid, freq))
             return
-
+        
         try:
             child = self.graph.cypher.execute("MATCH (s)-[:Child {token: '%s'}]->(c) WHERE id(s) = %i RETURN ID(c)" % (token, node))[0][0]
         except IndexError:
@@ -121,10 +127,13 @@ class Neo4jStorage(Storage):
         self._check_dirty()
 
         if ngram:
-            q = "(:RootNode)" + '()'.join("-[:Child {token: '%s'}]->" % token for token in ngram) + "(leaf)"
+            q = "(root)" + '()'.join("-[:Child {token: '%s'}]->" % token for token in ngram) + "(leaf)"
+            try:
+                count, entropy = self.graph.cypher.execute("MATCH %s WHERE id(root) = %i RETURN leaf.count, leaf.entropy" % (q, self.root))[0]
+            except IndexError:
+                count, entropy = 0, 0.
         else:
-            q = "(leaf:RootNode)"
-        count, entropy = self.graph.cypher.execute("MATCH %s RETURN leaf.count, leaf.entropy" % q)[0]
+            count, entropy = self.graph.cypher.execute("MATCH (root) WHERE id(root) = %i RETURN root.count, root.entropy" % self.root)[0]
 
         return (count, entropy)
 

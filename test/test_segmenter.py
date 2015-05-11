@@ -1,9 +1,10 @@
 import pytest
 
 from eleve.memory import MemoryStorage
+from eleve.neo4j import Neo4jStorage
 from eleve import Eleve
 
-@pytest.mark.parametrize("storage_class", [MemoryStorage])
+@pytest.mark.parametrize("storage_class", [MemoryStorage, Neo4jStorage])
 def test_basic_entropy(storage_class):
     """
     Forward that begins by « le petit »:
@@ -21,13 +22,15 @@ def test_basic_entropy(storage_class):
     m.add_sentence(['pour','le','petit'], 1, freq=2)
     assert m.query_node(('le', 'petit')) == (4.0, 1.25)
 
-def test_basic_segmentation():
-    l = Eleve(2)
+@pytest.mark.parametrize("storage_class", [MemoryStorage, Neo4jStorage])
+def test_basic_segmentation(storage_class):
+    l = Eleve(2, storage_class)
     l.add_sentence(['je', 'vous', 'parle', 'de', 'hot', 'dog'], 1)
     l.add_sentence(['j', 'ador', 'les', 'hot', 'dog'], 1)
     l.add_sentence(['hot', 'dog', 'ou', 'pas'], 1)
     l.add_sentence(['hot', 'dog', 'ou', 'sandwich'], 1)
 
-    assert l.segment(['je', 'deteste', 'les', 'hot', 'dog']) == [['je'], ['deteste'], ['les'], ['hot', 'dog']]
+    # 'deteste' is not in the phrases we added !
+    assert l.segment(['je', 'deteste', 'les', 'hot', 'dog']) == [['je', 'deteste'], ['les'], ['hot', 'dog']]
     #assert l.segment(['je', 'deteste', 'les', 'sandwich']) == [['je'], ['deteste'], ['les'], ['sandwich']]
     assert l.segment(['je', 'vous', 'ou', 'hot', 'dog']) == [['je', 'vous'], ['ou'], ['hot', 'dog']]

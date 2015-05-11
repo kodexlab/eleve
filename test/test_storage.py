@@ -28,23 +28,35 @@ def generate_random_ngrams():
 def compare_tries(ref_trie, test_trie):
     """ fails if two tries are different (on count, entropy, ...)
     """
-    for ngram in ref_trie:
+    
+    ngrams = set(map(tuple, ref_trie))
+    for i, n in enumerate(set(ngrams)):
+        if i > 20:
+            break
+        ngrams.add(tuple(n[:-1] + ('nonexistent',)))
+        ngrams.add(tuple(n[:-2] + ('nonexistent',)))
+        ngrams.add(tuple(n[:-2] + ('nonexistent','nonexistent')))
+
+    for ngram in ngrams:
         count_ref, entropy_ref = ref_trie.query_node(ngram)
         count_test, entropy_test = test_trie.query_node(ngram)
         assert count_ref == count_test
-        assert abs(entropy_ref - entropy_test) < 1e-6, (entropy_ref, entropy_test)
+        assert abs(entropy_ref - entropy_test) < 1e-6
 
         ev_ref = ref_trie.query_ev(ngram)
         ev_test = test_trie.query_ev(ngram)
-        assert abs(ev_ref - ev_test) < 1e-6, (ev_ref, ev_test)
+        assert abs(ev_ref - ev_test) < 1e-6
 
         autonomy_ref = ref_trie.query_autonomy(ngram, z_score=False)
         autonomy_test = test_trie.query_autonomy(ngram, z_score=False)
-        assert abs(autonomy_ref - autonomy_test) < 1e-6, (autonomy_ref, autonomy_test)
+        assert abs(autonomy_ref - autonomy_test) < 1e-6
 
-        autonomy_ref = ref_trie.query_autonomy(ngram, z_score=True)
-        autonomy_test = test_trie.query_autonomy(ngram, z_score=True)
-        assert abs(autonomy_ref - autonomy_test) < 1e-6, (autonomy_ref, autonomy_test)
+        try:
+            autonomy_ref = ref_trie.query_autonomy(ngram, z_score=True)
+            autonomy_test = test_trie.query_autonomy(ngram, z_score=True)
+            assert abs(autonomy_ref - autonomy_test) < 1e-6
+        except ZeroDivisionError:
+            pass # in case the variance is null, because we are on the last level...
 
 @pytest.mark.parametrize("storage_class", [Neo4jStorage])
 def test_storage_class(storage_class, reference_class=MemoryStorage):
