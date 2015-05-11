@@ -17,28 +17,29 @@ class Neo4jStorage(Storage):
 
         >>> s = Neo4jStorage(4)
         """
+        self.depth = depth
+
         self.graph = Graph()
 
         self.gid = gid if gid is not None else random.randint(0,1000000000)
 
-        self.root = self.graph.cypher.execute_one("MATCH (r:RootNode:Root%s) RETURN ID(r)" % self.gid)
-        if existing:
-            if self.root is None:
-                raise ValueError("Root doesn't exists.")
+        try:
+            self.root, self.depth = self.graph.cypher.execute("MATCH (r:RootNode:Root%s) RETURN ID(r)" % self.gid)[0]
+        except IndexError:
+            if existing:
+                raise ValueError("No root found.")
+            self.root = self.graph.cypher.execute_one("CREATE (r:RootNode:Root%s {count: 0, depth: %i}) RETURN ID(r)" % (self.gid, self.depth))
         else:
-            if self.root is not None:
+            if not existing:
                 raise ValueError("Found existing root.")
-            self.root = self.graph.cypher.execute_one("CREATE (r:RootNode:Root%s {count: 0}) RETURN ID(r)" % self.gid)
 
-        self.depth = depth
-
-        self.normalization = [(0,0)] * depth
+        self.normalization = [(0,0)] * self.depth
 
         self.dirty = True
 
     @classmethod
     def load(cls, gid):
-        raise NotImplementedError()
+        return cls(None, gid, True)
 
     @classmethod
     def delete(cls, gid):
