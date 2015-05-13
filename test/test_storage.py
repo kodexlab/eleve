@@ -24,7 +24,6 @@ def generate_random_ngrams():
     random.shuffle(m)
     return (depth, m)
 
-
 def compare_tries(ref_trie, test_trie):
     """ fails if two tries are different (on count, entropy, ...)
     """
@@ -63,8 +62,8 @@ def test_storage_class(storage_class, reference_class=MemoryStorage):
     """ Compare implementation against reference class (on random ngrams lists)
     """
     depth, ngrams = generate_random_ngrams()
-    test_trie = storage_class(depth)
-    ref_trie = reference_class(depth)
+    test_trie = storage_class(depth, 'test').clear()
+    ref_trie = reference_class(depth, 'test').clear()
     for n in ngrams:
         test_trie.add_ngram(n, 1)
         ref_trie.add_ngram(n, 1)
@@ -89,7 +88,7 @@ def test_save_load_trie(storage_class):
 def test_basic_storage(storage_class):
     """ Minimal test on simple example
     """
-    m = storage_class(3)
+    m = storage_class(3, 'test').clear()
     m.add_ngram(('le','petit','chat'), 1)
     m.add_ngram(('le','petit','chien'), 1)
     m.add_ngram(('le','gros','chien'), 1)

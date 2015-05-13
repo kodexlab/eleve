@@ -59,9 +59,10 @@ class MemoryStorage(Storage):
     """ In-memory tree (made to be simple, no specific optimizations)
     """
 
-    def __init__(self, depth):
+    def __init__(self, depth, path=None):
         """
         :param depth: Maximum length of stored ngrams
+        :param path: Path to the database (not used)
         """
         self.depth = depth
         self.root = MemoryNode()

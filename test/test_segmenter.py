@@ -16,7 +16,7 @@ def test_basic_entropy(storage_class):
      - petit le pour * 2
     --> count is the mean of 4 and 4, and entropy is the mean of 1.5 and 1.
     """
-    m = Eleve(2, storage_class)
+    m = Eleve(2, 'test', storage_class).clear()
     m.add_sentence(['le','petit','chat'], 1)
     m.add_sentence(['le','petit','chien'], 1)
     m.add_sentence(['pour','le','petit'], 1, freq=2)
@@ -24,7 +24,7 @@ def test_basic_entropy(storage_class):
 
 @pytest.mark.parametrize("storage_class", [MemoryStorage, Neo4jStorage])
 def test_basic_segmentation(storage_class):
-    l = Eleve(2, storage_class)
+    l = Eleve(2, 'test', storage_class).clear()
     l.add_sentence(['je', 'vous', 'parle', 'de', 'hot', 'dog'], 1)
     l.add_sentence(['j', 'ador', 'les', 'hot', 'dog'], 1)
     l.add_sentence(['hot', 'dog', 'ou', 'pas'], 1)

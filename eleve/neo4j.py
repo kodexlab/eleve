@@ -1,6 +1,5 @@
 from __future__ import division
 import logging
-import sys
 from py2neo import Graph
 import random
 
@@ -11,43 +10,30 @@ class Neo4jStorage(Storage):
     """ Neo4j storage
     """
 
-    def __init__(self, depth, gid=None, existing=False):
+    def __init__(self, depth, gid=None):
         """
         :param depth: Maximum length of stored ngrams
 
         >>> s = Neo4jStorage(4)
         """
         self.depth = depth
-
         self.graph = Graph()
-
         self.gid = gid if gid is not None else random.randint(0,1000000000)
-
-        try:
-            self.root, self.depth = self.graph.cypher.execute("MATCH (r:RootNode:Root%s) RETURN ID(r)" % self.gid)[0]
-        except IndexError:
-            if existing:
-                raise ValueError("No root found.")
-            self.root = self.graph.cypher.execute_one("CREATE (r:RootNode:Root%s {count: 0, depth: %i}) RETURN ID(r)" % (self.gid, self.depth))
-        else:
-            if not existing:
-                raise ValueError("Found existing root.")
-
         self.normalization = [(0,0)] * self.depth
+        self.load_root()
 
+    def load_root(self):
+        try:
+            self.root = self.graph.cypher.execute("MATCH (r:RootNode:Root%s) RETURN ID(r)" % self.gid)[0]
+        except IndexError:
+            self.root = self.graph.cypher.execute_one("CREATE (r:RootNode:Root%s {count: 0, depth: %i}) RETURN ID(r)" % (self.gid, self.depth))
         self.dirty = True
 
-    @classmethod
-    def load(cls, gid):
-        return cls(None, gid, True)
-
-    @classmethod
-    def delete(cls, gid):
+    def clear(self):
         # delete everything
-        Graph().cypher.execute("MATCH (n:RootNode:Root%s) OPTIONAL MATCH (n)-[r]-() DELETE n,r" % gid)
-
-    def save(self, path):
-        raise NotImplementedError()
+        self.graph.cypher.execute("MATCH (n:RootNode:Root%s) OPTIONAL MATCH (n)-[r]-() DELETE n,r" % self.gid)
+        self.load_root()
+        return self
 
     def __iter__(self):
         """ Iterator on all the ngrams in the trie.

@@ -10,10 +10,15 @@ class Storage(metaclass=ABCMeta):
     depth = None
 
     @abstractmethod
-    def __init__(self, depth):
+    def __init__(self, depth, path):
         # load/save qui sont dans un format indépendant de l'implémentation de storage
         # ou alors un argument format.
         pass
+
+    def clear(self):
+        """ Clear the storage
+        """
+        return self
 
     @abstractmethod
     def add_ngram(self, ngram, freq=1):
@@ -34,17 +39,3 @@ class Storage(metaclass=ABCMeta):
         """ Retrieve the autonomy of the ngram
         """
         pass
-
-    @abstractmethod
-    def save(self, path):
-        """ Save model to a file
-        """
-        pass
-
-    @classmethod
-    @abstractmethod
-    def load(path):
-        """ Load model from a file
-        """
-        pass
-

@@ -1,13 +1,20 @@
 from memory import MemoryStorage
 
 class Eleve:
-    def __init__(self, order, storage_class=MemoryStorage):
+    def __init__(self, order, path, storage_class=MemoryStorage):
         assert order > 1
-        self.bwd = storage_class(order + 1)
-        self.fwd = storage_class(order + 1)
+        assert isinstance(path, str)
         self.order = order
 
+        self.bwd = storage_class(order + 1, path + '_bwd')
+        self.fwd = storage_class(order + 1, path + '_fwd')
+
     # SENTENCE LEVEL
+
+    def clear(self):
+        self.bwd.clear()
+        self.fwd.clear()
+        return self
 
     def add_sentence(self, sentence, docid, freq=1):
         token_list = [None] + sentence + [None]
