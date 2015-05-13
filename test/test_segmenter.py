@@ -17,6 +17,7 @@ def test_basic_entropy(storage_class):
     --> count is the mean of 4 and 4, and entropy is the mean of 1.5 and 1.
     """
     m = Eleve(2, 'test', storage_class).clear()
+
     m.add_sentence(['le','petit','chat'], 1)
     m.add_sentence(['le','petit','chien'], 1)
     m.add_sentence(['pour','le','petit'], 1, freq=2)
