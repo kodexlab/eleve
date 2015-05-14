@@ -74,6 +74,11 @@ class MemoryStorage(Storage):
 
         self.dirty = False
 
+    def clear(self):
+        self.root = MemoryNode()
+        self.dirty = True
+        return self
+
     @classmethod
     def load(cls, path):
         depth, root, normalization = pickle.load(gzip.GzipFile(path, 'rb'))
@@ -87,6 +92,16 @@ class MemoryStorage(Storage):
         o = (self.depth, self.root, self.normalization)
         with gzip.GzipFile(path, 'wb') as f:
             pickle.dump(o, f)
+
+    def iter_leafs(self):
+        def _rec(ngram, node):
+            if node.childs:
+                for k,c in node.childs.items():
+                    yield from _rec(ngram + [k], c)
+            else:
+                yield ngram
+
+        yield from _rec([], self.root)
 
     def __iter__(self):
         """ Iterator on all the ngrams in the trie.
@@ -169,35 +184,47 @@ class MemoryStorage(Storage):
         # recurse, add the end of the ngram
         self._add_ngram(child, ngram[1:], docid, freq)
 
+    def _lookup(self, ngram):
+        """ Search for a node and raises KeyError if the node doesn't exists """
+        node = self.root
+        last_node = node
+        while ngram:
+            last_node = node
+            node = node.childs[ngram[0]]
+            ngram = ngram[1:]
+        return (last_node, node)
+
     def query_node(self, ngram):
         """ Return a tuple with the main node data : (count, entropy).
         Count is the number of ngrams starting with the ``ngram`` parameter, entropy the entropy after the ngram.
         """
         self._check_dirty()
-        node = self.root
-        while ngram:
-            try:
-                node = node.childs[ngram[0]]
-            except KeyError:
-                return (0, 0.)
-            ngram = ngram[1:]
+        try:
+            _, node = self._lookup(ngram)
+        except KeyError:
+            return (0, 0.)
         return (node.count, node.entropy)
+    
+    def query_postings(self, ngram):
+        try:
+            _, node = self._lookup(ngram)
+        except KeyError:
+            return
+        for docid, f in node.postings.items():
+            yield (docid, f)
 
     def query_ev(self, ngram):
         """ Return the entropy variation for the ngram.
         """
         self._check_dirty()
-        node = self.root
-        last_node = node
-        while ngram:
-            last_node = node
+        try:
+            last_node, node = self._lookup(ngram)
+        except KeyError:
             try:
-                node = node.childs[ngram[0]]
+                _, last_node = self._lookup(ngram[:-1])
             except KeyError:
-                # FIXME: If both are zero, I should return NaN ?
-                return -last_node.entropy if len(ngram) == 1 else 0.
-            ngram = ngram[1:]
-
+                return 0.
+            return -last_node.entropy
         return node.entropy - last_node.entropy
 
     def query_autonomy(self, ngram, z_score=True):

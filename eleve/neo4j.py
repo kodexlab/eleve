@@ -24,9 +24,10 @@ class Neo4jStorage(Storage):
 
     def load_root(self):
         try:
-            self.root = self.graph.cypher.execute("MATCH (r:RootNode:Root%s) RETURN ID(r)" % self.gid)[0]
+            self.root = self.graph.cypher.execute("MATCH (r:RootNode:Root%s) RETURN ID(r)" % self.gid)[0][0]
         except IndexError:
             self.root = self.graph.cypher.execute_one("CREATE (r:RootNode:Root%s {count: 0, depth: %i}) RETURN ID(r)" % (self.gid, self.depth))
+        assert isinstance(self.root, int)
         self.dirty = True
 
     def clear(self):
@@ -88,16 +89,16 @@ class Neo4jStorage(Storage):
         """ Recursive function used to add a ngram.
         """
 
-        self.graph.cypher.execute("MATCH (s) WHERE id(s) = %i SET s.count = s.count + %s" % (node, freq))
+        self.graph.cypher.execute("MATCH (s) WHERE id(s) = %i SET s.count = s.count + %.10f" % (node, freq))
 
         try:
             token = ngram[0]
         except IndexError:
-            r = self.graph.cypher.execute("MATCH (s)-[:Document {docid: %s}]->(r) WHERE id(s) = %i SET r.count = r.count + %s RETURN r" % (docid, node, freq))
+            r = self.graph.cypher.execute("MATCH (s)-[:Document {docid: %s}]->(r) WHERE id(s) = %i SET r.count = r.count + %.10f RETURN r" % (docid, node, freq))
             if len(r):
                 assert len(r) == 1
             else:
-                self.graph.cypher.execute("MATCH (n) WHERE id(n) = %i CREATE n-[:Document {docid: %s}]->(r {count: %s})" % (node, docid, freq))
+                self.graph.cypher.execute("MATCH (n) WHERE id(n) = %i CREATE n-[:Document {docid: %s}]->(r {count: %.10f})" % (node, docid, freq))
             return
         
         try:
@@ -107,23 +108,34 @@ class Neo4jStorage(Storage):
 
         # recurse, add the end of the ngram
         self._add_ngram(child, ngram[1:], docid, freq)
-
-    def query_node(self, ngram):
-        """ Return a tuple with the main node data : (count, entropy).
-        Count is the number of ngrams starting with the ``ngram`` parameter, entropy the entropy after the ngram.
-        """
+    
+    def _query_node(self, ngram):
+        """ Internal function that returns count, entropy and node_id """
         self._check_dirty()
 
         if ngram:
             q = "(root)" + '()'.join("-[:Child {token: '%s'}]->" % token for token in ngram) + "(leaf)"
             try:
-                count, entropy = self.graph.cypher.execute("MATCH %s WHERE id(root) = %i RETURN leaf.count, leaf.entropy" % (q, self.root))[0]
+                count, entropy, node_id = self.graph.cypher.execute("MATCH %s WHERE id(root) = %i RETURN leaf.count, leaf.entropy, id(leaf)" % (q, self.root))[0]
             except IndexError:
-                count, entropy = 0, 0.
+                return (0., 0., None)
         else:
-            count, entropy = self.graph.cypher.execute("MATCH (root) WHERE id(root) = %i RETURN root.count, root.entropy" % self.root)[0]
+            count, entropy, node_id = self.graph.cypher.execute("MATCH (root) WHERE id(root) = %i RETURN root.count, root.entropy, id(root)" % self.root)[0]
 
-        return (count, entropy)
+        return (count, entropy, node_id)
+
+    def query_node(self, ngram):
+        """ Return a tuple with the main node data : (count, entropy).
+        Count is the number of ngrams starting with the ``ngram`` parameter, entropy the entropy after the ngram.
+        """
+        return self._query_node(ngram)[:2]
+
+    def query_postings(self, ngram):
+        node_id = self._query_node(ngram)
+        if node_id is None:
+            return
+        for docid, count in self.graph.cypher.stream("MATCH (s)-[r:Document]->(l) WHERE id(s) = %i RETURN r.docid, s.count" % node_id):
+            yield (docid, count)
 
     def query_ev(self, ngram):
         """ Return the entropy variation for the ngram.

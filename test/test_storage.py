@@ -5,6 +5,7 @@ import os
 
 from eleve.memory import MemoryStorage
 from eleve.neo4j import Neo4jStorage
+from eleve.merge import MergeStorage
 
 def generate_random_ngrams():
     """ Generate list of random n-grams (of int)
@@ -57,7 +58,7 @@ def compare_tries(ref_trie, test_trie):
         except ZeroDivisionError:
             pass # in case the variance is null, because we are on the last level...
 
-@pytest.mark.parametrize("storage_class", [Neo4jStorage])
+@pytest.mark.parametrize("storage_class", [Neo4jStorage, MergeStorage])
 def test_storage_class(storage_class, reference_class=MemoryStorage):
     """ Compare implementation against reference class (on random ngrams lists)
     """
@@ -84,7 +85,7 @@ def test_save_load_trie(storage_class):
         reloaded_trie = storage_class.load(fn)
     compare_tries(test_trie, reloaded_trie)
 
-@pytest.mark.parametrize("storage_class", [MemoryStorage, Neo4jStorage])
+@pytest.mark.parametrize("storage_class", [MemoryStorage, Neo4jStorage, MergeStorage])
 def test_basic_storage(storage_class):
     """ Minimal test on simple example
     """
@@ -94,10 +95,10 @@ def test_basic_storage(storage_class):
     m.add_ngram(('le','gros','chien'), 1)
     assert m.query_node(('le', 'petit')) == (2, 1.0)
     assert m.query_node(None)[0] == 3
-    assert m.query_node(('le', 'petit')) != m.query_node(('le', 'gros'))
+    assert m.query_node(('le', 'petit'))[0] != m.query_node(('le', 'gros'))[0]
     m.add_ngram(('le','petit','chat'), 1 ,-1)
     assert m.query_node(('le', 'petit')) == m.query_node(('le', 'gros'))
 
 
 #TODO: test de remove
-
+#TODO: test des postings

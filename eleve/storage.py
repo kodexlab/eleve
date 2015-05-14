@@ -15,9 +15,9 @@ class Storage(metaclass=ABCMeta):
         # ou alors un argument format.
         pass
 
+    @abstractmethod
     def clear(self):
-        """ Clear the storage
-        """
+        """ Clear the storage. """
         return self
 
     @abstractmethod
@@ -38,4 +38,15 @@ class Storage(metaclass=ABCMeta):
     def query_autonomy(self, ngram, z_score):
         """ Retrieve the autonomy of the ngram
         """
+        pass
+
+    @abstractmethod
+    def query_node(self, ngram):
+        """ Return the (count, entropy) for a ngram """
+        pass
+
+    @abstractmethod
+    def query_postings(self, ngram):
+        """ Return an iterator to tuples (docid, frequency).
+        Works only for leaf nodes ATM """
         pass

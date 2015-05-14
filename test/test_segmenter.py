@@ -2,9 +2,11 @@ import pytest
 
 from eleve.memory import MemoryStorage
 from eleve.neo4j import Neo4jStorage
+from eleve.merge import MergeStorage
+
 from eleve import Eleve
 
-@pytest.mark.parametrize("storage_class", [MemoryStorage, Neo4jStorage])
+@pytest.mark.parametrize("storage_class", [MemoryStorage, Neo4jStorage, MergeStorage])
 def test_basic_entropy(storage_class):
     """
     Forward that begins by « le petit »:
@@ -23,7 +25,7 @@ def test_basic_entropy(storage_class):
     m.add_sentence(['pour','le','petit'], 1, freq=2)
     assert m.query_node(('le', 'petit')) == (4.0, 1.25)
 
-@pytest.mark.parametrize("storage_class", [MemoryStorage, Neo4jStorage])
+@pytest.mark.parametrize("storage_class", [MemoryStorage, Neo4jStorage, MergeStorage])
 def test_basic_segmentation(storage_class):
     l = Eleve(2, 'test', storage_class).clear()
     l.add_sentence(['je', 'vous', 'parle', 'de', 'hot', 'dog'], 1)

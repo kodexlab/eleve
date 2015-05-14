@@ -68,9 +68,11 @@ class Eleve:
         return (result_fwd + result_bwd) / 2
 
     def query_node(self, ngram):
-        result_fwd = self.fwd.query_node(ngram)
-        result_bwd = self.bwd.query_node(ngram[::-1])
-        return tuple((i + j) / 2 for i, j in zip(result_fwd, result_bwd))
+        count_fwd, entropy_fwd = self.fwd.query_node(ngram)
+        count_bwd, entropy_bwd = self.bwd.query_node(ngram[::-1])
+
+        return ((count_fwd + count_bwd) / 2,
+                (entropy_fwd + entropy_bwd) / 2)
 
     def update_stats(self):
         self.fwd.update_stats()
