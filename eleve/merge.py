@@ -28,16 +28,16 @@ class MergeStorage(Storage):
     def clear(self):
         self.hot_storage.clear()
         self.cold_storage.clear()
+        self.hot_count = 0
         return self
 
     def _merge(self):
+        if not self.hot_count:
+            return
         logging.info("MergeStorage merging hot storage to cold one. Can take some time.")
-        for ngram in self.hot_storage.iter_leafs():
-            self.cold_storage.add_ngram(ngram, 1, self.hot_storage.query_node(ngram)[0])
-            #FIXME: Add documents using postlists :
-            #for docid, freq in self.hot_storage.query_postings(ngram):
-            #    self.cold_storage.add_ngram(ngram, docid, freq)
+        self.cold_storage.merge(self.hot_storage)
         self.hot_storage.clear()
+        self.hot_count = 0
 
     def __iter__(self):
         self._merge()
@@ -49,7 +49,6 @@ class MergeStorage(Storage):
 
     def add_ngram(self, ngram, docid, freq=1):
         if self.hot_count > self.max_hot_count:
-            self.hot_count = 0
             self._merge()
         else:
             self.hot_count += 1

@@ -3,6 +3,7 @@ import datetime
 from test_storage import generate_random_ngrams
 from eleve.memory import MemoryStorage
 from eleve.neo4j import Neo4jStorage
+from eleve.merge import MergeStorage
 
 def benchmark_trie_class(trie_class, reference_class=MemoryStorage):
     depth, ngrams = generate_random_ngrams()
@@ -45,4 +46,4 @@ def benchmark_trie_class(trie_class, reference_class=MemoryStorage):
     print('Time to query test : {}'.format(time_query_test))
 
 if __name__ == '__main__':
-    benchmark_trie_class(Neo4jStorage)
+    benchmark_trie_class(MergeStorage)

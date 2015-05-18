@@ -2,6 +2,7 @@ from __future__ import division
 import logging
 from py2neo import Graph
 import random
+import sys
 
 from eleve.storage import Storage
 from eleve.memory import entropy
@@ -73,6 +74,29 @@ class Neo4jStorage(Storage):
         if self.dirty:
             logging.warning("Updating the tree statistics (update_stats method), as we query it while dirty. This is a slow operation.")
             self.update_stats()
+
+    def merge(self, other):
+        tx = self.graph.cypher.begin()
+        for ngram in other:
+            count = other.query_node(ngram)[0]
+            if count == 0:
+                continue
+            self.dirty = True
+
+            if len(ngram) > 1:
+                q = "(root)" + '()'.join("-[:Child {token: '%s'}]->" % token for token in ngram[:-1]) + "(parent) WHERE id(root) = %i" % self.root
+                tx.append('MATCH %s MERGE (parent)-[:Child {token: \'%s\'}]->(node) ON CREATE SET node.count = %.10f ON MATCH SET node.count = node.count + %.10f' % (q, ngram[-1], count, count))
+            elif len(ngram) == 1:
+                q = "(parent) WHERE id(parent) = %i" % self.root
+                tx.append('MATCH %s MERGE (parent)-[:Child {token: \'%s\'}]->(node) ON CREATE SET node.count = %.10f ON MATCH SET node.count = node.count + %.10f' % (q, ngram[-1], count, count))
+            else:
+                tx.append('MATCH (root) WHERE id(root) = %i SET root.count = root.count + %.10f' % (self.root, count))
+
+            for docid, count in other.query_postings(ngram):
+                q = "(root)" + '()'.join("-[:Child {token: '%s'}]->" % token for token in ngram) + "(child) WHERE id(root) = %i" % self.root
+                tx.append('MATCH %s MERGE (child)-[:Document {docid: %s}]->(node) ON CREATE SET node.count = %.10f ON MATCH SET node.count = node.count + %.10f' % (q, docid, count, count))
+
+        tx.commit()
 
     def add_ngram(self, ngram, docid, freq=1):
         """ Add a ngram to the tree.

@@ -3,6 +3,7 @@ from nltk.corpus import reuters
 
 from eleve import Eleve
 from eleve.memory import MemoryStorage
+from eleve.neo4j import Neo4jStorage
 
 def benchmark(storage_class):
     m = Eleve(3, 'test', storage_class).clear()
@@ -16,4 +17,4 @@ def benchmark(storage_class):
         print(m.segment(tokens[i:i+30]))
 
 if __name__ == '__main__':
-    benchmark(MemoryStorage)
+    benchmark(Neo4jStorage)
