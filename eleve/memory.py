@@ -11,6 +11,9 @@ def entropy(counts):
     """ Calculate entropy from an iterator containing
     count of occurence for each value.
 
+    Each count must be greater or equal to 1. If it is
+    not the case, it will be set to 1.
+
     >>> entropy([1,1])
     1.0
     >>> entropy([1])
@@ -20,8 +23,8 @@ def entropy(counts):
     """
     c, psum = 0, 0
     for i in counts:
-        c += i
-        psum += i * math.log2(i or 1)
+        c += max(i, 0)
+        psum += i * math.log2(max(i, 1))
     if c == 0:
         return 0
     return math.log2(c) - psum / c
@@ -96,9 +99,9 @@ class MemoryStorage(Storage):
     def iter_leafs(self):
         def _rec(ngram, node):
             if node.childs:
-                for k,c in node.childs.items():
+                for k, c in node.childs.items():
                     yield from _rec(ngram + [k], c)
-            else:
+            elif node is not self.root:
                 yield ngram
 
         yield from _rec([], self.root)
@@ -135,7 +138,10 @@ class MemoryStorage(Storage):
                     yield from ve_for_depth(child, node, depth - 1)
 
         for i in range(self.depth):
-            self.normalization[i] = mean_stdev(ve_for_depth(self.root, None, i + 1))
+            try:
+                self.normalization[i] = mean_stdev(ve_for_depth(self.root, None, i + 1))
+            except ZeroDivisionError:
+                pass
 
         self.dirty = False
 
@@ -151,9 +157,6 @@ class MemoryStorage(Storage):
 
         if len(ngram) > self.depth:
             raise ValueError("The size of the ngram parameter must be less or equal than depth ({})".format(self.depth))
-
-        if self.root.count + freq < 0:
-            raise ValueError("Can't remove a non-existent ngram.")
 
         self._add_ngram(self.root, ngram, docid, freq)
         self.dirty = True
@@ -177,9 +180,6 @@ class MemoryStorage(Storage):
         except KeyError:
             child = MemoryNode()
             node.childs[token] = child
-
-        if child.count + freq < 0:
-            raise ValueError("Can't remove a non-existent ngram.")
 
         # recurse, add the end of the ngram
         self._add_ngram(child, ngram[1:], docid, freq)
