@@ -54,10 +54,12 @@ class Neo4jStorage(Storage):
         if not self.dirty:
             return
 
+        tx = self.graph.cypher.begin()
         for s, in self.graph.cypher.stream("MATCH (r)-[:Child*0..]->(s) WHERE ID(r) = %i RETURN ID(s)" % self.root):
             e = entropy(j[0] for j in self.graph.cypher.stream("MATCH (s)-[:Child]->(c) WHERE ID(s) = %i RETURN c.count" % s))
             # the .10f is because neo4j doesn't handle correctly scientific notation. Example: 1.0e-5
-            self.graph.cypher.execute("MATCH (s) WHERE id(s) = %i SET s.entropy = %.10f" % (s, e))
+            tx.append("MATCH (s) WHERE id(s) = %i SET s.entropy = %.10f" % (s, e))
+        tx.commit()
 
         for i in range(self.depth):
             if i == 0:
