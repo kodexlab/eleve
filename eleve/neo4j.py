@@ -179,10 +179,34 @@ class Neo4jStorage(Storage):
     def query_ev(self, ngram):
         """ Return the entropy variation for the ngram.
         """
-        node_entropy = self.query_node(ngram)[1]
-        parent_entropy = self.query_node(ngram[:-1])[1]
+        self._check_dirty()
 
-        return node_entropy - parent_entropy
+        if not ngram:
+            r = 0.
+
+        elif len(ngram) == 1:
+            r = self.graph.cypher.execute_one(
+                "MATCH (root)-[R:Child {token: {token}}]->(c) WHERE id(root) = {root} RETURN c.entropy - root.entropy",
+                {'root': self.root, 'token': str(ngram[0])}
+            )
+            if r is None:
+                r = -self._query_node(None)[1]
+
+        else:
+
+            q = "(root)" + ''.join("-[:Child {token: {t%i}}]->(c%i)" % (tid, tid) for tid, token in enumerate(ngram))
+
+            d = {'t%i' % tid: str(token) for tid, token in enumerate(ngram)}
+            d.update({'root': self.root})
+
+            r = self.graph.cypher.execute_one(
+                "MATCH %s WHERE id(root) = {root} RETURN c%i.entropy - c%i.entropy" % (q, len(ngram) - 1, len(ngram) - 2),
+                d
+            )
+            if r is None:
+               r = -self._query_node(ngram[:-1])[1]
+
+        return r
 
     def query_autonomy(self, ngram, z_score=True):
         """ Return the autonomy (normalized entropy variation) for the ngram.
