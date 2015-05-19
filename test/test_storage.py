@@ -10,11 +10,11 @@ from eleve.merge import MergeStorage
 def generate_random_ngrams():
     """ Generate list of random n-grams (of int)
     """
-    depth = random.randint(2,4)
+    depth = random.randint(2,3)
     m = []
 
     def add(prefix):
-        for i in range(int(random.expovariate(0.1) + 1)):
+        for i in range(int(random.expovariate(0.2) + 1)):
             k = int(random.gauss(0, 7))
             if len(prefix) < depth - 1:
                 add(prefix + [k])

@@ -14,8 +14,6 @@ class Neo4jStorage(Storage):
     def __init__(self, depth, gid=None):
         """
         :param depth: Maximum length of stored ngrams
-
-        >>> s = Neo4jStorage(4)
         """
         self.depth = depth
         self.graph = Graph()
@@ -33,7 +31,10 @@ class Neo4jStorage(Storage):
 
     def clear(self):
         # delete everything
-        self.graph.cypher.execute("MATCH (n:RootNode:Root%s) OPTIONAL MATCH (n)-[r]-() DELETE n,r" % self.gid)
+        tx = self.graph.cypher.begin()
+        tx.append("MATCH (:RootNode:Root%s)-[r*]->(n) delete last(r),n" % self.gid)
+        tx.append("MATCH (n:RootNode:Root%s) delete n" % self.gid)
+        tx.commit()
         self.load_root()
         return self
 
@@ -54,19 +55,20 @@ class Neo4jStorage(Storage):
         if not self.dirty:
             return
 
+        #"MATCH (r)-[:Child*0..]->(s) WHERE ID(r) = %i MATCH (s)-[:Child]->(c) SET s.entropy = log10(c.count / sum) / log10(2)
+
         tx = self.graph.cypher.begin()
-        for s, in self.graph.cypher.stream("MATCH (r)-[:Child*0..]->(s) WHERE ID(r) = %i RETURN ID(s)" % self.root):
-            e = entropy(j[0] for j in self.graph.cypher.stream("MATCH (s)-[:Child]->(c) WHERE ID(s) = %i RETURN c.count" % s))
-            # the .10f is because neo4j doesn't handle correctly scientific notation. Example: 1.0e-5
-            tx.append("MATCH (s) WHERE id(s) = %i SET s.entropy = %.10f" % (s, e))
+        for s, in self.graph.cypher.stream("MATCH (r)-[:Child*0..]->(s) WHERE ID(r) = {root} RETURN ID(s)", {'root': self.root}):
+            e = entropy(j[0] for j in self.graph.cypher.stream("MATCH (s)-[:Child]->(c) WHERE ID(s) = {pid} RETURN c.count", {'pid': s}))
+            tx.append("MATCH (s) WHERE id(s) = {pid} SET s.entropy = {e}", {'pid': s, 'e': e})
         tx.commit()
 
         for i in range(self.depth):
             if i == 0:
-                mean, stdev = self.graph.cypher.execute("MATCH (r)-[:Child]->(s) WHERE ID(r) = %i RETURN avg(s.entropy - r.entropy), stdevp(s.entropy - r.entropy)" % self.root)[0]
+                mean, stdev = self.graph.cypher.execute("MATCH (r)-[:Child]->(s) WHERE ID(r) = {root} RETURN avg(s.entropy - r.entropy), stdevp(s.entropy - r.entropy)", {'root': self.root})[0]
             else:
-                q = 'MATCH (root)' + '-[:Child]->()' * (i - 1) + '-[:Child]->(r)-[:Child]->(s) WHERE ID(root) = %i' % self.root
-                mean, stdev = self.graph.cypher.execute(q + " RETURN avg(s.entropy - r.entropy), stdevp(s.entropy - r.entropy)")[0]
+                q = 'MATCH (root)' + '-[:Child]->()' * (i - 1) + '-[:Child]->(r)-[:Child]->(s) WHERE ID(root) = {root}'
+                mean, stdev = self.graph.cypher.execute(q + " RETURN avg(s.entropy - r.entropy), stdevp(s.entropy - r.entropy)", {'root': self.root})[0]
             assert mean is not None and stdev is not None
             self.normalization[i] = (mean, stdev)
 
@@ -85,18 +87,25 @@ class Neo4jStorage(Storage):
                 continue
             self.dirty = True
 
+            d = {'t%i' % tid: str(token) for tid, token in enumerate(ngram)}
+            d.update({'count': count, 'root': self.root})
+            if ngram:
+                d['tl'] = str(ngram[-1])
+
             if len(ngram) > 1:
-                q = "(root)" + '()'.join("-[:Child {token: '%s'}]->" % token for token in ngram[:-1]) + "(parent) WHERE id(root) = %i" % self.root
-                tx.append('MATCH %s MERGE (parent)-[:Child {token: \'%s\'}]->(node) ON CREATE SET node.count = %.10f ON MATCH SET node.count = node.count + %.10f' % (q, ngram[-1], count, count))
+                q = "(root)" + '()'.join("-[:Child {token: {t%i}}]->" % tid for tid, token in enumerate(ngram[:-1])) + "(parent) WHERE id(root) = {root}"
+                tx.append('MATCH %s MERGE (parent)-[:Child {token: {tl}}]->(node) ON CREATE SET node.count = {count} ON MATCH SET node.count = node.count + {count}' % q, d)
             elif len(ngram) == 1:
-                q = "(parent) WHERE id(parent) = %i" % self.root
-                tx.append('MATCH %s MERGE (parent)-[:Child {token: \'%s\'}]->(node) ON CREATE SET node.count = %.10f ON MATCH SET node.count = node.count + %.10f' % (q, ngram[-1], count, count))
+                q = "(parent) WHERE id(parent) = {root}"
+                tx.append('MATCH %s MERGE (parent)-[:Child {token: {tl}}]->(node) ON CREATE SET node.count = {count} ON MATCH SET node.count = node.count + {count}' % q, d)
             else:
-                tx.append('MATCH (root) WHERE id(root) = %i SET root.count = root.count + %.10f' % (self.root, count))
+                tx.append('MATCH (root) WHERE id(root) = {root} SET root.count = root.count + {count}', d)
 
             for docid, count in other.query_postings(ngram):
-                q = "(root)" + '()'.join("-[:Child {token: '%s'}]->" % token for token in ngram) + "(child) WHERE id(root) = %i" % self.root
-                tx.append('MATCH %s MERGE (child)-[:Document {docid: %s}]->(node) ON CREATE SET node.count = %.10f ON MATCH SET node.count = node.count + %.10f' % (q, docid, count, count))
+                q = "(root)" + '()'.join("-[:Child {token: {t%i}}]->" % tid for tid, token in enumerate(ngram)) + "(child) WHERE id(root) = {root}"
+                d2 = d
+                d2.update({'docid': docid})
+                tx.append('MATCH %s MERGE (child)-[:Document {docid: {docid}}]->(node) ON CREATE SET node.count = {count} ON MATCH SET node.count = node.count + {count}' % q, d2)
 
         tx.commit()
 
@@ -108,45 +117,49 @@ class Neo4jStorage(Storage):
         if len(ngram) > self.depth:
             raise ValueError("The size of the ngram parameter must be less or equal than depth ({})".format(self.depth))
 
+        self.graph.cypher.run("MATCH (s) WHERE id(s) = {root} SET s.count = s.count + {count}", {'root': self.root, 'count': freq})
+
         self._add_ngram(self.root, ngram, docid, freq)
+
         self.dirty = True
 
     def _add_ngram(self, node, ngram, docid, freq):
         """ Recursive function used to add a ngram.
         """
 
-        self.graph.cypher.execute("MATCH (s) WHERE id(s) = %i SET s.count = s.count + %.10f" % (node, freq))
-
         try:
             token = ngram[0]
-        except IndexError:
-            r = self.graph.cypher.execute("MATCH (s)-[:Document {docid: %s}]->(r) WHERE id(s) = %i SET r.count = r.count + %.10f RETURN r" % (docid, node, freq))
-            if len(r):
-                assert len(r) == 1
-            else:
-                self.graph.cypher.execute("MATCH (n) WHERE id(n) = %i CREATE n-[:Document {docid: %s}]->(r {count: %.10f})" % (node, docid, freq))
-            return
-        
-        try:
-            child = self.graph.cypher.execute("MATCH (s)-[:Child {token: '%s'}]->(c) WHERE id(s) = %i RETURN ID(c)" % (token, node))[0][0]
-        except IndexError:
-            child = self.graph.cypher.execute("MATCH (s) WHERE id(s) = %i CREATE (s)-[:Child {token: '%s'}]->(r {count: 0}) RETURN ID(r)" % (node, token))[0][0]
 
-        # recurse, add the end of the ngram
-        self._add_ngram(child, ngram[1:], docid, freq)
+        except IndexError:
+            # reached end of ngram
+            self.graph.cypher.run(
+                "MATCH (s) WHERE id(s) = {nid} MERGE (s)-[:Document {docid: {docid}}]->(r) ON CREATE SET r.count = {count} ON MATCH SET r.count = r.count + {count}",
+                {'nid': node, 'count': freq, 'docid': docid}
+            )
+
+        else:
+            child = self.graph.cypher.execute_one(
+                "MATCH (s) WHERE id(s) = {nid} MERGE (s)-[:Child {token: {token}}]->(c) ON CREATE SET c.count = {count} ON MATCH SET c.count = c.count + {count} RETURN id(c)",
+                {'token': str(token), 'count': freq, 'nid': node}
+            )
+            # recurse, add the end of the ngram
+            self._add_ngram(child, ngram[1:], docid, freq)
     
     def _query_node(self, ngram):
         """ Internal function that returns count, entropy and node_id """
         self._check_dirty()
 
+        d = {'t%i' % tid: str(token) for tid, token in enumerate(ngram or [])}
+        d.update({'root': self.root})
+
         if ngram:
-            q = "(root)" + '()'.join("-[:Child {token: '%s'}]->" % token for token in ngram) + "(leaf)"
+            q = "(root)" + '()'.join("-[:Child {token: {t%i}}]->" % tid for tid, token in enumerate(ngram)) + "(leaf)"
             try:
-                count, entropy, node_id = self.graph.cypher.execute("MATCH %s WHERE id(root) = %i RETURN leaf.count, leaf.entropy, id(leaf)" % (q, self.root))[0]
+                count, entropy, node_id = self.graph.cypher.execute("MATCH %s WHERE id(root) = {root} RETURN leaf.count, leaf.entropy, id(leaf)" % q, d)[0]
             except IndexError:
                 return (0., 0., None)
         else:
-            count, entropy, node_id = self.graph.cypher.execute("MATCH (root) WHERE id(root) = %i RETURN root.count, root.entropy, id(root)" % self.root)[0]
+            count, entropy, node_id = self.graph.cypher.execute("MATCH (root) WHERE id(root) = {root} RETURN root.count, root.entropy, id(root)", d)[0]
 
         return (count, entropy, node_id)
 
@@ -160,7 +173,7 @@ class Neo4jStorage(Storage):
         node_id = self._query_node(ngram)
         if node_id is None:
             return
-        for docid, count in self.graph.cypher.stream("MATCH (s)-[r:Document]->(l) WHERE id(s) = %i RETURN r.docid, s.count" % node_id):
+        for docid, count in self.graph.cypher.stream("MATCH (s)-[r:Document]->(l) WHERE id(s) = {nid} RETURN r.docid, s.count", {'nid': node_id}):
             yield (docid, count)
 
     def query_ev(self, ngram):
