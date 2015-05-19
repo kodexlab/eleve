@@ -44,7 +44,7 @@ class Neo4jStorage(Storage):
         """
         def _rec(node, ngram):
             yield ngram
-            r = self.graph.cypher.stream("MATCH (s)-[r:Child]->(c) WHERE id(s) = %i RETURN r.token, ID(c)" % node)
+            r = self.graph.cypher.stream("MATCH (s)-[r:Child]->(c) WHERE id(s) = {nid} RETURN r.token, ID(c)", {'nid': node})
             for token, child in r:
                 yield from _rec(child, ngram + [token])
         yield from _rec(self.root, [])
@@ -131,7 +131,7 @@ class Neo4jStorage(Storage):
             token = ngram[0]
 
         except IndexError:
-            # reached end of ngram
+            # reached end of ngram : add it to the postlist
             self.graph.cypher.run(
                 "MATCH (s) WHERE id(s) = {nid} MERGE (s)-[:Document {docid: {docid}}]->(r) ON CREATE SET r.count = {count} ON MATCH SET r.count = r.count + {count}",
                 {'nid': node, 'count': freq, 'docid': docid}
