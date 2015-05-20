@@ -29,7 +29,7 @@ def compare_tries(ref_trie, test_trie):
     """ fails if two tries are different (on count, entropy, ...)
     """
     
-    ngrams = set(map(tuple, ref_trie))
+    ngrams = set(map(lambda ngram_count: tuple(ngram_count[0]), ref_trie))
     for i, n in enumerate(set(ngrams)):
         if i > 20:
             break

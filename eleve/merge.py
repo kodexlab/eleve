@@ -6,6 +6,8 @@ from eleve.storage import Storage
 from eleve.neo4j import Neo4jStorage
 from eleve.memory import MemoryStorage
 
+logger = logging.getLogger(__name__)
+
 class MergeStorage(Storage):
     """ Storage implementation that put everything in a « hot » storage, that is fast.
     After a while, it will put the content of that « hot » storage in the « cold » storage,
@@ -13,7 +15,7 @@ class MergeStorage(Storage):
     """
 
     hot_class = MemoryStorage
-    max_hot_count = 100000
+    max_hot_count = 1000
 
     cold_class = Neo4jStorage
 
@@ -34,7 +36,7 @@ class MergeStorage(Storage):
     def _merge(self):
         if not self.hot_count:
             return
-        logging.info("MergeStorage merging hot storage to cold one. Can take some time.")
+        logger.info("MergeStorage merging hot storage to cold one. Can take some time.")
         self.cold_storage.merge(self.hot_storage)
         self.hot_storage.clear()
         self.hot_count = 0

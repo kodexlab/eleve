@@ -1,7 +1,7 @@
-from memory import MemoryStorage
+from merge import MergeStorage
 
 class Eleve:
-    def __init__(self, order, path, storage_class=MemoryStorage):
+    def __init__(self, order, path, storage_class=MergeStorage):
         assert order > 1
         assert isinstance(path, str)
         self.order = order

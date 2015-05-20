@@ -111,7 +111,7 @@ class MemoryStorage(Storage):
         Including partial ngrams (not leafs). So it gives a ngram for every node.
         """
         def _rec(ngram, node):
-            yield ngram
+            yield (ngram, node.count)
             for k, c in node.childs.items():
                 yield from _rec(ngram + [k], c)
 

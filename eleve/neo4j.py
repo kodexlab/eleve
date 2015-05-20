@@ -7,6 +7,8 @@ import sys
 from eleve.storage import Storage
 from eleve.memory import entropy
 
+logger = logging.getLogger(__name__)
+
 class Neo4jStorage(Storage):
     """ Neo4j storage
     """
@@ -43,10 +45,11 @@ class Neo4jStorage(Storage):
         Including partial ngrams (not leafs). So it gives a ngram for every node.
         """
         def _rec(node, ngram):
-            yield ngram
-            r = self.graph.cypher.stream("MATCH (s)-[r:Child]->(c) WHERE id(s) = {nid} RETURN r.token, ID(c)", {'nid': node})
-            for token, child in r:
-                yield from _rec(child, ngram + [token])
+            r = self.graph.cypher.stream("MATCH (s)-[r:Child]->(c) WHERE id(s) = {nid} RETURN r.token, ID(c), c.count", {'nid': node})
+            for token, child, count in r:
+                yield (ngram + [token], count)
+                yield from _rec(child, count, ngram + [token])
+        yield ([], self._query_node(None)[0])
         yield from _rec(self.root, [])
 
     def update_stats(self):
@@ -76,13 +79,12 @@ class Neo4jStorage(Storage):
 
     def _check_dirty(self):
         if self.dirty:
-            logging.warning("Updating the tree statistics (update_stats method), as we query it while dirty. This is a slow operation.")
+            logger.warning("Updating the tree statistics (update_stats method), as we query it while dirty. This is a slow operation.")
             self.update_stats()
 
     def merge(self, other):
         tx = self.graph.cypher.begin()
-        for ngram in other:
-            count = other.query_node(ngram)[0]
+        for ngram, count in other:
             if count == 0:
                 continue
             self.dirty = True
