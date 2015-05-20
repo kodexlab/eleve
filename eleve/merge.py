@@ -1,6 +1,7 @@
 from __future__ import division
 
 import logging
+import datetime
 
 from eleve.storage import Storage
 from eleve.neo4j import Neo4jStorage
@@ -37,9 +38,11 @@ class MergeStorage(Storage):
         if not self.hot_count:
             return
         logger.info("MergeStorage merging hot storage to cold one. Can take some time.")
+        begin = datetime.datetime.now()
         self.cold_storage.merge(self.hot_storage)
         self.hot_storage.clear()
         self.hot_count = 0
+        logger.info("Merge took %s seconds" % (datetime.datetime.now() - begin).total_seconds())
 
     def __iter__(self):
         self._merge()

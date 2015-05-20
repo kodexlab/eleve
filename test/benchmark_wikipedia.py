@@ -6,7 +6,6 @@ from eleve import Eleve
 import random
 import logging
 
-#logging.getLogger().setLevel(logging.INFO)
 logging.basicConfig(level=logging.INFO)
 logging.getLogger('py2neo').setLevel(logging.WARNING)
 
@@ -18,11 +17,12 @@ def main():
     l = Eleve(2, 'wikipedia').clear()
 
     i = 0
+    wcount = 0
     start = datetime.datetime.now()
     sentences = None
     for page in dump:
         i += 1
-        print(i)
+        print("Article %s, %s tokens, %s tokens/second" % (i, wcount, wcount // (datetime.datetime.now() - start).total_seconds()))
         if i % 10000 == 0:
             print('%s articles made. %s by second.' % (i, i // (datetime.datetime.now() - start).total_seconds()))
 
@@ -37,6 +37,7 @@ def main():
         sentences = text.split('.')
         sentences = list(filter(None, map(lambda p: RE_WORD.findall(p), sentences)))
         for sentence in sentences:
+            wcount += len(sentence)
             l.add_sentence(sentence, i)
 
 if __name__ == '__main__':
