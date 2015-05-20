@@ -91,22 +91,22 @@ class Neo4jStorage(Storage):
 
             d = {'t%i' % tid: str(token) for tid, token in enumerate(ngram)}
             d.update({'count': count})
-            if ngram:
-                d['tl'] = str(ngram[-1])
 
             if len(ngram) > 1:
-                q = "(:Root%s)" % self.gid + '()'.join("-[:Child {token: {t%i}}]->" % tid for tid, token in enumerate(ngram[:-1])) + "(parent)"
-                tx.append('MATCH %s MERGE (parent)-[:Child {token: {tl}}]->(node) ON CREATE SET node.count = {count} ON MATCH SET node.count = node.count + {count}' % q, d)
+                q = "(:Root%s)" % self.gid + ''.join("-[:Child]->(n%i:Node {token: {t%i}})" % (tid, tid) for tid, token in enumerate(ngram[:-1]))
+                tx.append('MATCH %s MERGE (n%i)-[:Child]->(node:Node {token: {t%i}}) ON CREATE SET node.count = {count} ON MATCH SET node.count = node.count + {count}' % (q, len(ngram) - 2, len(ngram) - 1), d)
             elif len(ngram) == 1:
-                tx.append('MATCH (parent:Root%s) MERGE (parent)-[:Child {token: {tl}}]->(node) ON CREATE SET node.count = {count} ON MATCH SET node.count = node.count + {count}' % self.gid, d)
+                tx.append('MATCH (root:Root%s) MERGE (root)-[:Child]->(node:Node {token: {t0}}) ON CREATE SET node.count = {count} ON MATCH SET node.count = node.count + {count}' % self.gid, d)
             else:
                 tx.append('MATCH (root:Root%s) SET root.count = root.count + {count}' % self.gid, d)
 
+            """
             for docid, count in other.query_postings(ngram):
                 q = "(:Root%s)" % self.gid + '()'.join("-[:Child {token: {t%i}}]->" % tid for tid, token in enumerate(ngram)) + "(child)"
                 d2 = d
                 d2.update({'docid': docid})
                 tx.append('MATCH %s MERGE (child)-[:Document {docid: {docid}}]->(node) ON CREATE SET node.count = {count} ON MATCH SET node.count = node.count + {count}' % q, d2)
+            """
 
         tx.commit()
 
