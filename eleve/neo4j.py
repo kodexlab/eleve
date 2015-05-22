@@ -86,32 +86,45 @@ class Neo4jStorage(Storage):
             self.update_stats()
 
     def merge(self, other):
+        def path(ngram):
+            return '(n0:Root%s)' % self.gid + ''.join('-[:Child]->(n%i:Node {token: {t%i}})' % (tid, tid) for tid, token in enumerate(ngram, start=1))
+
+
         tx = self.graph.cypher.begin()
         for ngram, count in other:
             if count == 0:
                 continue
             self.dirty = True
 
-            #ngram = [self.gid + ','.join(map(str, ngram[:i+1])) for i in range(len(ngram))] ###FIXME
+            ngram = [self.gid + ','.join(map(str, ngram[:i+1])) for i in range(len(ngram))] ###FIXME
 
-            d = {'t%i' % tid: str(token) for tid, token in enumerate(ngram)}
-            d.update({'count': count})
+            d = {'t%i' % tid: str(token) for tid, token in enumerate(ngram, start=1)}
+            tx.append('MATCH %s RETURN n%i.count ' % (path(ngram), len(ngram)), d)
+        
+        tx2 = self.graph.cypher.begin()
+        for (ngram, count), old_count in zip(other, tx.commit()):
+            ngram = [self.gid + ','.join(map(str, ngram[:i+1])) for i in range(len(ngram))] ###FIXME
 
-            if len(ngram) > 1:
-                q = "(:Root%s)" % self.gid + ''.join("-[:Child]->(n%i:Node {token: {t%i}})" % (tid, tid) for tid, token in enumerate(ngram[:-1]))
-                tx.append('MATCH %s MERGE (n%i)-[:Child]->(node:Node {token: {t%i}}) ON CREATE SET node.count = {count} ON MATCH SET node.count = node.count + {count}' % (q, len(ngram) - 2, len(ngram) - 1), d)
-            elif len(ngram) == 1:
-                tx.append('MATCH (root:Root%s) MERGE (root)-[:Child]->(node:Node {token: {t0}}) ON CREATE SET node.count = {count} ON MATCH SET node.count = node.count + {count}' % self.gid, d)
+            old_count = old_count[0][0] if old_count else None
+            d = {'t%i' % tid: str(token) for tid, token in enumerate(ngram, start=1)}
+            d['c'] = count if old_count is None else count + old_count
+
+            if old_count is None:
+                print('create')
+                tx2.append('MATCH %s CREATE (n%i)-[:Child]->(:Node {token: {t%i}, count: {c}})' % (path(ngram[:-1]), len(ngram) - 1, len(ngram)), d)
             else:
-                tx.append('MATCH (root:Root%s) SET root.count = root.count + {count}' % self.gid, d)
+                print('set')
+                tx2.append('MATCH %s SET n%i.count = {c}' % (path(ngram), len(ngram)), d)
 
-            for docid, count in other.query_postings(ngram):
-                q = "(:Root%s)" % self.gid + ''.join("-[:Child]->(n%i {token: {t%i}})" % (tid, tid) for tid, token in enumerate(ngram))
-                d2 = d
-                d2.update({'docid': docid})
-                tx.append('MATCH %s MERGE (t%i)-[:Document]->(node {docid: {docid}}) ON CREATE SET node.count = {count} ON MATCH SET node.count = node.count + {count}' % (q, len(ngram) - 1), d2)
+        tx2.commit()
 
-        tx.commit()
+        """
+        for docid, count in other.query_postings(ngram):
+            q = "(:Root%s)" % self.gid + ''.join("-[:Child]->(n%i {token: {t%i}})" % (tid, tid) for tid, token in enumerate(ngram))
+            d2 = d
+            d2.update({'docid': docid})
+            tx.append('MATCH %s MERGE (t%i)-[:Document]->(node {docid: {docid}}) ON CREATE SET node.count = {count} ON MATCH SET node.count = node.count + {count}' % (q, len(ngram) - 1), d2)
+        """
 
     def add_ngram(self, ngram, docid, freq=1):
         """ Add a ngram to the tree.
