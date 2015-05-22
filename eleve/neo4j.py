@@ -89,7 +89,6 @@ class Neo4jStorage(Storage):
         def path(ngram):
             return '(n0:Root%s)' % self.gid + ''.join('-[:Child]->(n%i:Node {token: {t%i}})' % (tid, tid) for tid, token in enumerate(ngram, start=1))
 
-
         tx = self.graph.cypher.begin()
         for ngram, count in other:
             if count == 0:
@@ -110,10 +109,8 @@ class Neo4jStorage(Storage):
             d['c'] = count if old_count is None else count + old_count
 
             if old_count is None:
-                print('create')
                 tx2.append('MATCH %s CREATE (n%i)-[:Child]->(:Node {token: {t%i}, count: {c}})' % (path(ngram[:-1]), len(ngram) - 1, len(ngram)), d)
             else:
-                print('set')
                 tx2.append('MATCH %s SET n%i.count = {c}' % (path(ngram), len(ngram)), d)
 
         tx2.commit()
@@ -133,6 +130,8 @@ class Neo4jStorage(Storage):
 
         if len(ngram) > self.depth:
             raise ValueError("The size of the ngram parameter must be less or equal than depth ({})".format(self.depth))
+
+        ngram = [self.gid + ','.join(map(str, ngram[:i+1])) for i in range(len(ngram))] ###FIXME
 
         self.graph.cypher.run("MATCH (s) WHERE id(s) = {root} SET s.count = s.count + {count}", {'root': self.root, 'count': freq})
 
@@ -166,6 +165,8 @@ class Neo4jStorage(Storage):
         """ Internal function that returns count, entropy and node_id """
         self._check_dirty()
 
+        ngram = [self.gid + ','.join(map(str, ngram[:i+1])) for i in range(len(ngram))] if ngram else [] ###FIXME
+
         d = {'t%i' % tid: str(token) for tid, token in enumerate(ngram or [])}
 
         if ngram:
@@ -198,11 +199,11 @@ class Neo4jStorage(Storage):
         self._check_dirty()
 
         if not ngram:
-            r = 0.
+            return 0.
 
+        ngram = [self.gid + ','.join(map(str, ngram[:i+1])) for i in range(len(ngram))] ###FIXME
 
-        elif len(ngram) == 1:
-            #ngram = [self.gid + ','.join(map(str, ngram[:i+1])) for i in range(len(ngram))] ###FIXME
+        if len(ngram) == 1:
             r = self.graph.cypher.execute_one(
                 "MATCH (root:Root%s)-[:Child]->(c {token: {token}}) RETURN c.entropy - root.entropy" % self.gid,
                 {'token': str(ngram[0])}
@@ -211,8 +212,6 @@ class Neo4jStorage(Storage):
                 r = -self._query_node(None)[1]
 
         else:
-            #ngram = [self.gid + ','.join(map(str, ngram[:i+1])) for i in range(len(ngram))] ###FIXME
-
             q = "(:Root%s)" % self.gid + ''.join("-[:Child]->(c%i {token: {t%i}})" % (tid, tid) for tid, token in enumerate(ngram))
 
             d = {'t%i' % tid: str(token) for tid, token in enumerate(ngram)}
