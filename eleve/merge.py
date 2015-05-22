@@ -16,7 +16,7 @@ class MergeStorage(Storage):
     """
 
     hot_class = MemoryStorage
-    max_hot_count = 10000
+    max_hot_count = 50000
 
     cold_class = Neo4jStorage
 
