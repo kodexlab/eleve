@@ -26,3 +26,4 @@ if __name__ == '__main__':
     bench("MATCH (root:Root) MERGE (root)-[:Child]->(n:Node {number: {i}}) ON CREATE SET n.count = 1 ON MATCH SET n.count = n.count + 1", 1000)
     bench("MATCH (root:Root)-[:Child]->(n:Node {number: {i}}) SET n.count = n.count + 1", 1000)
     bench("MATCH (root:Root) CREATE UNIQUE (root)-[:Child]->(n:Node {number: {i}}) SET n.count = coalesce(n.count, 0) + 1", 1000)
+    bench("MATCH (root:Root) MERGE (n:Node {number: {i}}) ON CREATE SET n.count = 1 ON MATCH SET n.count = n.count + 1 MERGE (root)-[:Child]->(n)")

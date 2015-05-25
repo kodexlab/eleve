@@ -1,3 +1,3 @@
-from api import Eleve
+from .api import Eleve
 
 __all__ = ['Eleve']
