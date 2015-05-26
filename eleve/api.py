@@ -1,4 +1,7 @@
+import logging
 from eleve.memory import MemoryStorage
+
+logger = logging.getLogger(__name__)
 
 class Eleve:
     def __init__(self, order, path, storage_class=MemoryStorage):
@@ -25,6 +28,9 @@ class Eleve:
             self.bwd.add_ngram(token_list[i:i+self.order+1], docid, freq)
 
     def segment(self, sentence): 
+        if len(sentence) > 1000:
+            logger.warning("The sentence you want to segment is HUGE. This will take a lot of memory.")
+
         sentence = [None] + sentence + [None]
 
         # dynamic programming to segment the sentence
