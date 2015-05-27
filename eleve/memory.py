@@ -52,8 +52,8 @@ class MemoryNode(object):
     # to take a little less memory
     __slots__ = ['count', 'entropy', 'childs']
 
-    def __init__(self):
-        self.count = 0
+    def __init__(self, count=0):
+        self.count = count
         self.entropy = 0
         self.childs = {}
 
@@ -68,8 +68,8 @@ class MemoryNode(object):
 class MemoryLeaf(object):
     __slots__ = ['count', 'postings']
 
-    def __init__(self):
-        self.count = 0
+    def __init__(self, count=0):
+        self.count = count
         self.postings = {}
 
     def get_entropy(self):
@@ -182,34 +182,24 @@ class MemoryStorage(Storage):
         if len(ngram) > self.depth:
             raise ValueError("The size of the ngram parameter must be less or equal than depth ({})".format(self.depth))
 
-        self._add_ngram(self.root, ngram, docid, freq)
         self.dirty = True
 
-    def _add_ngram(self, node, ngram, docid, freq):
-        """ Recursive function used to add a ngram.
-        """
-
+        node = self.root
         node.count += freq
-        try:
-            token = ngram[0]
-        except IndexError:
+
+        for i, token in enumerate(ngram):
             try:
-                node.postings[docid] += freq
+                node = node.childs[token]
+                node.count += freq
             except KeyError:
-                node.postings[docid] = freq
-            return # ngram is empty (nothing left)
+                child = MemoryLeaf(freq) if i == len(ngram) - 1 else MemoryNode(freq)
+                node.childs[token] = child
+                node = child
 
         try:
-            child = node.childs[token]
+            node.postings[docid] += freq
         except KeyError:
-            if len(ngram) > 1:
-                child = MemoryNode()
-            else:
-                child = MemoryLeaf()
-            node.childs[token] = child
-
-        # recurse, add the end of the ngram
-        self._add_ngram(child, ngram[1:], docid, freq)
+            node.postings[docid] = freq
 
     def _lookup(self, ngram):
         """ Search for a node and raises KeyError if the node doesn't exists """
