@@ -50,13 +50,37 @@ class MemoryNode(object):
     """
     
     # to take a little less memory
-    __slots__ = ['count', 'entropy', 'childs', 'postings']
+    __slots__ = ['count', 'entropy', 'childs']
 
     def __init__(self):
         self.count = 0
         self.entropy = 0
         self.childs = {}
+
+    @property
+    def postings(self):
+        d = collections.defaultdict(float)
+        for v in self.childs.values():
+            for docid, f in v.postings.items():
+                d[docid] += f
+        return d
+
+class MemoryLeaf(object):
+    __slots__ = ['count', 'postings']
+
+    def __init__(self):
+        self.count = 0
         self.postings = {}
+
+    def get_entropy(self):
+        return 0.
+    def set_entropy(self, e):
+        assert e == 0.
+    entropy = property(get_entropy, set_entropy)
+
+    @property
+    def childs(self):
+        return {}
 
 class MemoryStorage(Storage):
     """ In-memory tree (made to be simple, no specific optimizations)
@@ -178,7 +202,10 @@ class MemoryStorage(Storage):
         try:
             child = node.childs[token]
         except KeyError:
-            child = MemoryNode()
+            if len(ngram) > 1:
+                child = MemoryNode()
+            else:
+                child = MemoryLeaf()
             node.childs[token] = child
 
         # recurse, add the end of the ngram
