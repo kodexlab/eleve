@@ -1,5 +1,5 @@
 import logging
-from eleve.memory import MemoryStorage
+from eleve.merge import MemoryStorage, MergeStorage
 
 logger = logging.getLogger(__name__)
 
