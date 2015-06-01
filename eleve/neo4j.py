@@ -65,9 +65,15 @@ class Neo4jStorage(Storage):
             return
 
         tx = self.graph.cypher.begin()
+        set_count = 0
         for s, in self.graph.cypher.stream("MATCH (:Root%s)-[:Child*0..]->(s) RETURN ID(s)" % self.gid):
             e = entropy(j[0] for j in self.graph.cypher.stream("MATCH (s)-[:Child]->(c) WHERE ID(s) = {pid} RETURN c.count", {'pid': s}))
             tx.append("MATCH (s) WHERE id(s) = {pid} SET s.entropy = {e}", {'pid': s, 'e': e})
+            if set_count > 10000:
+                tx.process()
+                set_count = 0
+            else:
+                set_count += 1
         tx.commit()
 
         for i in range(self.depth):
