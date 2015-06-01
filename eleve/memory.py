@@ -4,6 +4,7 @@ import operator
 import logging
 import pickle
 import gzip
+import collections
 
 from eleve.storage import Storage
 
@@ -59,10 +60,9 @@ class MemoryNode(object):
 
     @property
     def postings(self):
-        d = collections.defaultdict(float)
+        d = collections.Counter()
         for v in self.childs.values():
-            for docid, f in v.postings.items():
-                d[docid] += f
+            d.update(v.postings)
         return d
 
 class MemoryLeaf(object):
