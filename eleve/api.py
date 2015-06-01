@@ -1,5 +1,6 @@
 import logging
 from eleve.merge import MemoryStorage, MergeStorage
+import collections
 
 logger = logging.getLogger(__name__)
 
@@ -79,6 +80,11 @@ class Eleve:
 
         return ((count_fwd + count_bwd) / 2,
                 (entropy_fwd + entropy_bwd) / 2)
+
+    def query_postings(self, ngram):
+        a = collections.Counter(self.fwd.query_postings(ngram))
+        a.update(self.bwd.query_postings(ngram))
+        return a
 
     def update_stats(self):
         self.fwd.update_stats()
