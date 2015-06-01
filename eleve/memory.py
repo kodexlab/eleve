@@ -226,9 +226,8 @@ class MemoryStorage(Storage):
         try:
             _, node = self._lookup(ngram)
         except KeyError:
-            return
-        for docid, f in node.postings.items():
-            yield (docid, f)
+            return {}
+        return node.postings
 
     def query_ev(self, ngram):
         """ Return the entropy variation for the ngram.
