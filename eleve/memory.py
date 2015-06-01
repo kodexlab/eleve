@@ -124,11 +124,11 @@ class MemoryStorage(Storage):
         def _rec(ngram, node):
             if node.childs:
                 for k, c in node.childs.items():
-                    yield from _rec(ngram + [k], c)
+                    for i in _rec(ngram + [k], c): yield i
             elif node is not self.root:
                 yield ngram
 
-        yield from _rec([], self.root)
+        for i in _rec([], self.root): yield i
 
     def __iter__(self):
         """ Iterator on all the ngrams in the trie.
@@ -137,9 +137,9 @@ class MemoryStorage(Storage):
         def _rec(ngram, node):
             yield (ngram, node.count)
             for k, c in node.childs.items():
-                yield from _rec(ngram + [k], c)
+                for i in _rec(ngram + [k], c): yield i
 
-        yield from _rec([], self.root)
+        for i in _rec([], self.root): yield i
 
     def update_stats(self):
         """ Update the internal statistics (like entropy, and stdev & means
@@ -159,7 +159,7 @@ class MemoryStorage(Storage):
                 yield node.entropy - parent.entropy
             else:
                 for child in node.childs.values():
-                    yield from ve_for_depth(child, node, depth - 1)
+                    for i in ve_for_depth(child, node, depth - 1): yield i
 
         for i in range(self.depth):
             try:
