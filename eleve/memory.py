@@ -24,10 +24,10 @@ def entropy(counts):
     c, psum = 0, 0
     for i in counts:
         c += max(i, 0)
-        psum += i * math.log2(max(i, 1))
+        psum += i * math.log(max(i, 1), 2)
     if c == 0:
         return 0
-    return math.log2(c) - psum / c
+    return math.log(c, 2) - psum / c
 
 def mean_stdev(values):
     """ Calculate mean and standard deviation from values of an iterator.
