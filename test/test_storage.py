@@ -36,6 +36,7 @@ def compare_tries(ref_trie, test_trie):
         ngrams.add(tuple(n[:-1] + ('nonexistent',)))
         ngrams.add(tuple(n[:-2] + ('nonexistent',)))
         ngrams.add(tuple(n[:-2] + ('nonexistent','nonexistent')))
+    ngrams.add(None)
 
     for ngram in ngrams:
         count_ref, entropy_ref = ref_trie.query_node(ngram)
@@ -47,16 +48,26 @@ def compare_tries(ref_trie, test_trie):
         ev_test = test_trie.query_ev(ngram)
         assert abs(ev_ref - ev_test) < 1e-6
 
-        autonomy_ref = ref_trie.query_autonomy(ngram, z_score=False)
-        autonomy_test = test_trie.query_autonomy(ngram, z_score=False)
-        assert abs(autonomy_ref - autonomy_test) < 1e-6
-
-        try:
-            autonomy_ref = ref_trie.query_autonomy(ngram, z_score=True)
-            autonomy_test = test_trie.query_autonomy(ngram, z_score=True)
+        if ngram:
+            autonomy_ref = ref_trie.query_autonomy(ngram, z_score=False)
+            autonomy_test = test_trie.query_autonomy(ngram, z_score=False)
             assert abs(autonomy_ref - autonomy_test) < 1e-6
-        except ZeroDivisionError:
-            pass # in case the variance is null, because we are on the last level...
+
+            try:
+                autonomy_ref = ref_trie.query_autonomy(ngram, z_score=True)
+                autonomy_test = test_trie.query_autonomy(ngram, z_score=True)
+                assert abs(autonomy_ref - autonomy_test) < 1e-6
+            except ZeroDivisionError:
+                # in case the variance is null, because we are on the last level...
+                with pytest.raises(ZeroDivisionError):
+                    ref_trie.query_autonomy(ngram, z_score=True)
+                with pytest.raises(ZeroDivisionError):
+                    test_trie.query_autonomy(ngram, z_score=True)
+        else:
+            with pytest.raises(ValueError):
+                ref_trie.query_autonomy(ngram)
+            with pytest.raises(ValueError):
+                test_trie.query_autonomy(ngram)
 
 @pytest.mark.parametrize("storage_class", [Neo4jStorage, MergeStorage])
 def test_storage_class(storage_class, reference_class=MemoryStorage):

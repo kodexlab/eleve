@@ -204,6 +204,8 @@ class Neo4jStorage(Storage):
     def query_autonomy(self, ngram, z_score=True):
         """ Return the autonomy (normalized entropy variation) for the ngram.
         """
+        if not ngram:
+            raise ValueError("Can't query the autonomy of the root node.")
         self._check_dirty()
         mean, variance = self.normalization[len(ngram) - 1]
         nev = self.query_ev(ngram) - mean
