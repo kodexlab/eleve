@@ -13,21 +13,6 @@ class Eleve:
         self.bwd = storage_class(order + 1, path + '_bwd')
         self.fwd = storage_class(order + 1, path + '_fwd')
 
-        self.trans_bwd = {}
-
-    def _translate(self, ngram):
-        def trans(token):
-            h = hash(token)
-            try:
-                while self.trans_bwd[h] != token:
-                    logger.info("Hash collision !")
-                    h += 1
-            except KeyError:
-                self.trans_bwd[h] = token
-            return h
-        
-        return tuple(map(trans, ngram)) if ngram else ngram
-
     # SENTENCE LEVEL
 
     def clear(self):
@@ -79,20 +64,17 @@ class Eleve:
     # NGRAM LEVEL
 
     def query_autonomy(self, ngram):
-        self._translate(ngram)
         assert 0 < len(ngram) <= self.order
         result_fwd = self.fwd.query_autonomy(ngram)
         result_bwd = self.bwd.query_autonomy(ngram[::-1])
         return (result_fwd + result_bwd) / 2
      
     def query_ev(self, ngram):
-        self._translate(ngram)
         result_fwd = self.fwd.query_ev(ngram)
         result_bwd = self.bwd.query_ev(ngram[::-1])
         return (result_fwd + result_bwd) / 2
 
     def query_node(self, ngram):
-        self._translate(ngram)
         count_fwd, entropy_fwd = self.fwd.query_node(ngram)
         count_bwd, entropy_bwd = self.bwd.query_node(ngram[::-1])
 
@@ -100,7 +82,6 @@ class Eleve:
                 (entropy_fwd + entropy_bwd) / 2)
 
     def query_postings(self, ngram):
-        self._translate(ngram)
         a = collections.Counter(self.fwd.query_postings(ngram))
         a.update(self.bwd.query_postings(ngram))
         return a
