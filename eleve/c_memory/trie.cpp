@@ -144,11 +144,8 @@ class IndexBlock: public Block
     {
         assert(shingle_it != shingle_end);
 
-        auto it = data.begin();
-        while(it != data.end() && *shingle_it > it->token)
-        {
-            ++it;
-        }
+        auto it = std::lower_bound(data.begin(), data.end(), *shingle_it, [](TokenBlock& a, ID t) {return a.token < t;});
+        // it->token >= token;
 
         if(it == data.end())
         {
@@ -239,11 +236,9 @@ class LeafBlock: public Block
     {
         assert(shingle_it == shingle_end);
 
-        auto it = data.begin();
-        while(it != data.end() && it->docid < info.docid)
-        {
-            ++it;
-        }
+        auto it = std::lower_bound(data.begin(), data.end(), info.docid, [](ShingleInfo& a, ID t) {return a.docid < t;});
+        // it->token >= token;
+        
         if(it->docid == info.docid)
         {
             it->count += info.count;
@@ -373,13 +368,8 @@ class ListBlock: public Block
 
         auto token = *shingle_it;
 
-        //auto it = std::lower_bound(data.begin(), data.end(), token);
-        // it->token >= token
-        auto it = data.begin();
-        while(it != data.end() && it->token < token)
-        {
-            ++it;
-        }
+        auto it = std::lower_bound(data.begin(), data.end(), token, [](TokenBlock& a, ID t) {return a.token < t;});
+        // it->token >= token;
 
         if(it != data.end() && it->token == token)
         {
