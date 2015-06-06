@@ -22,4 +22,4 @@ def benchmark(storage_class, create=True):
         print(m.segment(tokens[i:i+30]))
 
 if __name__ == '__main__':
-    benchmark(MergeStorage)
+    benchmark(MemoryStorage)
