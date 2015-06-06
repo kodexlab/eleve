@@ -7,7 +7,7 @@
 #include <boost/python.hpp>
 #include <boost/python/stl_iterator.hpp>
 
-const size_t BLOCK_MAX_SIZE = 100;
+const size_t BLOCK_MAX_SIZE = 128;
 
 typedef uint32_t ID;
 typedef uint32_t COUNT;
@@ -145,7 +145,7 @@ class IndexBlock: public Block
         assert(shingle_it != shingle_end);
 
         auto it = std::lower_bound(data.begin(), data.end(), *shingle_it, [](TokenBlock& a, ID t) {return a.token < t;});
-        // it->token >= token;
+        // it->token >= token
 
         if(it == data.end())
         {
@@ -237,7 +237,7 @@ class LeafBlock: public Block
         assert(shingle_it == shingle_end);
 
         auto it = std::lower_bound(data.begin(), data.end(), info.docid, [](ShingleInfo& a, ID t) {return a.docid < t;});
-        // it->token >= token;
+        // it->token >= token
         
         if(it->docid == info.docid)
         {
@@ -369,7 +369,7 @@ class ListBlock: public Block
         auto token = *shingle_it;
 
         auto it = std::lower_bound(data.begin(), data.end(), token, [](TokenBlock& a, ID t) {return a.token < t;});
-        // it->token >= token;
+        // it->token >= token
 
         if(it != data.end() && it->token == token)
         {
