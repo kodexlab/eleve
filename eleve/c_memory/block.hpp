@@ -53,12 +53,12 @@ struct Block
     //virtual std::map<ID, COUNT> postings();
 };
 
-struct TokenBlock
+struct __attribute__((packed)) TokenBlock
 {
-    ID token;
     std::unique_ptr<Block> block;
+    ID token;
 
-    TokenBlock(ID t, std::unique_ptr<Block> b): token(t), block(std::move(b)) {};
+    TokenBlock(ID t, std::unique_ptr<Block> b): block(std::move(b)), token(t) {};
 };
 
 #endif
