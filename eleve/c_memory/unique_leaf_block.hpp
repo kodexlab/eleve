@@ -25,6 +25,12 @@ class UniqueLeafBlock: public Block
     {
         assert(shingle_it == shingle_end);
 
+        if(info.docid == data.docid)
+        {
+            data.count += info.count;
+            return nullptr;
+        }
+
         std::unique_ptr<Block> b = std::unique_ptr<Block>(new LeafBlock(data));
         b->add_shingle(shingle_it, shingle_end, info);
 
