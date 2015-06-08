@@ -4,6 +4,8 @@ ENV/
 *~
 # ignore pyc files
 *.pyc
+*.so
+.gdb_history
 
 # ignore _rep in documentation dir
 /docs/_*
