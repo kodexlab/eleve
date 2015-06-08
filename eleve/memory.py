@@ -245,15 +245,8 @@ class MemoryStorage(Storage):
             last_node, node = self._lookup(ngram)
             last_entropy, entropy = last_node.entropy, node.entropy
         except KeyError:
-            entropy = 0.
-            try:
-                _, last_node = self._lookup(ngram[:-1])
-                last_entropy = last._node.entropy
-            except KeyError:
-                last_entropy = 0.
-        if entropy == 0 and last_entropy == 0:
             return None
-        return entropy - last_entropy
+        return node.entropy - last_node.entropy if last_node.entropy != 0 or node.entropy != 0 else None
 
     def query_autonomy(self, ngram, z_score=True):
         """ Return the autonomy (normalized entropy variation) for the ngram.
