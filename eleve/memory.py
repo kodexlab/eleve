@@ -148,7 +148,14 @@ class MemoryStorage(Storage):
             return
 
         def update_entropy(node):
-            node.entropy = entropy(map(operator.attrgetter('count'), node.childs.values()))
+            counts = []
+            for k, n in node.childs.items():
+                if k:
+                    counts.append(n.count)
+                else:
+                    for _ in range(n.count):
+                        counts.append(1)
+            node.entropy = entropy(counts)
             for child in node.childs.values():
                 update_entropy(child)
 
