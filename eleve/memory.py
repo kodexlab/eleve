@@ -163,7 +163,8 @@ class MemoryStorage(Storage):
 
         def ve_for_depth(node, parent, depth):
             if depth == 0:
-                yield node.entropy - parent.entropy
+                if node.entropy != 0 or parent.entropy != 0:
+                    yield node.entropy - parent.entropy
             else:
                 for child in node.childs.values():
                     for i in ve_for_depth(child, node, depth - 1): yield i
@@ -251,7 +252,6 @@ class MemoryStorage(Storage):
             except KeyError:
                 last_entropy = 0.
         if entropy == 0 and last_entropy == 0:
-            logging.warning("none")
             return None
         return entropy - last_entropy
 
