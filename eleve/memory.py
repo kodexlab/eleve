@@ -72,11 +72,9 @@ class MemoryLeaf(object):
         self.count = count
         self.postings = {}
 
-    def get_entropy(self):
-        return 0.
-    def set_entropy(self, e):
-        assert e == 0.
-    entropy = property(get_entropy, set_entropy)
+    @property
+    def entropy(self):
+        return None
 
     @property
     def childs(self):
@@ -156,15 +154,17 @@ class MemoryStorage(Storage):
                     for _ in range(n.count):
                         counts.append(1)
             node.entropy = entropy(counts)
+
             for child in node.childs.values():
-                update_entropy(child)
+                if isinstance(child, MemoryNode):
+                    update_entropy(child)
 
         update_entropy(self.root)
 
         def ve_for_depth(node, parent, depth):
             if depth == 0:
                 if node.entropy != 0 or parent.entropy != 0:
-                    yield node.entropy - parent.entropy
+                    yield (node.entropy or 0.) - parent.entropy
             else:
                 for child in node.childs.values():
                     for i in ve_for_depth(child, node, depth - 1): yield i
@@ -245,10 +245,9 @@ class MemoryStorage(Storage):
         self._check_dirty()
         try:
             last_node, node = self._lookup(ngram)
-            last_entropy, entropy = last_node.entropy, node.entropy
         except KeyError:
             return None
-        return node.entropy - last_node.entropy if last_node.entropy != 0 or node.entropy != 0 else None
+        return (node.entropy or 0.) - last_node.entropy if last_node.entropy or node.entropy else None
 
     def query_autonomy(self, ngram, z_score=True):
         """ Return the autonomy (normalized entropy variation) for the ngram.
