@@ -187,8 +187,8 @@ class MemoryStorage(Storage):
         You can specify the number of times you add (or substract) that ngram by using the `freq` argument.
         """
 
-        if len(ngram) > self.depth:
-            raise ValueError("The size of the ngram parameter must be less or equal than depth ({})".format(self.depth))
+        if not 0 < len(ngram) <= self.depth:
+            raise ValueError("The size of the ngram parameter must be in range(1, {} + 1)".format(self.depth))
 
         self.dirty = True
 
@@ -201,9 +201,11 @@ class MemoryStorage(Storage):
                 node.count += freq
             except KeyError:
                 child = MemoryLeaf(freq) if i == len(ngram) - 1 else MemoryNode(freq)
+                assert isinstance(node, MemoryNode)
                 node.childs[token] = child
                 node = child
 
+        assert isinstance(node, MemoryLeaf)
         try:
             node.postings[docid] += freq
         except KeyError:
