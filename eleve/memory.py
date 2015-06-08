@@ -242,13 +242,18 @@ class MemoryStorage(Storage):
         self._check_dirty()
         try:
             last_node, node = self._lookup(ngram)
+            last_entropy, entropy = last_node.entropy, node.entropy
         except KeyError:
+            entropy = 0.
             try:
                 _, last_node = self._lookup(ngram[:-1])
+                last_entropy = last._node.entropy
             except KeyError:
-                return 0.
-            return -last_node.entropy
-        return node.entropy - last_node.entropy
+                last_entropy = 0.
+        if entropy == 0 and last_entropy == 0:
+            logging.warning("none")
+            return None
+        return entropy - last_entropy
 
     def query_autonomy(self, ngram, z_score=True):
         """ Return the autonomy (normalized entropy variation) for the ngram.
@@ -257,7 +262,10 @@ class MemoryStorage(Storage):
             raise ValueError("Can't query the autonomy of the root node.")
         self._check_dirty()
         mean, stdev = self.normalization[len(ngram) - 1]
-        nev = self.query_ev(ngram) - mean
+        ev = self.query_ev(ngram)
+        if ev is None:
+            return -100. #FIXME
+        nev = ev - mean
         if z_score:
             nev /= stdev
         return nev
