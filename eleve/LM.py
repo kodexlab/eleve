@@ -64,7 +64,7 @@ class LanguageModel:
 
     def add_ngram(self, ngram):
         ngram = self.encode_ngram_with_boundaries(ngram)
-        for left in range(0, len(ngram)):
+        for left in range(0, len(ngram) - 1):
             right = min(left + self.nmax, len(ngram))
             self.DT.add(ngram[left:right+1])
         for right in range(1, len(ngram)):
