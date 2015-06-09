@@ -163,7 +163,7 @@ class MemoryStorage(Storage):
 
         def ve_for_depth(node, parent, depth):
             if depth == 0:
-                if node.entropy != 0 or parent.entropy != 0:
+                if node.entropy or parent.entropy:
                     yield (node.entropy or 0.) - parent.entropy
             else:
                 for child in node.childs.values():
