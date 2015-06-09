@@ -55,7 +55,7 @@ class MemoryNode(object):
 
     def __init__(self, count=0):
         self.count = count
-        self.entropy = 0
+        self.entropy = None
         self.childs = {}
 
     @property
@@ -163,7 +163,7 @@ class MemoryStorage(Storage):
 
         def ve_for_depth(node, parent, depth):
             if depth == 0:
-                if node.entropy or parent.entropy:
+                if node.entropy is not None and (node.entropy != 0 or parent.entropy != 0):
                     yield (node.entropy or 0.) - parent.entropy
             else:
                 for child in node.childs.values():
@@ -247,7 +247,9 @@ class MemoryStorage(Storage):
             last_node, node = self._lookup(ngram)
         except KeyError:
             return None
-        return (node.entropy or 0.) - last_node.entropy if last_node.entropy or node.entropy else None
+        if node.entropy is not None and (node.entropy != 0 or last_node.entropy != 0):
+            return (node.entropy or 0.) - last_node.entropy
+        return None
 
     def query_autonomy(self, ngram, z_score=True):
         """ Return the autonomy (normalized entropy variation) for the ngram.
