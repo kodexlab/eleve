@@ -7,6 +7,9 @@ from eleve.memory import MemoryStorage
 from eleve.neo4j import Neo4jStorage
 from eleve.merge import MergeStorage
 
+def float_equal(a, b):
+    return (a is None and b is None) or abs(a - b) < 1e-6
+
 def generate_random_ngrams():
     """ Generate list of random n-grams (of int)
     """
@@ -42,21 +45,21 @@ def compare_tries(ref_trie, test_trie):
         count_ref, entropy_ref = ref_trie.query_node(ngram)
         count_test, entropy_test = test_trie.query_node(ngram)
         assert count_ref == count_test
-        assert abs(entropy_ref - entropy_test) < 1e-6
+        assert float_equal(entropy_ref, entropy_test)
 
         ev_ref = ref_trie.query_ev(ngram)
         ev_test = test_trie.query_ev(ngram)
-        assert abs(ev_ref - ev_test) < 1e-6
+        assert float_equal(ev_ref, ev_test)
 
         if ngram:
             autonomy_ref = ref_trie.query_autonomy(ngram, z_score=False)
             autonomy_test = test_trie.query_autonomy(ngram, z_score=False)
-            assert abs(autonomy_ref - autonomy_test) < 1e-6
+            assert float_equal(autonomy_ref, autonomy_test)
 
             try:
                 autonomy_ref = ref_trie.query_autonomy(ngram, z_score=True)
                 autonomy_test = test_trie.query_autonomy(ngram, z_score=True)
-                assert abs(autonomy_ref - autonomy_test) < 1e-6
+                assert float_equal(autonomy_ref, autonomy_test)
             except ZeroDivisionError:
                 # in case the variance is null, because we are on the last level...
                 with pytest.raises(ZeroDivisionError):

@@ -148,11 +148,10 @@ class MemoryStorage(Storage):
         def update_entropy(node):
             counts = []
             for k, n in node.childs.items():
-                if k:
-                    counts.append(n.count)
+                if k is None:
+                    counts.extend(1 for _ in range(n.count))
                 else:
-                    for _ in range(n.count):
-                        counts.append(1)
+                    counts.append(n.count)
             node.entropy = entropy(counts)
 
             for child in node.childs.values():
@@ -164,7 +163,7 @@ class MemoryStorage(Storage):
         def ve_for_depth(node, parent, depth):
             if depth == 0:
                 if node.entropy is not None and (node.entropy != 0 or parent.entropy != 0):
-                    yield (node.entropy or 0.) - parent.entropy
+                    yield node.entropy - parent.entropy
             else:
                 for child in node.childs.values():
                     for i in ve_for_depth(child, node, depth - 1): yield i
@@ -229,7 +228,7 @@ class MemoryStorage(Storage):
         try:
             _, node = self._lookup(ngram)
         except KeyError:
-            return (0, 0.)
+            return (0, None)
         return (node.count, node.entropy)
     
     def query_postings(self, ngram):
@@ -243,12 +242,16 @@ class MemoryStorage(Storage):
         """ Return the entropy variation for the ngram.
         """
         self._check_dirty()
+
+        if not ngram:
+            return None
+
         try:
             last_node, node = self._lookup(ngram)
         except KeyError:
             return None
         if node.entropy is not None and (node.entropy != 0 or last_node.entropy != 0):
-            return (node.entropy or 0.) - last_node.entropy
+            return node.entropy - last_node.entropy
         return None
 
     def query_autonomy(self, ngram, z_score=True):
@@ -260,7 +263,7 @@ class MemoryStorage(Storage):
         mean, stdev = self.normalization[len(ngram) - 1]
         ev = self.query_ev(ngram)
         if ev is None:
-            return -100. #FIXME
+            return -100. # FIXME
         nev = ev - mean
         if z_score:
             nev /= stdev

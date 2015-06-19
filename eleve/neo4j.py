@@ -2,6 +2,8 @@ from __future__ import division
 import logging
 import random
 import warnings
+import sys
+import math
 
 from eleve.storage import Storage
 from eleve.memory import entropy
@@ -34,7 +36,6 @@ class Neo4jStorage(Storage):
         self.depth = depth
         self.graph = Graph()
         self.gid = str(gid if gid is not None else random.randint(0,1000000000))
-        self.normalization = [(0,0)] * self.depth
         self.load_root()
 
     def _path(self, ngram):
@@ -64,26 +65,49 @@ class Neo4jStorage(Storage):
         if not self.dirty:
             return
 
+        self.normalization = [(0,0,0)] * self.depth
+
         tx = self.graph.cypher.begin()
         set_count = 0
-        for s, in self.graph.cypher.stream("MATCH (:Root%s)-[:Child*0..]->(s) RETURN ID(s)" % self.gid):
-            e = entropy(j[0] for j in self.graph.cypher.stream("MATCH (s)-[:Child]->(c) WHERE ID(s) = {pid} RETURN c.count", {'pid': s}))
-            tx.append("MATCH (s) WHERE id(s) = {pid} SET s.entropy = {e}", {'pid': s, 'e': e})
+
+        def _rec(parent_entropy, node_id, level):
+            nonlocal set_count
+            counts = []
+            for path, count in self.graph.cypher.stream("MATCH (n)-[:Child]->(c) WHERE ID(n) = {pid} RETURN c.path, c.count", {'pid': node_id}):
+                if path.split('->')[-1] == 'None':
+                    counts.extend(1 for _ in range(count))
+                else:
+                    counts.append(count)
+            e = entropy(counts) if counts else -1 # -1 means that it's a leaf
+
+            tx.append("MATCH (n) WHERE ID(n) = {pid} SET n.entropy = {e}", {'pid': node_id, 'e': e})
             if set_count > 10000:
                 tx.process()
                 set_count = 0
             else:
                 set_count += 1
+
+            if not counts:
+                return
+
+            if parent_entropy is not None and (e != 0 or parent_entropy != 0):
+                # update the normalization factor
+                ve = e - parent_entropy
+                a, q, k = self.normalization[level]
+                k += 1
+                old_a = a
+                a += (ve - a) / k
+                q += (ve - old_a)*(ve - a)
+                self.normalization[level] = (a, q, k)
+
+            for s, in self.graph.cypher.stream("MATCH (n)-[:Child]->(c) WHERE ID(n) = {pid} RETURN ID(c)", {'pid': node_id}):
+                _rec(e, s, level + 1)
+
+        _rec(None, self.root, -1)
+
         tx.commit()
 
-        for i in range(self.depth):
-            if i == 0:
-                mean, stdev = self.graph.cypher.execute("MATCH (r:Root%s)-[:Child]->(s) RETURN avg(s.entropy - r.entropy), stdevp(s.entropy - r.entropy)" % self.gid)[0]
-            else:
-                q = 'MATCH (:Root%s)' % self.gid + '-[:Child]->()' * (i - 1) + '-[:Child]->(r)-[:Child]->(s)'
-                mean, stdev = self.graph.cypher.execute(q + " RETURN avg(s.entropy - r.entropy), stdevp(s.entropy - r.entropy)")[0]
-            assert mean is not None and stdev is not None
-            self.normalization[i] = (mean, stdev)
+        self.normalization = [(a, math.sqrt(q / (k or 1.))) for a, q, k in self.normalization]
 
         self.graph.cypher.run("MATCH (r:Root%s) SET r.dirty = FALSE" % self.gid)
         self.dirty = False
@@ -142,7 +166,7 @@ class Neo4jStorage(Storage):
         """
 
         warnings.warn("The performance of adding individual ngrams with Neo4j is horrible. You should use an intermediate storage that will do `merge`.")
-        
+
         ngram = list(map(str, ngram))
         fake_tree = [(ngram[:i], freq) for i in range(len(ngram) + 1)]
         self.merge(fake_tree)
@@ -161,7 +185,10 @@ class Neo4jStorage(Storage):
         else:
             r = self.graph.cypher.execute("MATCH (n:Root%s) RETURN n.count, n.entropy" % self.gid)
 
-        return r[0] if r else (0, 0.)
+        if r:
+            count, entropy = r[0]
+            return (count, entropy if entropy != -1 else None)
+        return (0, None)
 
     def query_postings(self, ngram):
         raise NotImplementedError()
@@ -181,25 +208,25 @@ class Neo4jStorage(Storage):
         self._check_dirty()
 
         if not ngram:
-            return 0.
+            return None
 
         if len(ngram) == 1:
-            r = self.graph.cypher.execute_one(
-                "MATCH (root:Root%s), (c:Node {path: {p}}) RETURN c.entropy - root.entropy" % self.gid,
+            r = self.graph.cypher.execute(
+                "MATCH (root:Root%s), (c:Node {path: {p}}) RETURN c.entropy, root.entropy" % self.gid,
                 {'p': self._path(ngram)}
             )
-            if r is None:
-                r = -self.query_node(None)[1]
-
         else:
-            r = self.graph.cypher.execute_one(
-                "MATCH (c:Node {path: {pc}}), (p: Node {path: {pp}}) RETURN c.entropy - p.entropy",
+            r = self.graph.cypher.execute(
+                "MATCH (c:Node {path: {pc}}), (p: Node {path: {pp}}) RETURN c.entropy, p.entropy",
                 {'pc': self._path(ngram), 'pp': self._path(ngram[:-1])}
             )
-            if r is None:
-               r = -self.query_node(ngram[:-1])[1]
 
-        return r
+        if r:
+            child, parent = r[0]
+            assert parent != -1
+            if child != -1 and (child != 0 or parent != 0):
+                return child - parent
+        return None
 
     def query_autonomy(self, ngram, z_score=True):
         """ Return the autonomy (normalized entropy variation) for the ngram.
@@ -208,7 +235,10 @@ class Neo4jStorage(Storage):
             raise ValueError("Can't query the autonomy of the root node.")
         self._check_dirty()
         mean, variance = self.normalization[len(ngram) - 1]
-        nev = self.query_ev(ngram) - mean
+        ev = self.query_ev(ngram)
+        if ev is None:
+            return -100. # FIXME
+        nev = ev - mean
         if z_score:
             nev /= variance
         return nev
