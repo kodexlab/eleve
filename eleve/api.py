@@ -26,7 +26,7 @@ class Eleve:
             self.fwd.add_ngram(token_list[i:i+self.order+1], docid, freq)
         token_list = token_list[::-1]
         for i in range(len(token_list) - 1):
-            self.bwd.add_ngram(token_list[i:i+self.order+1], docid, freq)
+            self.bwd.add_ngram(token_list[i:i+self.order+1], 1, freq)
 
     def segment(self, sentence): 
         if len(sentence) > 1000:
@@ -82,9 +82,7 @@ class Eleve:
                 (entropy_fwd + entropy_bwd) / 2)
 
     def query_postings(self, ngram):
-        a = collections.Counter(self.fwd.query_postings(ngram))
-        a.update(self.bwd.query_postings(ngram))
-        return a
+        return self.fwd.query_postings(ngram)
 
     def update_stats(self):
         self.fwd.update_stats()
