@@ -269,16 +269,6 @@ class MemoryStorage(Storage):
             nev /= stdev
         return nev
 
-    def extend_one(self, ngram, candidates=None):
-        try:
-            _, node = self._lookup(ngram)
-        except KeyError:
-            return []
-        c = []
-        for child in node.childs:
-            c.append((self.query_autonomy(ngram + [child]), ngram + [child]))
-        return sorted(c, reverse=True)[:candidates]
-
 if __name__ == '__main__':
     import doctest
     doctest.testmod()
