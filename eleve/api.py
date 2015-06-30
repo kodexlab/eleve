@@ -88,3 +88,17 @@ class Eleve:
         self.fwd.update_stats()
         self.bwd.update_stats()
 
+    def extend(self, ngram, candidates=None):
+        print('extend')
+        extensions_one = self.fwd.extend_one(ngram, candidates)
+        print('e %s' % extensions_one)
+        for k, v in self.bwd.extend_one(ngram[::-1], candidates):
+            extensions_one.append((k, v[::-1]))
+        print('e %s' % extensions_one)
+
+        extensions = extensions_one
+        for k, v in extensions_one:
+            extensions.extend(self.extend(v))
+
+        extensions.sort(reverse=True)
+        return extensions[:candidates]
