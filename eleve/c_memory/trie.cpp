@@ -58,7 +58,19 @@ class Trie
             return 0;
         }
         return b->count();
-    }
+    };
+
+    void update_stats()
+    {
+    };
+
+    float query_entropy(py::list ngram)
+    {
+        std::vector<ID> shingle{py::stl_input_iterator<ID>(ngram),
+                                py::stl_input_iterator<ID>()};
+        
+
+    };
 };
 
 BOOST_PYTHON_MODULE(eleve_trie)
@@ -67,5 +79,6 @@ BOOST_PYTHON_MODULE(eleve_trie)
     class_<Trie, boost::noncopyable>("Trie")
         .def("add_ngram", &Trie::add_ngram)
         .def("query_count", &Trie::query_count)
+        .def("query_entropy", &Trie::query_entropy)
     ;
 }
