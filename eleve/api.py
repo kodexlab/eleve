@@ -21,7 +21,7 @@ class Eleve:
         return self
 
     def add_sentence(self, sentence, docid, freq=1):
-        token_list = [None] + sentence + [None]
+        token_list = ['^'] + sentence + ['$']
         for i in range(len(token_list) - 1):
             self.fwd.add_ngram(token_list[i:i+self.order+1], docid, freq)
         token_list = token_list[::-1]
@@ -32,7 +32,7 @@ class Eleve:
         if len(sentence) > 1000:
             logger.warning("The sentence you want to segment is HUGE. This will take a lot of memory.")
 
-        sentence = [None] + sentence + [None]
+        sentence = ['^'] + sentence + ['$']
 
         # dynamic programming to segment the sentence
        
@@ -47,7 +47,10 @@ class Eleve:
             for j in range(1, self.order + 1):
                 if i - j < 0:
                     break
-                score = best_score[i-j] + self.query_autonomy(sentence[i-j:i]) * j
+                a = self.query_autonomy(sentence[i-j:i])
+                if a is None:
+                    a = -100.
+                score = best_score[i-j] + a * j
                 if score > best_score[i]:
                     best_score[i] = score
                     best_segmentation[i] = best_segmentation[i-j] + [sentence[i-j:i]]
@@ -67,6 +70,8 @@ class Eleve:
         assert 0 < len(ngram) <= self.order
         result_fwd = self.fwd.query_autonomy(ngram)
         result_bwd = self.bwd.query_autonomy(ngram[::-1])
+        if result_fwd is None or result_bwd is None:
+            return None
         return (result_fwd + result_bwd) / 2
      
     def query_ev(self, ngram):

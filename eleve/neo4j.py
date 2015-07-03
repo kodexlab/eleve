@@ -6,7 +6,7 @@ import sys
 import math
 
 from eleve.storage import Storage
-from eleve.memory import entropy
+from eleve.memory import entropy, is_terminal
 
 from py2neo import Graph
 from py2neo.packages.httpstream import http
@@ -74,7 +74,7 @@ class Neo4jStorage(Storage):
             nonlocal set_count
             counts = []
             for path, count in self.graph.cypher.stream("MATCH (n)-[:Child]->(c) WHERE ID(n) = {pid} RETURN c.path, c.count", {'pid': node_id}):
-                if path.split('->')[-1] == 'None':
+                if is_terminal(path.split('->')[-1]):
                     counts.extend(1 for _ in range(count))
                 else:
                     counts.append(count)
@@ -237,7 +237,7 @@ class Neo4jStorage(Storage):
         mean, variance = self.normalization[len(ngram) - 1]
         ev = self.query_ev(ngram)
         if ev is None:
-            return -100. # FIXME
+            return None
         nev = ev - mean
         if z_score:
             nev /= variance

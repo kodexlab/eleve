@@ -8,6 +8,9 @@ import collections
 
 from eleve.storage import Storage
 
+def is_terminal(token):
+    return token in ('^', '$')
+
 def entropy(counts):
     """ Calculate entropy from an iterator containing
     count of occurence for each value.
@@ -148,7 +151,7 @@ class MemoryStorage(Storage):
         def update_entropy(node):
             counts = []
             for k, n in node.childs.items():
-                if k is None:
+                if is_terminal(k):
                     counts.extend(1 for _ in range(n.count))
                 else:
                     counts.append(n.count)
@@ -263,7 +266,7 @@ class MemoryStorage(Storage):
         mean, stdev = self.normalization[len(ngram) - 1]
         ev = self.query_ev(ngram)
         if ev is None:
-            return -100. # FIXME
+            return None
         nev = ev - mean
         if z_score:
             nev /= stdev
