@@ -1,15 +1,15 @@
 from __future__ import division
 import math
-import operator
 import logging
 import pickle
 import gzip
-import collections
 
 from eleve.storage import Storage
 
+from nltk.corpus import stopwords
+TERMINAL = set(stopwords.words('english') + ['^', '$'])
 def is_terminal(token):
-    return token in ('^', '$')
+    return token in TERMINAL
 
 def entropy(counts):
     """ Calculate entropy from an iterator containing
@@ -49,6 +49,22 @@ def mean_stdev(values):
         q += (v - old_a)*(v - a)
     return (a, math.sqrt(q / k))
 
+class Postings:
+    def __init__(self, memory_node):
+        self.node = memory_node
+
+    def items(self):
+        """ Iterator to all the postings of the leafs """
+        for i in self.node.childs.values():
+            yield from i.postings.items()
+
+    def __len__(self):
+        # in case we have a looot of documents (more that 10 000), we could use a hyperloglog algorithm
+        s = set()
+        for docid, _ in self.items():
+            s.add(docid)
+        return len(s)
+    
 class MemoryNode(object):
     """ Node used by :class:`MemoryStorage`
     """
@@ -63,10 +79,7 @@ class MemoryNode(object):
 
     @property
     def postings(self):
-        d = collections.Counter()
-        for v in self.childs.values():
-            d.update(v.postings)
-        return d
+        return Postings(self)
 
 class MemoryLeaf(object):
     __slots__ = ['count', 'postings']
