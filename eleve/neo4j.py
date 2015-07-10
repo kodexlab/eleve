@@ -6,7 +6,7 @@ import sys
 import math
 
 from eleve.storage import Storage
-from eleve.memory import entropy, is_terminal
+from eleve.memory import entropy
 
 from py2neo import Graph
 from py2neo.packages.httpstream import http
@@ -28,7 +28,7 @@ class Neo4jStorage(Storage):
 
     """
 
-    def __init__(self, depth, gid=None):
+    def __init__(self, depth, gid=None, terminals=['^', '$']):
         """
         :param depth: Maximum length of stored ngrams
         :param gid: The ID of the root node in the neo4j database (to load existing trees, and have multiple ones in the database)
@@ -37,6 +37,7 @@ class Neo4jStorage(Storage):
         self.graph = Graph()
         self.gid = str(gid if gid is not None else random.randint(0,1000000000))
         self.load_root()
+        self.terminals = set(terminals)
 
     def _path(self, ngram):
         return self.gid + ''.join('->%s' % token for token in ngram)
@@ -74,7 +75,7 @@ class Neo4jStorage(Storage):
             nonlocal set_count
             counts = []
             for path, count in self.graph.cypher.stream("MATCH (n)-[:Child]->(c) WHERE ID(n) = {pid} RETURN c.path, c.count", {'pid': node_id}):
-                if is_terminal(path.split('->')[-1]):
+                if path.split('->')[-1] in self.terminals:
                     counts.extend(1 for _ in range(count))
                 else:
                     counts.append(count)
