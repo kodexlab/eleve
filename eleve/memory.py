@@ -6,11 +6,6 @@ import gzip
 
 from eleve.storage import Storage
 
-from nltk.corpus import stopwords
-TERMINAL = set(stopwords.words('english') + ['^', '$'])
-def is_terminal(token):
-    return token in TERMINAL
-
 def entropy(counts):
     """ Calculate entropy from an iterator containing
     count of occurence for each value.
@@ -100,7 +95,7 @@ class MemoryStorage(Storage):
     """ In-memory tree (made to be simple, no specific optimizations)
     """
 
-    def __init__(self, depth, path=None):
+    def __init__(self, depth, path=None, terminals=['^', '$']):
         """
         :param depth: Maximum length of stored ngrams
         :param path: Path to the database (not used)
@@ -112,6 +107,8 @@ class MemoryStorage(Storage):
         # one for each level
         # on each level : mean, stdev
         self.normalization = [(0,0)] * depth
+
+        self.terminals = set(terminals)
 
         self.dirty = False
 
@@ -164,7 +161,7 @@ class MemoryStorage(Storage):
         def update_entropy(node):
             counts = []
             for k, n in node.childs.items():
-                if is_terminal(k):
+                if k in self.terminals:
                     counts.extend(1 for _ in range(n.count))
                 else:
                     counts.append(n.count)

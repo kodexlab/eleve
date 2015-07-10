@@ -1,17 +1,16 @@
 import logging
 from eleve.merge import MemoryStorage, MergeStorage
-import collections
 
 logger = logging.getLogger(__name__)
 
 class Eleve:
-    def __init__(self, order, path, storage_class=MemoryStorage):
+    def __init__(self, order, path, storage_class=MemoryStorage, *args, **kwargs):
         assert order > 1
         assert isinstance(path, str)
         self.order = order
 
-        self.bwd = storage_class(order + 1, path + '_bwd')
-        self.fwd = storage_class(order + 1, path + '_fwd')
+        self.bwd = storage_class(order + 1, path + '_bwd', *args, **kwargs)
+        self.fwd = storage_class(order + 1, path + '_fwd', *args, **kwargs)
 
     # SENTENCE LEVEL
 
