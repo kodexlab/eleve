@@ -74,8 +74,11 @@ class Eleve:
         return (result_fwd + result_bwd) / 2
      
     def query_ev(self, ngram):
+        assert 0 < len(ngram) <= self.order
         result_fwd = self.fwd.query_ev(ngram)
         result_bwd = self.bwd.query_ev(ngram[::-1])
+        if result_fwd is None or result_bwd is None:
+            return None
         return (result_fwd + result_bwd) / 2
 
     def query_node(self, ngram):
@@ -83,7 +86,7 @@ class Eleve:
         count_bwd, entropy_bwd = self.bwd.query_node(ngram[::-1])
 
         return ((count_fwd + count_bwd) / 2,
-                (entropy_fwd + entropy_bwd) / 2)
+                (entropy_fwd + entropy_bwd) / 2 if entropy_fwd is not None and entropy_bwd is not None else None)
 
     def query_postings(self, ngram):
         return self.fwd.query_postings(ngram)
