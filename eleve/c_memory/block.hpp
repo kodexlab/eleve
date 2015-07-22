@@ -9,22 +9,13 @@
 #include <algorithm>
 
 struct Block;
-struct TokenBlock;
+struct TokenBlockPair;
 
 const size_t BLOCK_MAX_SIZE = 128;
 
 typedef uint32_t ID;
 typedef uint32_t COUNT;
 typedef std::vector<ID>::const_iterator shingle_const_iterator;
-
-struct ShingleInfo
-{
-    ID docid;
-    COUNT count;
-
-    ShingleInfo(ID d, COUNT c): docid(d), count(c) {};
-    ShingleInfo(const ShingleInfo& other): docid(other.docid), count(other.count) {};
-};
 
 class BlockIterator
 {
@@ -42,23 +33,30 @@ class EmptyBlockIterator : public BlockIterator
 
 struct Block
 {
-    virtual std::unique_ptr<Block> add_shingle(shingle_const_iterator shingle_it, shingle_const_iterator shingle_end, ShingleInfo& info) = 0;
-    virtual TokenBlock split() = 0;
-    virtual size_t size() = 0;
+    // Recursive function used to add the occurence of a shingle
+    virtual std::unique_ptr<Block> add_shingle(shingle_const_iterator shingle_it, shingle_const_iterator shingle_end, COUNT count=1) = 0;
 
+    // To split the block in two, modifying it and returning a new one
+    virtual TokenBlockPair split() = 0;
+    // Get the size of the internal list, for calling split() if its too big
+    virtual size_t size() const = 0;
+
+    // Get the number of childs
+    virtual COUNT count() const = 0;
+
+    // Search for a sub-block
     virtual Block* block_for(shingle_const_iterator shingle_it, shingle_const_iterator shingle_end) = 0;
-    virtual std::unique_ptr<BlockIterator> begin_childs() = 0;
 
-    virtual COUNT count() = 0;
-    //virtual std::map<ID, COUNT> postings();
+    // Iterator to the childs
+    virtual std::unique_ptr<BlockIterator> begin_childs() = 0;
 };
 
-struct __attribute__((packed)) TokenBlock
+struct __attribute__((packed)) TokenBlockPair
 {
     std::unique_ptr<Block> block;
     ID token;
 
-    TokenBlock(ID t, std::unique_ptr<Block> b): block(std::move(b)), token(t) {};
+    TokenBlockPair(ID t, std::unique_ptr<Block> b): block(std::move(b)), token(t) {};
 };
 
 #endif

@@ -10,16 +10,13 @@ class LeafBlock: public Block
     */
 
     private:
-    std::vector<ShingleInfo> data;
+    COUNT m_count;
 
     LeafBlock() {};
 
     public:
 
-    LeafBlock(ShingleInfo& info)
-    {
-        data.push_back(info);
-    }
+    LeafBlock(COUNT count): m_count(count) {}
 
     Block* block_for(shingle_const_iterator shingle_it, shingle_const_iterator shingle_end)
     {
@@ -27,13 +24,13 @@ class LeafBlock: public Block
         return this;
     };
 
-    std::unique_ptr<Block> add_shingle(shingle_const_iterator shingle_it, shingle_const_iterator shingle_end, ShingleInfo& info);
+    std::unique_ptr<Block> add_shingle(shingle_const_iterator shingle_it, shingle_const_iterator shingle_end, COUNT count);
 
-    TokenBlock split();
+    TokenBlockPair split();
 
-    size_t size()
+    size_t size() const
     {
-        return data.size();
+        return 1;
     };
 
     std::unique_ptr<BlockIterator> begin_childs()
@@ -41,7 +38,10 @@ class LeafBlock: public Block
         return std::unique_ptr<EmptyBlockIterator>(new EmptyBlockIterator());
     };
 
-    COUNT count();
+    COUNT count() const
+    {
+        return m_count;
+    }
 };
 
 #endif

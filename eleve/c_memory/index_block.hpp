@@ -12,7 +12,7 @@ class IndexBlock: public Block
 
     private:
     std::unique_ptr<Block> last;
-    std::vector<TokenBlock> data;
+    std::vector<TokenBlockPair> data;
 
     IndexBlock() {};
 
@@ -20,8 +20,8 @@ class IndexBlock: public Block
     {
         private:
         std::unique_ptr<BlockIterator> current_child_iterator;
-        std::vector<TokenBlock>::iterator current_child;
-        std::vector<TokenBlock>::iterator childs_end;
+        std::vector<TokenBlockPair>::iterator current_child;
+        std::vector<TokenBlockPair>::iterator childs_end;
 
         public:
 
@@ -55,7 +55,7 @@ class IndexBlock: public Block
 
     public:
 
-    IndexBlock(TokenBlock& b1, std::unique_ptr<Block>& b2)
+    IndexBlock(TokenBlockPair& b1, std::unique_ptr<Block>& b2)
     {
         last = std::move(b2);
         data.push_back(std::move(b1));
@@ -66,7 +66,7 @@ class IndexBlock: public Block
         return std::unique_ptr<IndexBlockIterator>(new IndexBlockIterator(this));
     };
 
-    TokenBlock split()
+    TokenBlockPair split()
     {
         // (Block* | ID) | Block*
         size_t new_size = data.size() / 2;
@@ -79,26 +79,26 @@ class IndexBlock: public Block
             other->data.push_back(std::move(*it));
         }
         data.erase(data.begin() + new_size, data.end());
-        return TokenBlock(token, std::move(other));
+        return TokenBlockPair(token, std::move(other));
     }
 
-    std::unique_ptr<Block> add_shingle(shingle_const_iterator shingle_it, shingle_const_iterator shingle_end, ShingleInfo& info)
+    std::unique_ptr<Block> add_shingle(shingle_const_iterator shingle_it, shingle_const_iterator shingle_end, COUNT count)
     {
         assert(shingle_it != shingle_end);
 
-        auto it = std::lower_bound(data.begin(), data.end(), *shingle_it, [](TokenBlock& a, ID t) {return a.token < t;});
+        auto it = std::lower_bound(data.begin(), data.end(), *shingle_it, [](TokenBlockPair& a, ID t) {return a.token < t;});
         // it->token >= token
 
         std::unique_ptr<Block> b;
         if(it == data.end())
         {
-            b = last->add_shingle(shingle_it, shingle_end, info);
+            b = last->add_shingle(shingle_it, shingle_end, count);
             if(b)
                 last = std::move(b);
         }
         else
         {
-            b = it->block->add_shingle(shingle_it, shingle_end, info);
+            b = it->block->add_shingle(shingle_it, shingle_end, count);
             if(b)
                 it->block = std::move(b);
         }
@@ -108,7 +108,7 @@ class IndexBlock: public Block
             if(it == data.end())
             {
                 auto tb = last->split();
-                auto tb2 = TokenBlock(tb.token, std::move(last));
+                auto tb2 = TokenBlockPair(tb.token, std::move(last));
                 data.push_back(std::move(tb2));
                 last = std::move(tb.block);
             }
@@ -118,7 +118,7 @@ class IndexBlock: public Block
                 auto left_token = it->token;
                 it->token = tb.token;
                 ++it;
-                auto tb2 = TokenBlock(left_token, std::move(tb.block));
+                auto tb2 = TokenBlockPair(left_token, std::move(tb.block));
                 data.insert(it, std::move(tb2));
             }
         }
@@ -140,12 +140,12 @@ class IndexBlock: public Block
         return it->block->block_for(shingle_it, shingle_end);
     }
 
-    size_t size()
+    size_t size() const
     {
         return data.size() + 1;
     };
 
-    COUNT count()
+    COUNT count() const
     {
         COUNT c = 0;
         for(auto it = data.begin(); it != data.end(); ++it)

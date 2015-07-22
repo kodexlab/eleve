@@ -13,9 +13,9 @@ class Trie
 
     std::unique_ptr<Block> root;
 
-    void add_shingle(shingle_const_iterator shingle_it, shingle_const_iterator shingle_end, ShingleInfo& info)
+    void add_shingle(shingle_const_iterator shingle_it, shingle_const_iterator shingle_end, COUNT count)
     {
-        auto b = root->add_shingle(shingle_it, shingle_end, info);
+        auto b = root->add_shingle(shingle_it, shingle_end, count);
         if(b)
             root = std::move(b);
 
@@ -24,7 +24,7 @@ class Trie
             // tb is the right part of the splitted block + the token in the middle
             // tb2 is the token in the middle + the left part.
             auto tb = root->split();
-            auto tb2 = TokenBlock(tb.token, std::move(root));
+            auto tb2 = TokenBlockPair(tb.token, std::move(root));
             auto last = std::move(tb.block);
             root = std::unique_ptr<Block>(new IndexBlock(tb2, last));
         }
@@ -37,14 +37,12 @@ class Trie
         root = std::unique_ptr<Block>(new ListBlock());
     };
 
-    void add_ngram(py::list ngram, ID docid, COUNT freq)
+    void add_ngram(py::list ngram, COUNT freq)
     {
         std::vector<ID> shingle{py::stl_input_iterator<ID>(ngram),
                                 py::stl_input_iterator<ID>()};
 
-        ShingleInfo info(docid, freq);
-
-        add_shingle(shingle.begin(), shingle.end(), info);
+        add_shingle(shingle.begin(), shingle.end(), freq);
     };
 
     COUNT query_count(py::list ngram)
@@ -68,8 +66,6 @@ class Trie
     {
         std::vector<ID> shingle{py::stl_input_iterator<ID>(ngram),
                                 py::stl_input_iterator<ID>()};
-        
-
     };
 };
 

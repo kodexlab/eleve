@@ -3,6 +3,7 @@
 
 #include "block.hpp"
 #include "list_block.hpp"
+#include "leaf_block.hpp"
 
 class UniqueListBlock: public Block
 { 
@@ -12,12 +13,12 @@ class UniqueListBlock: public Block
     */
 
     private:
-    TokenBlock data;
+    TokenBlockPair data;
 
     class UniqueListBlockIterator: public BlockIterator
     {
         private:
-        TokenBlock& data;
+        TokenBlockPair& data;
         bool ended;
 
         public:
@@ -42,18 +43,18 @@ class UniqueListBlock: public Block
 
     public:
 
-    UniqueListBlock(shingle_const_iterator shingle_it, shingle_const_iterator shingle_end, ShingleInfo& info);
+    UniqueListBlock(shingle_const_iterator shingle_it, shingle_const_iterator shingle_end, COUNT count);
 
     Block* block_for(shingle_const_iterator shingle_it, shingle_const_iterator shingle_end);
 
-    std::unique_ptr<Block> add_shingle(shingle_const_iterator shingle_it, shingle_const_iterator shingle_end, ShingleInfo& info);
+    std::unique_ptr<Block> add_shingle(shingle_const_iterator shingle_it, shingle_const_iterator shingle_end, COUNT count);
 
-    size_t size()
+    size_t size() const
     {
         return 1;
     };
 
-    TokenBlock split()
+    TokenBlockPair split()
     {
         assert(false);
     };
@@ -63,7 +64,7 @@ class UniqueListBlock: public Block
         return std::unique_ptr<UniqueListBlockIterator>(new UniqueListBlockIterator(this));
     };
 
-    COUNT count()
+    COUNT count() const
     {
         return data.block->count();
     };

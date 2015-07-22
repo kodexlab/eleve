@@ -1,6 +1,6 @@
 #include "list_block.hpp"
 
-ListBlock::ListBlock(shingle_const_iterator shingle_it, shingle_const_iterator shingle_end, ShingleInfo& info)
+ListBlock::ListBlock(shingle_const_iterator shingle_it, shingle_const_iterator shingle_end, COUNT count)
 {
     auto token = *shingle_it;
     ++shingle_it;
@@ -8,14 +8,14 @@ ListBlock::ListBlock(shingle_const_iterator shingle_it, shingle_const_iterator s
     std::unique_ptr<Block> block;
     if(shingle_end == shingle_it)
     {
-        block = std::unique_ptr<Block>(new UniqueLeafBlock(info));
+        block = std::unique_ptr<Block>(new LeafBlock(count));
     }
     else
     {
-        block = std::unique_ptr<Block>(new UniqueListBlock(shingle_it, shingle_end, info));
+        block = std::unique_ptr<Block>(new UniqueListBlock(shingle_it, shingle_end, count));
     }
 
-    data.push_back(TokenBlock(token, std::move(block)));
+    data.push_back(TokenBlockPair(token, std::move(block)));
 };
 
 Block* ListBlock::block_for(shingle_const_iterator shingle_it, shingle_const_iterator shingle_end)
@@ -34,19 +34,19 @@ Block* ListBlock::block_for(shingle_const_iterator shingle_it, shingle_const_ite
     return (it->block)->block_for(++shingle_it, shingle_end);
 };
 
-std::unique_ptr<Block> ListBlock::add_shingle(shingle_const_iterator shingle_it, shingle_const_iterator shingle_end, ShingleInfo& info)
+std::unique_ptr<Block> ListBlock::add_shingle(shingle_const_iterator shingle_it, shingle_const_iterator shingle_end, COUNT count)
 {
     assert(shingle_it != shingle_end);
 
     auto token = *shingle_it;
 
-    auto it = std::lower_bound(data.begin(), data.end(), token, [](TokenBlock& a, ID t) {return a.token < t;});
+    auto it = std::lower_bound(data.begin(), data.end(), token, [](TokenBlockPair& a, ID t) {return a.token < t;});
     // it->token >= token
 
     if(it != data.end() && it->token == token)
     {
         // the token exists, add it recursively
-        auto b = it->block->add_shingle(++shingle_it, shingle_end, info);
+        auto b = it->block->add_shingle(++shingle_it, shingle_end, count);
         if(b)
             it->block = std::move(b);
     }
@@ -57,13 +57,13 @@ std::unique_ptr<Block> ListBlock::add_shingle(shingle_const_iterator shingle_it,
         std::unique_ptr<Block> new_block;
         if(shingle_it == shingle_end)
         {
-            new_block = std::unique_ptr<Block>(new UniqueLeafBlock(info));
+            new_block = std::unique_ptr<Block>(new LeafBlock(count));
         }
         else
         {
-            new_block = std::unique_ptr<Block>(new UniqueListBlock(shingle_it, shingle_end, info));
+            new_block = std::unique_ptr<Block>(new UniqueListBlock(shingle_it, shingle_end, count));
         }
-        it = data.insert(it, TokenBlock(token, std::move(new_block)));
+        it = data.insert(it, TokenBlockPair(token, std::move(new_block)));
     }
 
     if(it->block->size() > BLOCK_MAX_SIZE)
@@ -71,7 +71,7 @@ std::unique_ptr<Block> ListBlock::add_shingle(shingle_const_iterator shingle_it,
         // tb is the right part of the splitted block + the token in the middle
         // tb2 is the token in the middle + the left part.
         auto tb = it->block->split();
-        auto tb2 = TokenBlock(tb.token, std::move(it->block));
+        auto tb2 = TokenBlockPair(tb.token, std::move(it->block));
         auto last = std::move(tb.block);
         it->block = std::unique_ptr<Block>(new IndexBlock(tb2, last));
     }
@@ -79,7 +79,7 @@ std::unique_ptr<Block> ListBlock::add_shingle(shingle_const_iterator shingle_it,
     return nullptr;
 };
 
-TokenBlock ListBlock::split()
+TokenBlockPair ListBlock::split()
 {
     size_t new_size = data.size() / 2;
     auto token = data[new_size].token;
@@ -89,10 +89,10 @@ TokenBlock ListBlock::split()
         other->data.push_back(std::move(*it));
     }
     data.erase(data.begin() + new_size, data.end());
-    return TokenBlock(token, std::move(other));
+    return TokenBlockPair(token, std::move(other));
 };
 
-COUNT ListBlock::count()
+COUNT ListBlock::count() const
 {
     COUNT c = 0;
     for(auto it = data.begin(); it != data.end(); ++it)

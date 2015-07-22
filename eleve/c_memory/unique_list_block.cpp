@@ -1,6 +1,6 @@
 #include "unique_list_block.hpp"
 
-UniqueListBlock::UniqueListBlock(shingle_const_iterator shingle_it, shingle_const_iterator shingle_end, ShingleInfo& info): data(TokenBlock(0, nullptr))
+UniqueListBlock::UniqueListBlock(shingle_const_iterator shingle_it, shingle_const_iterator shingle_end, COUNT count): data(TokenBlockPair(0, nullptr))
 {
     auto token = *shingle_it;
     ++shingle_it;
@@ -8,14 +8,14 @@ UniqueListBlock::UniqueListBlock(shingle_const_iterator shingle_it, shingle_cons
     std::unique_ptr<Block> block;
     if(shingle_end == shingle_it)
     {
-        block = std::unique_ptr<Block>(new UniqueLeafBlock(info));
+        block = std::unique_ptr<Block>(new LeafBlock(count));
     }
     else
     {
-        block = std::unique_ptr<Block>(new UniqueListBlock(shingle_it, shingle_end, info));
+        block = std::unique_ptr<Block>(new UniqueListBlock(shingle_it, shingle_end, count));
     }
 
-    data = TokenBlock(token, std::move(block));
+    data = TokenBlockPair(token, std::move(block));
 };
 
 Block* UniqueListBlock::block_for(shingle_const_iterator shingle_it, shingle_const_iterator shingle_end)
@@ -34,7 +34,7 @@ Block* UniqueListBlock::block_for(shingle_const_iterator shingle_it, shingle_con
     }
 };
 
-std::unique_ptr<Block> UniqueListBlock::add_shingle(shingle_const_iterator shingle_it, shingle_const_iterator shingle_end, ShingleInfo& info)
+std::unique_ptr<Block> UniqueListBlock::add_shingle(shingle_const_iterator shingle_it, shingle_const_iterator shingle_end, COUNT count)
 {
     assert(shingle_it != shingle_end);
 
@@ -43,7 +43,7 @@ std::unique_ptr<Block> UniqueListBlock::add_shingle(shingle_const_iterator shing
     if(data.token == token)
     {
         // the token exists, add it recursively
-        auto b = data.block->add_shingle(++shingle_it, shingle_end, info);
+        auto b = data.block->add_shingle(++shingle_it, shingle_end, count);
         if(b)
         {
             data.block = std::move(b);
@@ -54,7 +54,7 @@ std::unique_ptr<Block> UniqueListBlock::add_shingle(shingle_const_iterator shing
             // tb is the right part of the splitted block + the token in the middle
             // tb2 is the token in the middle + the left part.
             auto tb = data.block->split();
-            auto tb2 = TokenBlock(tb.token, std::move(data.block));
+            auto tb2 = TokenBlockPair(tb.token, std::move(data.block));
             auto last = std::move(tb.block);
             data.block = std::unique_ptr<Block>(new IndexBlock(tb2, last));
         }
@@ -63,7 +63,7 @@ std::unique_ptr<Block> UniqueListBlock::add_shingle(shingle_const_iterator shing
     }
 
     std::unique_ptr<Block> b = std::unique_ptr<Block>(new ListBlock(data));
-    b->add_shingle(shingle_it, shingle_end, info);
+    b->add_shingle(shingle_it, shingle_end, count);
 
     return std::move(b);
 };
