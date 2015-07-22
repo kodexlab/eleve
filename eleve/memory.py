@@ -4,8 +4,6 @@ import logging
 import pickle
 import gzip
 
-from eleve.storage import Storage
-
 def entropy(counts):
     """ Calculate entropy from an iterator containing
     count of occurence for each value.
@@ -44,24 +42,8 @@ def mean_stdev(values):
         q += (v - old_a)*(v - a)
     return (a, math.sqrt(q / k))
 
-class Postings:
-    def __init__(self, memory_node):
-        self.node = memory_node
-
-    def items(self):
-        """ Iterator to all the postings of the leafs """
-        for i in self.node.childs.values():
-            yield from i.postings.items()
-
-    def __len__(self):
-        # in case we have a looot of documents (more that 10 000), we could use a hyperloglog algorithm
-        s = set()
-        for docid, _ in self.items():
-            s.add(docid)
-        return len(s)
-    
 class MemoryNode(object):
-    """ Node used by :class:`MemoryStorage`
+    """ Node used by :class:`MemoryTrie`
     """
     
     # to take a little less memory
@@ -72,26 +54,17 @@ class MemoryNode(object):
         self.entropy = None
         self.childs = {}
 
-    @property
-    def postings(self):
-        return Postings(self)
-
 class MemoryLeaf(object):
-    __slots__ = ['count', 'postings']
+    __slots__ = ['count']
 
     def __init__(self, count=0):
         self.count = count
-        self.postings = {}
 
     @property
     def entropy(self):
         return None
 
-    @property
-    def childs(self):
-        return {}
-
-class MemoryStorage(Storage):
+class MemoryTrie:
     """ In-memory tree (made to be simple, no specific optimizations)
     """
 
@@ -147,8 +120,9 @@ class MemoryStorage(Storage):
         """
         def _rec(ngram, node):
             yield (ngram, node.count)
-            for k, c in node.childs.items():
-                for i in _rec(ngram + [k], c): yield i
+            if isinstance(node, MemoryNode):
+                for k, c in node.childs.items():
+                    for i in _rec(ngram + [k], c): yield i
 
         for i in _rec([], self.root): yield i
 
@@ -177,7 +151,7 @@ class MemoryStorage(Storage):
             if depth == 0:
                 if node.entropy is not None and (node.entropy != 0 or parent.entropy != 0):
                     yield node.entropy - parent.entropy
-            else:
+            elif isinstance(node, MemoryNode):
                 for child in node.childs.values():
                     for i in ve_for_depth(child, node, depth - 1): yield i
 
@@ -194,7 +168,7 @@ class MemoryStorage(Storage):
             logging.warning("Updating the tree statistics (update_stats method), as we query it while dirty. This is a slow operation.")
             self.update_stats()
 
-    def add_ngram(self, ngram, docid, freq=1):
+    def add_ngram(self, ngram, freq=1):
         """ Add a ngram to the tree.
         You can specify the number of times you add (or substract) that ngram by using the `freq` argument.
         """
@@ -217,11 +191,7 @@ class MemoryStorage(Storage):
                 node.childs[token] = child
                 node = child
 
-        assert isinstance(node, MemoryLeaf)
-        try:
-            node.postings[docid] += freq
-        except KeyError:
-            node.postings[docid] = freq
+        assert isinstance(node, MemoryLeaf), str(ngram)
 
     def _lookup(self, ngram):
         """ Search for a node and raises KeyError if the node doesn't exists """
@@ -233,24 +203,21 @@ class MemoryStorage(Storage):
             ngram = ngram[1:]
         return (last_node, node)
 
-    def query_node(self, ngram):
-        """ Return a tuple with the main node data : (count, entropy).
-        Count is the number of ngrams starting with the ``ngram`` parameter, entropy the entropy after the ngram.
-        """
+    def query_count(self, ngram):
+        try:
+            _, node = self._lookup(ngram)
+        except KeyError:
+            return 0
+        return node.count
+
+    def query_entropy(self, ngram):
         self._check_dirty()
         try:
             _, node = self._lookup(ngram)
         except KeyError:
-            return (0, None)
-        return (node.count, node.entropy)
+            return None
+        return node.entropy
     
-    def query_postings(self, ngram):
-        try:
-            _, node = self._lookup(ngram)
-        except KeyError:
-            return {}
-        return node.postings
-
     def query_ev(self, ngram):
         """ Return the entropy variation for the ngram.
         """

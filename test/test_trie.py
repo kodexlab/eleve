@@ -3,9 +3,7 @@ import random
 import tempfile
 import os
 
-from eleve.memory import MemoryStorage
-from eleve.neo4j import Neo4jStorage
-from eleve.merge import MergeStorage
+from eleve.memory import MemoryTrie
 
 def float_equal(a, b):
     return (a is None and b is None) or abs(a - b) < 1e-6
@@ -42,8 +40,8 @@ def compare_tries(ref_trie, test_trie):
     ngrams.add(None)
 
     for ngram in ngrams:
-        count_ref, entropy_ref = ref_trie.query_node(ngram)
-        count_test, entropy_test = test_trie.query_node(ngram)
+        count_ref, entropy_ref = ref_trie.query_count(ngram), ref_trie.query_entropy(ngram)
+        count_test, entropy_test = test_trie.query_count(ngram), test_trie.query_entropy(ngram)
         assert count_ref == count_test
         assert float_equal(entropy_ref, entropy_test)
 
@@ -72,47 +70,47 @@ def compare_tries(ref_trie, test_trie):
             with pytest.raises(ValueError):
                 test_trie.query_autonomy(ngram)
 
-@pytest.mark.parametrize("storage_class", [Neo4jStorage, MergeStorage])
-def test_storage_class(storage_class, reference_class=MemoryStorage):
+@pytest.mark.parametrize("trie_class", [])
+def test_trie_class(trie_class, reference_class=MemoryTrie):
     """ Compare implementation against reference class (on random ngrams lists)
     """
     depth, ngrams = generate_random_ngrams()
-    test_trie = storage_class(depth, 'test').clear()
+    test_trie = trie_class(depth, 'test').clear()
     ref_trie = reference_class(depth, 'test').clear()
     for n in ngrams:
-        test_trie.add_ngram(n, 1)
-        ref_trie.add_ngram(n, 1)
+        test_trie.add_ngram(n)
+        ref_trie.add_ngram(n)
     compare_tries(ref_trie, test_trie)
 
-@pytest.mark.parametrize("storage_class", [MemoryStorage])
-def test_save_load_trie(storage_class):
+@pytest.mark.parametrize("trie_class", [MemoryTrie])
+def test_save_load_trie(trie_class):
     """ Test save/load methods (on random ngrams lists)
     """
     depth, ngrams = generate_random_ngrams()
-    test_trie = storage_class(depth)
+    test_trie = trie_class(depth)
     for n in ngrams:
-        test_trie.add_ngram(n, 1)
+        test_trie.add_ngram(n)
     # test load/save
     with tempfile.TemporaryDirectory(prefix='eleve_') as t:
-        fn = os.path.join(t, 'test_storage')
+        fn = os.path.join(t, 'test_trie')
         test_trie.save(fn)
-        reloaded_trie = storage_class.load(fn)
+        reloaded_trie = trie_class.load(fn)
     compare_tries(test_trie, reloaded_trie)
 
-@pytest.mark.parametrize("storage_class", [MemoryStorage, Neo4jStorage, MergeStorage])
-def test_basic_storage(storage_class):
+@pytest.mark.parametrize("trie_class", [MemoryTrie])
+def test_basic_trie(trie_class):
     """ Minimal test on simple example
     """
-    m = storage_class(3, 'test').clear()
-    m.add_ngram(('le','petit','chat'), 1)
-    m.add_ngram(('le','petit','chien'), 1)
-    m.add_ngram(('le','gros','chien'), 1)
-    assert m.query_node(('le', 'petit')) == (2, 1.0)
-    assert m.query_node(None)[0] == 3
-    assert m.query_node(('le', 'petit'))[0] != m.query_node(('le', 'gros'))[0]
-    m.add_ngram(('le','petit','chat'), 1 ,-1)
-    assert m.query_node(('le', 'petit')) == m.query_node(('le', 'gros'))
-
+    m = trie_class(3, 'test').clear()
+    m.add_ngram(('le','petit','chat'))
+    m.add_ngram(('le','petit','chien'))
+    m.add_ngram(('le','gros','chien'))
+    assert m.query_count(('le', 'petit')) == 2
+    assert m.query_entropy(('le', 'petit')) == 1.0
+    assert m.query_count(None) == 3
+    assert m.query_count(('le', 'petit')) != m.query_count(('le', 'gros'))
+    m.add_ngram(('le','petit','chat'), freq=-1)
+    assert m.query_count(('le', 'petit')) == m.query_count(('le', 'petit'))
+    assert m.query_entropy(('le', 'petit')) == m.query_entropy(('le', 'petit'))
 
 #TODO: test de remove
-#TODO: test des postings
