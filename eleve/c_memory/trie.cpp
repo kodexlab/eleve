@@ -1,9 +1,9 @@
 #include <boost/python.hpp>
 #include <boost/python/stl_iterator.hpp>
 
-#include "block.hpp"
-#include "list_block.hpp"
-#include "index_block.hpp"
+#include "list.hpp"
+#include "child_list.hpp"
+#include "index_list.hpp"
 
 namespace py = boost::python;
 
@@ -11,38 +11,20 @@ class Trie
 {
     protected:
 
-    std::unique_ptr<Block> root;
-
-    void add_shingle(shingle_const_iterator shingle_it, shingle_const_iterator shingle_end, COUNT count)
-    {
-        auto b = root->add_shingle(shingle_it, shingle_end, count);
-        if(b)
-            root = std::move(b);
-
-        if(root->size() > BLOCK_MAX_SIZE)
-        {
-            // tb is the right part of the splitted block + the token in the middle
-            // tb2 is the token in the middle + the left part.
-            auto tb = root->split();
-            auto tb2 = TokenBlockPair(tb.token, std::move(root));
-            auto last = std::move(tb.block);
-            root = std::unique_ptr<Block>(new IndexBlock(tb2, last));
-        }
-    };
+    Node root;
 
     public:
 
-    Trie()
+    Trie() : root(0, std::unique_ptr<ChildList>(new ChildList()), 0)
     {
-        root = std::unique_ptr<Block>(new ListBlock());
     };
 
-    void add_ngram(py::list ngram, COUNT freq)
+    void add_ngram(py::list ngram, COUNT freq=1)
     {
         std::vector<ID> shingle{py::stl_input_iterator<ID>(ngram),
                                 py::stl_input_iterator<ID>()};
 
-        add_shingle(shingle.begin(), shingle.end(), freq);
+        root.add_shingle(shingle.begin(), shingle.end(), freq);
     };
 
     COUNT query_count(py::list ngram)
@@ -50,7 +32,7 @@ class Trie
         std::vector<ID> shingle{py::stl_input_iterator<ID>(ngram),
                                 py::stl_input_iterator<ID>()};
 
-        Block* b = root->block_for(shingle.cbegin(), shingle.cend());
+        Node* b = root.search_child(shingle.cbegin(), shingle.cend());
         if(! b)
         {
             return 0;
