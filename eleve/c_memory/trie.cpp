@@ -68,7 +68,7 @@ class Trie
         dirty = false;
     };
 
-    void add_ngram(py::list ngram, COUNT freq=1)
+    void add_ngram(py::list ngram, int freq)
     {
         std::vector<ID> shingle{py::stl_input_iterator<ID>(ngram),
                                 py::stl_input_iterator<ID>()};
@@ -77,6 +77,11 @@ class Trie
 
         root.add_shingle(shingle.begin(), shingle.end(), freq);
     };
+
+    void add_ngram_(py::list ngram)
+    {
+        add_ngram(ngram, 1);
+    }
 
     COUNT query_count(py::list ngram)
     {
@@ -137,6 +142,12 @@ class Trie
         auto& n = hstats.normalization[py::len(ngram)];
         return (ev - n.mean) / n.stdev;
     }
+
+    void clear()
+    {
+        dirty = true;
+        root = Node(0, std::unique_ptr<ChildList>(new ChildList()), 0);
+    };
 };
 
 BOOST_PYTHON_MODULE(eleve_trie)
@@ -144,10 +155,12 @@ BOOST_PYTHON_MODULE(eleve_trie)
     using namespace boost::python;
     class_<Trie, boost::noncopyable>("Trie")
         .def("add_ngram", &Trie::add_ngram)
+        .def("add_ngram", &Trie::add_ngram_)
         .def("query_count", &Trie::query_count)
         .def("query_entropy", &Trie::query_entropy)
         .def("update_stats", &Trie::update_stats)
         .def("query_ev", &Trie::query_ev)
         .def("query_autonomy", &Trie::query_autonomy)
+        .def("clear", &Trie::clear)
     ;
 }

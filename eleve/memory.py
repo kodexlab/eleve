@@ -68,7 +68,7 @@ class MemoryTrie:
     """ In-memory tree (made to be simple, no specific optimizations)
     """
 
-    def __init__(self, depth, path=None, terminals=['^', '$']):
+    def __init__(self, depth=10, path=None, terminals=['^', '$']):
         """
         :param depth: Maximum length of stored ngrams
         :param path: Path to the database (not used)

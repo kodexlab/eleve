@@ -84,7 +84,7 @@ class IndexList: public List
         return TokenListPair(token, std::move(other));
     }
 
-    std::unique_ptr<List> add_shingle(shingle_const_iterator shingle_it, shingle_const_iterator shingle_end, COUNT count)
+    std::unique_ptr<List> add_shingle(shingle_const_iterator shingle_it, shingle_const_iterator shingle_end, int count)
     {
         assert(shingle_it != shingle_end);
 

@@ -32,7 +32,7 @@ class EmptyListIterator : public ListIterator
 struct List
 {
     // Recursive function used to add the occurence of a shingle
-    virtual std::unique_ptr<List> add_shingle(shingle_const_iterator shingle_it, shingle_const_iterator shingle_end, COUNT count=1) = 0;
+    virtual std::unique_ptr<List> add_shingle(shingle_const_iterator shingle_it, shingle_const_iterator shingle_end, int count=1) = 0;
 
     // To split the list in two, modifying it and returning a new one
     virtual TokenListPair split() = 0;

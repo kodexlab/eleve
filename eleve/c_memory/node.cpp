@@ -7,7 +7,7 @@ Node::Node(ID token, std::unique_ptr<List> b, COUNT count): m_list(std::move(b))
 {
 };
 
-void Node::add_shingle(shingle_const_iterator shingle_it, shingle_const_iterator shingle_end, COUNT count)
+void Node::add_shingle(shingle_const_iterator shingle_it, shingle_const_iterator shingle_end, int count)
 {
     m_count += count;
 

@@ -33,7 +33,7 @@ Node* ChildList::search_child(shingle_const_iterator shingle_it, shingle_const_i
     return it->search_child(shingle_it + 1, shingle_end);
 };
 
-std::unique_ptr<List> ChildList::add_shingle(shingle_const_iterator shingle_it, shingle_const_iterator shingle_end, COUNT count)
+std::unique_ptr<List> ChildList::add_shingle(shingle_const_iterator shingle_it, shingle_const_iterator shingle_end, int count)
 {
     assert(shingle_it != shingle_end);
 

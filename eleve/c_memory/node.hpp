@@ -18,7 +18,7 @@ class __attribute__((packed)) Node
 
     Node(ID token, std::unique_ptr<List> b, COUNT count);
 
-    void add_shingle(shingle_const_iterator shingle_it, shingle_const_iterator shingle_end, COUNT count=1);
+    void add_shingle(shingle_const_iterator shingle_it, shingle_const_iterator shingle_end, int count=1);
 
     Node* search_child(shingle_const_iterator shingle_it, shingle_const_iterator shingle_end);
 

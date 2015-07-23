@@ -57,7 +57,7 @@ class ChildList: public List
 
     Node* search_child(shingle_const_iterator shingle_it, shingle_const_iterator shingle_end);
 
-    std::unique_ptr<List> add_shingle(shingle_const_iterator shingle_it, shingle_const_iterator shingle_end, COUNT count);
+    std::unique_ptr<List> add_shingle(shingle_const_iterator shingle_it, shingle_const_iterator shingle_end, int count);
 
     size_t size() const
     {
