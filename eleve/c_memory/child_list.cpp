@@ -30,7 +30,7 @@ Node* ChildList::search_child(shingle_const_iterator shingle_it, shingle_const_i
     if(it == data.end())
         return nullptr;
 
-    return it->search_child(++shingle_it, shingle_end);
+    return it->search_child(shingle_it + 1, shingle_end);
 };
 
 std::unique_ptr<List> ChildList::add_shingle(shingle_const_iterator shingle_it, shingle_const_iterator shingle_end, COUNT count)
@@ -45,7 +45,6 @@ std::unique_ptr<List> ChildList::add_shingle(shingle_const_iterator shingle_it, 
     if(it != data.end() && it->token() == token)
     {
         // the token exists, add it recursively
-        it->set_count(it->count() + count);
         it->add_shingle(++shingle_it, shingle_end, count);
     }
     else
@@ -72,7 +71,7 @@ TokenListPair ChildList::split()
     size_t new_size = data.size() / 2;
     auto token = data[new_size].token();
     auto other = std::unique_ptr<ChildList>(new ChildList());
-    for(auto it = data.begin() + new_size + 1; it != data.end(); ++it)
+    for(auto it = data.begin() + new_size; it != data.end(); ++it)
     {
         other->data.push_back(std::move(*it));
     }

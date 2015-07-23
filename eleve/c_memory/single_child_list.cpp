@@ -41,7 +41,6 @@ std::unique_ptr<List> SingleChildList::add_shingle(shingle_const_iterator shingl
     if(data.token()  == token)
     {
         // the token exists, add it recursively
-        data.set_count(data.count() + count);
         data.add_shingle(++shingle_it, shingle_end, count);
         return nullptr;
     }

@@ -19,15 +19,14 @@ class IndexList: public List
     class IndexListIterator: public ListIterator
     {
         private:
+        IndexList* index_list;
         std::unique_ptr<ListIterator> current_child_iterator;
         std::vector<TokenListPair>::iterator current_child;
-        std::vector<TokenListPair>::iterator childs_end;
 
         public:
 
-        IndexListIterator(IndexList* b)
+        IndexListIterator(IndexList* b): index_list(b)
         {
-            childs_end = b->data.end();
             current_child = b->data.begin();
             current_child_iterator = current_child->list->begin_childs();
         }
@@ -37,13 +36,16 @@ class IndexList: public List
         void next()
         {
             current_child_iterator->next();
-            if(current_child_iterator->get() == nullptr && current_child != childs_end)
+            if(current_child_iterator->get() == nullptr && index_list != nullptr)
             {
                 current_child++;
-                if(current_child != childs_end)
+                if(current_child == index_list->data.end())
                 {
-                    current_child_iterator = current_child->list->begin_childs();
+                    current_child_iterator = index_list->last->begin_childs();
+                    index_list = nullptr;
                 }
+                else
+                    current_child_iterator = current_child->list->begin_childs();
             }
         };
 
@@ -74,7 +76,7 @@ class IndexList: public List
         auto other = std::unique_ptr<IndexList>(new IndexList());
         other->last = std::move(last);
         last = std::move(data[new_size].list);
-        for(auto it = data.begin() + new_size + 1; it != data.end(); ++it)
+        for(auto it = data.begin() + new_size; it != data.end(); ++it)
         {
             other->data.push_back(std::move(*it));
         }
