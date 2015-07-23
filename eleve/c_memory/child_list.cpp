@@ -45,6 +45,7 @@ std::unique_ptr<List> ChildList::add_shingle(shingle_const_iterator shingle_it, 
     if(it != data.end() && it->token() == token)
     {
         // the token exists, add it recursively
+        it->set_count(it->count() + count);
         it->add_shingle(++shingle_it, shingle_end, count);
     }
     else

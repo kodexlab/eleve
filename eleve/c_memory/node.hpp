@@ -26,6 +26,11 @@ class __attribute__((packed)) Node
         return m_count;
     };
 
+    COUNT set_count(COUNT count)
+    {
+        m_count = count;
+    };
+
     inline ID token() const
     {
         return m_token;
