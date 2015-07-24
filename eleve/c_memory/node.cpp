@@ -3,7 +3,7 @@
 #include "index_list.hpp"
 #include <cmath>
 
-Node::Node(ID token, std::unique_ptr<List> b, COUNT count): m_list(std::move(b)), m_token(token), m_count(count)
+Node::Node(ID token, std::unique_ptr<List> b, COUNT count): m_childs(std::move(b)), m_token(token), m_count(count)
 {
 };
 
@@ -11,7 +11,7 @@ void Node::add_shingle(shingle_const_iterator shingle_it, shingle_const_iterator
 {
     m_count += count;
 
-    if(! m_list)
+    if(! m_childs)
     {
         // case where we are at a leaf
         assert(shingle_it == shingle_end);
@@ -20,30 +20,30 @@ void Node::add_shingle(shingle_const_iterator shingle_it, shingle_const_iterator
 
     assert(shingle_it != shingle_end);
 
-    auto r = m_list->add_shingle(shingle_it, shingle_end, count);
+    auto r = m_childs->add_shingle(shingle_it, shingle_end, count);
     if(r)
-        m_list = std::move(r);
+        m_childs = std::move(r);
 
-    if(m_list->size() > BLOCK_MAX_SIZE)
+    if(m_childs->size() > BLOCK_MAX_SIZE)
     {
         // tb is the right part of the splitted list + the token in the middle
         // tb2 is the token in the middle + the left part.
-        auto tb = m_list->split();
-        auto tb2 = TokenListPair(m_token, std::move(m_list));
+        auto tb = m_childs->split();
+        auto tb2 = TokenListPair(m_token, std::move(m_childs));
         auto last = std::move(tb.list);
-        m_list = std::unique_ptr<List>(new IndexList(tb2, last));
+        m_childs = std::unique_ptr<List>(new IndexList(tb2, last));
     }
 
 };
 
 std::unique_ptr<ListIterator> Node::begin_childs()
 {
-    if(! m_list)
+    if(! m_childs)
     {
         return std::unique_ptr<ListIterator>(new EmptyListIterator());
     }
 
-    return m_list->begin_childs();
+    return m_childs->begin_childs();
 };
 
 Node* Node::search_child(shingle_const_iterator shingle_it, shingle_const_iterator shingle_end)
@@ -51,25 +51,25 @@ Node* Node::search_child(shingle_const_iterator shingle_it, shingle_const_iterat
     if(shingle_it == shingle_end)
         return this;
 
-    if(! m_list)
+    if(! m_childs)
     {
         // it's a leaf...
         return nullptr;
     }
 
-    return m_list->search_child(shingle_it, shingle_end);
+    return m_childs->search_child(shingle_it, shingle_end);
 };
 
 float Node::entropy(HStats& hstats) const
 {
-    if((! m_list) || (! m_count))
+    if((! m_childs) || (! m_count))
         return NAN;
 
 #ifndef NDEBUG
     COUNT sum_count = 0;
 #endif
     float entropy = 0;
-    for(auto it = m_list->begin_childs(); it->get(); it->next())
+    for(auto it = m_childs->begin_childs(); it->get(); it->next())
     {
         Node* node = it->get();
 #ifndef NDEBUG

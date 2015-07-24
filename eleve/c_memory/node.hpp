@@ -10,7 +10,7 @@ class ListIterator;
 class __attribute__((packed)) Node
 {
     private:
-    std::unique_ptr<List> m_list;
+    std::unique_ptr<List> m_childs;
     ID m_token;
     COUNT m_count;
 
@@ -28,13 +28,6 @@ class __attribute__((packed)) Node
     {
         return m_count;
     };
-
-    /*
-    void set_count(COUNT count)
-    {
-        m_count = count;
-    };
-    */
 
     inline ID token() const
     {

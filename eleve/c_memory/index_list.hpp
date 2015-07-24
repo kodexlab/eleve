@@ -131,6 +131,7 @@ class IndexList: public List
     Node* search_child(shingle_const_iterator shingle_it, shingle_const_iterator shingle_end)
     {
         auto it = data.begin();
+        // FIXME: std::lower_bound ?
         while(it != data.end() && *shingle_it > it->token)
         {
             ++it;
