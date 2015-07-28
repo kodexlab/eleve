@@ -1,7 +1,7 @@
-all: eleve_trie.so
+all: memory_trie.so
 
-eleve_trie.so: *.cpp *.hpp
-	clang++ -Wall -O2 -lboost_python3 -lpython3.4m -I/usr/include/python3.4m --std=c++11 -shared -fPIC -o eleve_trie.so *.cpp
+memory_trie.so: *.cpp *.hpp
+	clang++ -Wall -O2 -lboost_python3 -lpython3.4m -I/usr/include/python3.4m --std=c++11 -shared -fPIC -o memory_trie.so *.cpp
 
 clean:
-	rm eleve_trie.so
+	rm memory_trie.so

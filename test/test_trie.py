@@ -4,7 +4,7 @@ import tempfile
 import os
 
 from eleve.memory import MemoryTrie
-from eleve.c_memory.eleve_trie import Trie as CMemoryTrie
+from eleve.c_memory.memory_trie import MemoryTrie as CMemoryTrie
 
 def float_equal(a, b):
     if a != a:
@@ -127,3 +127,4 @@ def test_basic_trie(trie_class):
     assert m.query_entropy(('le', 'petit')) == m.query_entropy(('le', 'petit'))
 
 #TODO: test de remove
+#FIXME: on dirait que ça checke pas les cas ou l'entropie est pas définie (genre une feuille avec un fils, tout ça)
