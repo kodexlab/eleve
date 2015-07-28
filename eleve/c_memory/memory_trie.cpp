@@ -49,21 +49,15 @@ void MemoryTrie::update_stats()
     dirty = false;
 };
 
-void MemoryTrie::add_ngram(py::list ngram, int freq)
+void MemoryTrie::add_ngram(std::vector<ID> shingle, int freq)
 {
-    std::vector<ID> shingle{py::stl_input_iterator<ID>(ngram),
-                            py::stl_input_iterator<ID>()};
-
     dirty = true;
 
     root.add_shingle(shingle.begin(), shingle.end(), freq);
 };
 
-COUNT MemoryTrie::query_count(py::list ngram)
+COUNT MemoryTrie::query_count(std::vector<ID> shingle)
 {
-    std::vector<ID> shingle{py::stl_input_iterator<ID>(ngram),
-                            py::stl_input_iterator<ID>()};
-
     Node* n = root.search_child(shingle.cbegin(), shingle.cend());
     if(! n)
     {
@@ -72,11 +66,8 @@ COUNT MemoryTrie::query_count(py::list ngram)
     return n->count();
 };
 
-float MemoryTrie::query_entropy(py::list ngram)
+float MemoryTrie::query_entropy(std::vector<ID> shingle)
 {
-    std::vector<ID> shingle{py::stl_input_iterator<ID>(ngram),
-                            py::stl_input_iterator<ID>()};
-
     Node* n = root.search_child(shingle.cbegin(), shingle.cend());
     if(! n)
     {
@@ -85,11 +76,8 @@ float MemoryTrie::query_entropy(py::list ngram)
     return n->entropy(hstats);
 };
 
-float MemoryTrie::query_ev(py::list ngram)
+float MemoryTrie::query_ev(std::vector<ID> shingle)
 {
-    std::vector<ID> shingle{py::stl_input_iterator<ID>(ngram),
-                            py::stl_input_iterator<ID>()};
-
     if(! shingle.size())
         return NAN;
 
@@ -108,16 +96,16 @@ float MemoryTrie::query_ev(py::list ngram)
     return NAN;
 }
 
-float MemoryTrie::query_autonomy(py::list ngram)
+float MemoryTrie::query_autonomy(std::vector<ID> shingle)
 {
     if(dirty)
         update_stats();
 
-    float ev = query_ev(ngram);
+    float ev = query_ev(shingle);
     if(ev != ev) // if ev is NAN
         return NAN;
 
-    auto& n = hstats.normalization[py::len(ngram)];
+    auto& n = hstats.normalization[shingle.size()];
     return (ev - n.mean) / n.stdev;
 }
 
@@ -127,6 +115,7 @@ void MemoryTrie::clear()
     root = Node(0, std::unique_ptr<ChildList>(new ChildList()), 0);
 };
 
+/*
 BOOST_PYTHON_MODULE(memory_trie)
 {
     using namespace boost::python;
@@ -141,3 +130,4 @@ BOOST_PYTHON_MODULE(memory_trie)
         .def("clear", &MemoryTrie::clear)
     ;
 }
+*/

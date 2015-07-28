@@ -28,19 +28,14 @@ class MemoryTrie
 
     void update_stats();
 
-    void add_ngram(py::list ngram, int freq);
+    void add_ngram(std::vector<ID> shingle, int freq);
 
-    void add_ngram_(py::list ngram)
-    {
-        add_ngram(ngram, 1);
-    };
-
-    COUNT query_count(py::list ngram);
-    float query_entropy(py::list ngram);
-    float query_ev(py::list ngram);
+    COUNT query_count(std::vector<ID> shingle);
+    float query_entropy(std::vector<ID> shingle);
+    float query_ev(std::vector<ID> shingle);
 
     void clear();
-    float query_autonomy(py::list ngram);
+    float query_autonomy(std::vector<ID> shingle);
 };
 
 #endif
