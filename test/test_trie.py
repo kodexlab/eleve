@@ -4,7 +4,6 @@ import tempfile
 import os
 
 from eleve.memory import MemoryTrie
-from eleve.c_memory.memory_trie import MemoryTrie as CMemoryTrie
 
 def float_equal(a, b):
     if a != a:
@@ -80,7 +79,7 @@ def compare_tries(ref_trie, test_trie):
                 test_trie.query_autonomy(ngram)
         """
 
-@pytest.mark.parametrize("trie_class", [CMemoryTrie])
+@pytest.mark.parametrize("trie_class", [])
 def test_trie_class(trie_class, reference_class=MemoryTrie):
     """ Compare implementation against reference class (on random ngrams lists)
     """

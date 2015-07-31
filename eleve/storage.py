@@ -7,7 +7,7 @@ from eleve.memory import MemoryTrie
 class Storage:
     order = None
 
-    def __init__(self, order, path, trie_class=MemoryTrie, *args, **kwargs):
+    def __init__(self, order, path='', trie_class=MemoryTrie, *args, **kwargs):
         assert order > 1
         assert isinstance(path, str)
         self.order = order

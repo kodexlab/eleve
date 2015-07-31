@@ -51,7 +51,7 @@ class MemoryNode(object):
 
     def __init__(self, count=0):
         self.count = count
-        self.entropy = None
+        self.entropy = float('nan')
         self.childs = {}
 
 class MemoryLeaf(object):
@@ -62,7 +62,7 @@ class MemoryLeaf(object):
 
     @property
     def entropy(self):
-        return None
+        return float('nan')
 
 class MemoryTrie:
     """ In-memory tree (made to be simple, no specific optimizations)
@@ -149,7 +149,7 @@ class MemoryTrie:
 
         def ve_for_depth(node, parent, depth):
             if depth == 0:
-                if node.entropy is not None and (node.entropy != 0 or parent.entropy != 0):
+                if node.entropy == node.entropy and (node.entropy != 0 or parent.entropy != 0):
                     yield node.entropy - parent.entropy
             elif isinstance(node, MemoryNode):
                 for child in node.childs.values():
@@ -215,7 +215,7 @@ class MemoryTrie:
         try:
             _, node = self._lookup(ngram)
         except KeyError:
-            return None
+            return float('nan')
         return node.entropy
     
     def query_ev(self, ngram):
@@ -224,26 +224,26 @@ class MemoryTrie:
         self._check_dirty()
 
         if not ngram:
-            return None
+            return float('nan')
 
         try:
             last_node, node = self._lookup(ngram)
         except KeyError:
-            return None
-        if node.entropy is not None and (node.entropy != 0 or last_node.entropy != 0):
+            return float('nan')
+        if node.entropy == node.entropy and (node.entropy != 0 or last_node.entropy != 0):
             return node.entropy - last_node.entropy
-        return None
+        return float('nan')
 
     def query_autonomy(self, ngram, z_score=True):
         """ Return the autonomy (normalized entropy variation) for the ngram.
         """
-        if not ngram:
-            raise ValueError("Can't query the autonomy of the root node.")
+        if not (1 <= len(ngram) <= self.depth):
+            return float('nan')
         self._check_dirty()
         mean, stdev = self.normalization[len(ngram) - 1]
         ev = self.query_ev(ngram)
-        if ev is None:
-            return None
+        if ev != ev:
+            return float('nan')
         nev = ev - mean
         if z_score:
             nev /= stdev

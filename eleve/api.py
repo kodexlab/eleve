@@ -38,7 +38,7 @@ class Eleve:
                 if i - j < 0:
                     break
                 a = self.query_autonomy(sentence[i-j:i])
-                if a is None:
+                if a != a:
                     a = -100.
                 score = best_score[i-j] + a * j
                 if score > best_score[i]:
