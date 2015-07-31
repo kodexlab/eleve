@@ -13,7 +13,6 @@ class __attribute__((packed)) Node
     std::unique_ptr<List> m_childs;
     ID m_token;
     COUNT m_count;
-    float m_entropy;
 
     public:
 
@@ -35,7 +34,7 @@ class __attribute__((packed)) Node
         return m_token;
     };
 
-    float entropy(HStats& hstats);
+    float entropy(HStats& hstats) const;
 };
 
 #endif

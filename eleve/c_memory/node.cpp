@@ -3,13 +3,12 @@
 #include "index_list.hpp"
 #include <cmath>
 
-Node::Node(ID token, std::unique_ptr<List> b, COUNT count): m_childs(std::move(b)), m_token(token), m_count(count), m_entropy(INFINITY)
+Node::Node(ID token, std::unique_ptr<List> b, COUNT count): m_childs(std::move(b)), m_token(token), m_count(count)
 {
 };
 
 void Node::add_shingle(shingle_const_iterator shingle_it, shingle_const_iterator shingle_end, int count)
 {
-    m_entropy = INFINITY;
     m_count += count;
 
     if(! m_childs)
@@ -61,13 +60,10 @@ Node* Node::search_child(shingle_const_iterator shingle_it, shingle_const_iterat
     return m_childs->search_child(shingle_it, shingle_end);
 };
 
-float Node::entropy(HStats& hstats)
+float Node::entropy(HStats& hstats) const
 {
     if((! m_childs) || (! m_count))
         return NAN;
-
-    if(! isinf(m_entropy))
-        return m_entropy;
 
 #ifndef NDEBUG
     COUNT sum_count = 0;
@@ -94,6 +90,5 @@ float Node::entropy(HStats& hstats)
     // if it isn't, the entropy computation we just made using m_count is wrong
     assert(m_count == sum_count);
 #endif
-    m_entropy = entropy;
     return entropy;
 };
