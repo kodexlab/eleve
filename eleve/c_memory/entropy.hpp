@@ -2,10 +2,7 @@
 #define _ENTROPY_HPP_
 #include "config.hpp"
 #include <set>
-#include <map>
 #include <array>
-
-class Node;
 
 struct HStats
 {
@@ -19,8 +16,6 @@ struct HStats
     };
 
     std::vector<Normalization> normalization;
-
-    std::map<const Node*, float> entropy_cache;
 };
 
 #endif

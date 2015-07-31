@@ -65,14 +65,6 @@ float Node::entropy(HStats& hstats) const
     if((! m_childs) || (! m_count))
         return NAN;
 
-    bool use_cache = m_childs->size() > 10;
-    if(use_cache)
-    {
-        auto cache_it = hstats.entropy_cache.find(this);
-        if(cache_it != hstats.entropy_cache.end())
-            return cache_it->second;
-    }
-
 #ifndef NDEBUG
     COUNT sum_count = 0;
 #endif
@@ -98,9 +90,5 @@ float Node::entropy(HStats& hstats) const
     // if it isn't, the entropy computation we just made using m_count is wrong
     assert(m_count == sum_count);
 #endif
-    
-    if(use_cache)
-        hstats.entropy_cache[this] = entropy;
-
     return entropy;
 };
