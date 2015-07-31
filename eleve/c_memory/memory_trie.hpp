@@ -1,14 +1,9 @@
 #ifndef _MEMORYTRIE_HPP_
 #define _MEMORYTRIE_HPP_
 
-#include <boost/python.hpp>
-#include <boost/python/stl_iterator.hpp>
-
 #include "node.hpp"
 #include "child_list.hpp"
 #include "entropy.hpp"
-
-namespace py = boost::python;
 
 class MemoryTrie
 {

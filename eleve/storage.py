@@ -5,8 +5,6 @@ from eleve.memory import MemoryTrie
 """
 
 class Storage:
-    """ Abstract class for LM storage
-    """
     order = None
 
     def __init__(self, order, path, trie_class=MemoryTrie, *args, **kwargs):
