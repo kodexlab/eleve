@@ -14,7 +14,7 @@ class IndexList: public List
     std::unique_ptr<List> last;
     std::vector<TokenListPair> data;
 
-    IndexList() {};
+    IndexList(std::unique_ptr<List> l): last(std::move(l)) {};
 
     class IndexListIterator: public ListIterator
     {
@@ -73,10 +73,9 @@ class IndexList: public List
         // (List* | ID) | List*
         size_t new_size = data.size() / 2;
         auto token = data[new_size].token;
-        auto other = std::unique_ptr<IndexList>(new IndexList());
-        other->last = std::move(last);
+        auto other = std::unique_ptr<IndexList>(new IndexList(std::move(last)));
         last = std::move(data[new_size].list);
-        for(auto it = data.begin() + new_size; it != data.end(); ++it)
+        for(auto it = data.begin() + new_size + 1; it != data.end(); ++it)
         {
             other->data.push_back(std::move(*it));
         }
