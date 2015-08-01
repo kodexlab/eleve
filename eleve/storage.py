@@ -30,15 +30,15 @@ class Storage:
     def query_autonomy(self, ngram):
         result_fwd = self.fwd.query_autonomy(ngram)
         result_bwd = self.bwd.query_autonomy(ngram[::-1])
-        if result_fwd is None or result_bwd is None:
-            return None
+        if result_fwd != result_fwd or result_bwd != result_bwd:
+            return float('nan')
         return (result_fwd + result_bwd) / 2
      
     def query_ev(self, ngram):
         result_fwd = self.fwd.query_ev(ngram)
         result_bwd = self.bwd.query_ev(ngram[::-1])
-        if result_fwd is None or result_bwd is None:
-            return None
+        if result_fwd != result_fwd or result_bwd != result_bwd:
+            return float('nan')
         return (result_fwd + result_bwd) / 2
 
     def query_count(self, ngram):
@@ -49,6 +49,6 @@ class Storage:
     def query_entropy(self, ngram):
         entropy_fwd = self.fwd.query_entropy(ngram)
         entropy_bwd = self.bwd.query_entropy(ngram[::-1])
-        if entropy_fwd is None or entropy_bwd is None:
-            return None
+        if entropy_fwd != entropy_fwd or entropy_bwd != entropy_bwd:
+            return float('nan')
         return (entropy_fwd + entropy_bwd) / 2
