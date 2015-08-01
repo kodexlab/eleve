@@ -23,7 +23,7 @@ def entropy(counts):
         c += max(i, 0)
         psum += i * math.log(max(i, 1), 2)
     if c == 0:
-        return 0
+        return float('nan')
     return math.log(c, 2) - psum / c
 
 def mean_stdev(values):
@@ -36,6 +36,8 @@ def mean_stdev(values):
     """
     a, q, k = 0, 0, 0
     for v in values:
+        if v != v:
+            continue
         k += 1
         old_a = a
         a += (v - a) / k

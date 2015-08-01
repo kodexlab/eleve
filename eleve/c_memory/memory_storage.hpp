@@ -20,7 +20,15 @@ class MemoryStorage
 
     public:
     
-    MemoryStorage(size_t o) : order(o) {};
+    MemoryStorage(size_t o, strVec& terminals): order(o)
+    {
+        auto terminals_ids = tokens_to_ids(terminals);
+        std::set<ID> t = std::set<ID>(terminals_ids.cbegin(), terminals_ids.cend());
+        fwd = MemoryTrie(t);
+        bwd = MemoryTrie(t);
+    };
+
+    MemoryStorage(size_t o) : MemoryStorage(o, {"^", "$"}) {};
 
     void add_sentence(std::vector<std::string> s, int freq=1);
     void add_ngram(strVec& s, int freq=1);

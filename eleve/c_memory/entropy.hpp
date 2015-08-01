@@ -6,7 +6,7 @@
 
 struct HStats
 {
-    std::set<COUNT> terminals;
+    std::set<ID> terminals;
     
     struct Normalization
     {
@@ -16,6 +16,9 @@ struct HStats
     };
 
     std::vector<Normalization> normalization;
+
+    HStats(const std::set<ID> t): terminals(t) {};
+    HStats() {};
 };
 
 #endif

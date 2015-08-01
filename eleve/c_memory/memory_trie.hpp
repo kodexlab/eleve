@@ -21,6 +21,11 @@ class MemoryTrie
     {
     };
 
+    MemoryTrie(const std::set<ID>& terminals) : MemoryTrie()
+    {
+        hstats = HStats(terminals);
+    };
+
     void update_stats();
 
     void add_ngram(std::vector<ID> shingle, int freq);
