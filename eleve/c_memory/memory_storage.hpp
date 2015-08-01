@@ -15,7 +15,8 @@ class MemoryStorage
     std::map<std::size_t, std::string> hash_to_token;
 
     std::vector<ID> tokens_to_ids(strVec& tokens);
-    strVec ids_to_tokens(std::vector<ID>& ids);
+    strVec ids_to_tokens(const std::vector<ID>& ids);
+    static std::vector<ID> reverse(const std::vector<ID>&);
 
     public:
     

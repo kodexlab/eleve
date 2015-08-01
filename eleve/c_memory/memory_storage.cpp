@@ -31,7 +31,7 @@ std::vector<ID> MemoryStorage::tokens_to_ids(strVec& tokens)
     return ids;
 };
 
-strVec MemoryStorage::ids_to_tokens(std::vector<ID>& ids)
+strVec MemoryStorage::ids_to_tokens(const std::vector<ID>& ids)
 {
     auto tokens = std::vector<std::string>();
     tokens.reserve(ids.size());
@@ -42,11 +42,16 @@ strVec MemoryStorage::ids_to_tokens(std::vector<ID>& ids)
     return tokens;
 };
 
+std::vector<ID> MemoryStorage::reverse(const std::vector<ID>& ids)
+{
+    return std::vector<ID>(ids.rbegin(), ids.rend());
+};
+
 void MemoryStorage::add_ngram(strVec& s, int freq)
 {
     auto ids = tokens_to_ids(s);
     fwd.add_ngram(ids, freq);
-    bwd.add_ngram(ids, freq);
+    bwd.add_ngram(reverse(ids), freq);
 };
 
 void MemoryStorage::add_sentence(std::vector<std::string> s, int freq)
@@ -75,7 +80,7 @@ float MemoryStorage::query_autonomy(strVec& ngram)
 {
     auto ids = tokens_to_ids(ngram);
     float f = fwd.query_autonomy(ids);
-    float b = bwd.query_autonomy(ids);
+    float b = bwd.query_autonomy(reverse(ids));
     if(f == f && b == b) // not NaN
     {
         return (f + b) / 2.f;
@@ -87,7 +92,7 @@ float MemoryStorage::query_ev(strVec& ngram)
 {
     auto ids = tokens_to_ids(ngram);
     float f = fwd.query_ev(ids);
-    float b = bwd.query_ev(ids);
+    float b = bwd.query_ev(reverse(ids));
     if(f == f && b == b) // not NaN
     {
         return (f + b) / 2.f;
@@ -98,14 +103,14 @@ float MemoryStorage::query_ev(strVec& ngram)
 COUNT MemoryStorage::query_count(strVec& ngram)
 {
     auto ids = tokens_to_ids(ngram);
-    return (fwd.query_count(ids) + bwd.query_count(ids)) / 2;
+    return (fwd.query_count(ids) + bwd.query_count(reverse(ids))) / 2;
 };
 
 float MemoryStorage::query_entropy(strVec& ngram)
 {
     auto ids = tokens_to_ids(ngram);
     float f = fwd.query_entropy(ids);
-    float b = bwd.query_entropy(ids);
+    float b = bwd.query_entropy(reverse(ids));
     if(f == f && b == b) // not NaN
     {
         return (f + b) / 2.f;

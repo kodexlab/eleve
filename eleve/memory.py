@@ -206,7 +206,7 @@ class MemoryTrie:
     def query_count(self, ngram):
         try:
             _, node = self._lookup(ngram)
-        except KeyError:
+        except (KeyError, AttributeError):
             return 0
         return node.count
 
@@ -214,7 +214,7 @@ class MemoryTrie:
         self._check_dirty()
         try:
             _, node = self._lookup(ngram)
-        except KeyError:
+        except (KeyError, AttributeError):
             return float('nan')
         return node.entropy
     
@@ -228,7 +228,7 @@ class MemoryTrie:
 
         try:
             last_node, node = self._lookup(ngram)
-        except KeyError:
+        except (KeyError, AttributeError):
             return float('nan')
         if node.entropy == node.entropy and (node.entropy != 0 or last_node.entropy != 0):
             return node.entropy - last_node.entropy
@@ -237,10 +237,11 @@ class MemoryTrie:
     def query_autonomy(self, ngram, z_score=True):
         """ Return the autonomy (normalized entropy variation) for the ngram.
         """
-        if not (1 <= len(ngram) <= self.depth):
-            return float('nan')
         self._check_dirty()
-        mean, stdev = self.normalization[len(ngram) - 1]
+        try:
+            mean, stdev = self.normalization[len(ngram) - 1]
+        except IndexError:
+            return float('nan')
         ev = self.query_ev(ngram)
         if ev != ev:
             return float('nan')
