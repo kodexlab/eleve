@@ -58,13 +58,21 @@ class MemoryStorage
     {
         return query_entropy(strVec{pyStrIt(ngram), pyStrIt()});
     };
-    void add_sentence_(py::list s, int freq=1)
+    void add_sentence_(py::list s, int freq)
     {
         add_sentence(strVec{pyStrIt(s), pyStrIt()});
     };
-    void add_ngram_(py::list s, int freq=1)
+    void add_sentence__(py::list s)
+    {
+        add_sentence_(s, 1);
+    };
+    void add_ngram_(py::list s, int freq)
     {
         add_ngram(strVec{pyStrIt(s), pyStrIt()});
+    };
+    void add_ngram__(py::list s)
+    {
+        add_ngram_(s, 1);
     };
 
 };
