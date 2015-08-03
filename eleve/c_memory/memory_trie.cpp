@@ -49,14 +49,14 @@ void MemoryTrie::update_stats()
     dirty = false;
 };
 
-void MemoryTrie::add_ngram(std::vector<ID> shingle, int freq)
+void MemoryTrie::add_ngram(const std::vector<ID>& shingle, int freq)
 {
     dirty = true;
 
     root.add_shingle(shingle.begin(), shingle.end(), freq);
 };
 
-COUNT MemoryTrie::query_count(std::vector<ID> shingle)
+COUNT MemoryTrie::query_count(const std::vector<ID>& shingle)
 {
     Node* n = root.search_child(shingle.cbegin(), shingle.cend());
     if(! n)
@@ -66,7 +66,7 @@ COUNT MemoryTrie::query_count(std::vector<ID> shingle)
     return n->count();
 };
 
-float MemoryTrie::query_entropy(std::vector<ID> shingle)
+float MemoryTrie::query_entropy(const std::vector<ID>& shingle)
 {
     Node* n = root.search_child(shingle.cbegin(), shingle.cend());
     if(! n)
@@ -76,7 +76,7 @@ float MemoryTrie::query_entropy(std::vector<ID> shingle)
     return n->entropy(hstats);
 };
 
-float MemoryTrie::query_ev(std::vector<ID> shingle)
+float MemoryTrie::query_ev(const std::vector<ID>& shingle)
 {
     if(! shingle.size())
         return NAN;
@@ -96,7 +96,7 @@ float MemoryTrie::query_ev(std::vector<ID> shingle)
     return NAN;
 }
 
-float MemoryTrie::query_autonomy(std::vector<ID> shingle)
+float MemoryTrie::query_autonomy(const std::vector<ID>& shingle)
 {
     if(dirty)
         update_stats();
@@ -114,20 +114,3 @@ void MemoryTrie::clear()
     dirty = true;
     root = Node(0, std::unique_ptr<ChildList>(new ChildList()), 0);
 };
-
-/*
-BOOST_PYTHON_MODULE(memory_trie)
-{
-    using namespace boost::python;
-    class_<MemoryTrie, boost::noncopyable>("MemoryTrie")
-        .def("add_ngram", &MemoryTrie::add_ngram)
-        .def("add_ngram", &MemoryTrie::add_ngram_)
-        .def("query_count", &MemoryTrie::query_count)
-        .def("query_entropy", &MemoryTrie::query_entropy)
-        .def("update_stats", &MemoryTrie::update_stats)
-        .def("query_ev", &MemoryTrie::query_ev)
-        .def("query_autonomy", &MemoryTrie::query_autonomy)
-        .def("clear", &MemoryTrie::clear)
-    ;
-}
-*/

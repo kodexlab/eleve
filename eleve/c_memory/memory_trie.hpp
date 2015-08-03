@@ -28,14 +28,14 @@ class MemoryTrie
 
     void update_stats();
 
-    void add_ngram(std::vector<ID> shingle, int freq);
+    void add_ngram(const std::vector<ID>& shingle, int freq=1);
 
-    COUNT query_count(std::vector<ID> shingle);
-    float query_entropy(std::vector<ID> shingle);
-    float query_ev(std::vector<ID> shingle);
+    COUNT query_count(const std::vector<ID>& shingle);
+    float query_entropy(const std::vector<ID>& shingle);
+    float query_ev(const std::vector<ID>& shingle);
+    float query_autonomy(const std::vector<ID>& shingle);
 
     void clear();
-    float query_autonomy(std::vector<ID> shingle);
 };
 
 #endif

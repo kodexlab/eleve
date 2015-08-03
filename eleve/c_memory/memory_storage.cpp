@@ -42,11 +42,6 @@ strVec MemoryStorage::ids_to_tokens(const std::vector<ID>& ids)
     return tokens;
 };
 
-std::vector<ID> MemoryStorage::reverse(const std::vector<ID>& ids)
-{
-    return std::vector<ID>(ids.rbegin(), ids.rend());
-};
-
 void MemoryStorage::add_ngram(strVec& s, int freq)
 {
     auto ids = tokens_to_ids(s);
