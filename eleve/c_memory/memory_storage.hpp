@@ -7,7 +7,7 @@ typedef const std::vector<std::string> strVec;
 class MemoryStorage
 {
     protected:
-    size_t order;
+    size_t ngram_length;
     MemoryTrie fwd;
     MemoryTrie bwd;
     std::map<std::size_t, std::string> hash_to_token;
@@ -22,7 +22,7 @@ class MemoryStorage
 
     public:
     
-    MemoryStorage(size_t o, strVec& terminals): order(o)
+    MemoryStorage(size_t order, strVec& terminals): ngram_length(order)
     {
         auto terminals_ids = tokens_to_ids(terminals);
         std::set<ID> t = std::set<ID>(terminals_ids.cbegin(), terminals_ids.cend());
@@ -39,7 +39,7 @@ class MemoryStorage
 
     float query_autonomy(strVec& ngram);
     float query_ev(strVec& ngram);
-    COUNT query_count(strVec& ngram);
+    float query_count(strVec& ngram);
     float query_entropy(strVec& ngram);
 
 };

@@ -12,16 +12,16 @@ class Storage:
         assert isinstance(path, str)
         self.order = order
 
-        self.bwd = trie_class(order + 1, path + '_bwd', *args, **kwargs)
-        self.fwd = trie_class(order + 1, path + '_fwd', *args, **kwargs)
+        self.bwd = trie_class(order, path + '_bwd', *args, **kwargs)
+        self.fwd = trie_class(order, path + '_fwd', *args, **kwargs)
 
     def add_sentence(self, sentence, freq=1):
         token_list = ['^'] + sentence + ['$']
         for i in range(len(token_list) - 1):
-            self.fwd.add_ngram(token_list[i:i+self.order+1], freq)
+            self.fwd.add_ngram(token_list[i:i+self.order], freq)
         token_list = token_list[::-1]
         for i in range(len(token_list) - 1):
-            self.bwd.add_ngram(token_list[i:i+self.order+1], freq)
+            self.bwd.add_ngram(token_list[i:i+self.order], freq)
 
     def clear(self):
         self.bwd.clear()

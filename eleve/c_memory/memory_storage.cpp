@@ -57,11 +57,11 @@ void MemoryStorage::add_sentence(std::vector<std::string> s, int freq)
 
     for(auto it = ids.begin(); it < ids.end() - 1; it++)
     {
-        fwd.add_ngram(std::vector<ID>(it, std::min(it + order, ids.end())), freq);
+        fwd.add_ngram(std::vector<ID>(it, std::min(it + ngram_length + 1, ids.end())), freq);
     }
     for(auto it = ids.rbegin(); it < ids.rend() - 1; it++)
     {
-        bwd.add_ngram(std::vector<ID>(it, std::min(it + order, ids.rend())), freq);
+        bwd.add_ngram(std::vector<ID>(it, std::min(it + ngram_length + 1, ids.rend())), freq);
     }
 };
 
@@ -76,11 +76,9 @@ float MemoryStorage::query_autonomy(strVec& ngram)
     auto ids = tokens_to_ids(ngram);
     float f = fwd.query_autonomy(ids);
     float b = bwd.query_autonomy(reverse(ids));
-    if(f == f && b == b) // not NaN
-    {
-        return (f + b) / 2.f;
-    }
-    return NAN;
+    if(isnan(f) || isnan(b))
+        return NAN;
+    return (f + b) / 2.f;
 };
 
 float MemoryStorage::query_ev(strVec& ngram)
@@ -88,17 +86,15 @@ float MemoryStorage::query_ev(strVec& ngram)
     auto ids = tokens_to_ids(ngram);
     float f = fwd.query_ev(ids);
     float b = bwd.query_ev(reverse(ids));
-    if(f == f && b == b) // not NaN
-    {
-        return (f + b) / 2.f;
-    }
-    return NAN;
+    if(isnan(f) || isnan(b))
+        return NAN;
+    return (f + b) / 2.f;
 };
 
-COUNT MemoryStorage::query_count(strVec& ngram)
+float MemoryStorage::query_count(strVec& ngram)
 {
     auto ids = tokens_to_ids(ngram);
-    return (fwd.query_count(ids) + bwd.query_count(reverse(ids))) / 2;
+    return (fwd.query_count(ids) + bwd.query_count(reverse(ids))) / 2.f;
 };
 
 float MemoryStorage::query_entropy(strVec& ngram)
@@ -106,9 +102,7 @@ float MemoryStorage::query_entropy(strVec& ngram)
     auto ids = tokens_to_ids(ngram);
     float f = fwd.query_entropy(ids);
     float b = bwd.query_entropy(reverse(ids));
-    if(f == f && b == b) // not NaN
-    {
-        return (f + b) / 2.f;
-    }
-    return NAN;
+    if(isnan(f) || isnan(b))
+        return NAN;
+    return (f + b) / 2.f;
 };

@@ -9,7 +9,7 @@ OBJ_FILES = $(SRC:.cpp=.o)
 
 all: $(LIB_NAME)
 
-%.o : %.cpp
+%.o : %.cpp %.hpp
 	$(CC) $(CFLAGS) $(INCLUDES) -o $@ -c $<
 
 $(LIB_NAME): $(OBJ_FILES)

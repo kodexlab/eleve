@@ -6,8 +6,7 @@ void MemoryTrie::update_stats_rec(float parent_entropy, int depth, Node* node)
 {
     float entropy = node->entropy(hstats);
     
-    // entropy == entropy, for « entropy != NAN »
-    if(entropy == entropy && (entropy || parent_entropy))
+    if((!isnan(entropy)) && (entropy != 0. || parent_entropy != 0.))
     {
         float ev = entropy - parent_entropy;
 
@@ -87,14 +86,15 @@ float MemoryTrie::query_ev(const std::vector<ID>& shingle)
     Node* child = parent->search_child(shingle.cend() - 1, shingle.cend());
     if(! child)
         return NAN;
+    assert(parent != child);
     float parent_entropy = parent->entropy(hstats);
+    assert(! isnan(parent_entropy));
     float entropy = child->entropy(hstats);
 
-    // entropy == entropy for « entropy != NAN » (that always returns true)
-    if(entropy == entropy && (entropy || parent_entropy))
+    if((! isnan(entropy)) && (entropy != 0. || parent_entropy != 0.))
         return entropy - parent_entropy;
     return NAN;
-}
+};
 
 float MemoryTrie::query_autonomy(const std::vector<ID>& shingle)
 {
@@ -102,12 +102,12 @@ float MemoryTrie::query_autonomy(const std::vector<ID>& shingle)
         update_stats();
 
     float ev = query_ev(shingle);
-    if(ev != ev) // if ev is NAN
+    if(isnan(ev))
         return NAN;
 
     auto& n = hstats.normalization[shingle.size()];
     return (ev - n.mean) / n.stdev;
-}
+};
 
 void MemoryTrie::clear()
 {

@@ -94,6 +94,7 @@ float Node::entropy(HStats& hstats)
     // if it isn't, the entropy computation we just made using m_count is wrong
     assert(m_count == sum_count);
 #endif
+    assert(entropy >= 0);
     m_entropy = entropy;
     return entropy;
 };

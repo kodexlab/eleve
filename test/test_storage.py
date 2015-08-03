@@ -9,13 +9,13 @@ def test_basic_entropy(storage_class):
     Forward that begins by « le petit »:
      - le petit chat
      - le petit chien
-     - le petit None * 2
+     - le petit $ * 2
     Backward that begins by « petit le » :
-     - petit le None * 2
+     - petit le ^ * 2
      - petit le pour * 2
     --> count is the mean of 4 and 4, and entropy is the mean of 2 (the None are counted separately) and 1.5.
     """
-    m = storage_class(2)
+    m = storage_class(3)
 
     m.add_sentence(['le','petit','chat'])
     m.add_sentence(['le','petit','chien'])

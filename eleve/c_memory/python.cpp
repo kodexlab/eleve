@@ -10,7 +10,7 @@ class PyMemoryTrie: public MemoryTrie
 
     void add_ngram_(py::list ngram, int freq)
     {
-        add_ngram(std::vector<ID>{pyIdIt(ngram), pyIdIt()});
+        add_ngram(std::vector<ID>{pyIdIt(ngram), pyIdIt()}, freq);
     };
     void add_ngram__(py::list ngram)
     {
@@ -20,15 +20,15 @@ class PyMemoryTrie: public MemoryTrie
     {
         return query_count(std::vector<ID>{pyIdIt(ngram), pyIdIt()});
     };
-    COUNT query_entropy_(py::list ngram)
+    float query_entropy_(py::list ngram)
     {
         return query_entropy(std::vector<ID>{pyIdIt(ngram), pyIdIt()});
     };
-    COUNT query_ev_(py::list ngram)
+    float query_ev_(py::list ngram)
     {
         return query_ev(std::vector<ID>{pyIdIt(ngram), pyIdIt()});
     };
-    COUNT query_autonomy_(py::list ngram)
+    float query_autonomy_(py::list ngram)
     {
         return query_autonomy(std::vector<ID>{pyIdIt(ngram), pyIdIt()});
     };
@@ -58,7 +58,7 @@ class PyMemoryStorage: public MemoryStorage
     };
     void add_sentence_(py::list s, int freq)
     {
-        add_sentence(strVec{pyStrIt(s), pyStrIt()});
+        add_sentence(strVec{pyStrIt(s), pyStrIt()}, freq);
     };
     void add_sentence__(py::list s)
     {
@@ -66,11 +66,11 @@ class PyMemoryStorage: public MemoryStorage
     };
     void add_ngram_(py::list s, int freq)
     {
-        add_ngram(strVec{pyStrIt(s), pyStrIt()});
+        add_ngram(strVec{pyStrIt(s), pyStrIt()}, freq);
     };
     void add_ngram__(py::list s)
     {
-        add_ngram_(s, 1);
+        add_ngram(strVec{pyStrIt(s), pyStrIt()}, 1);
     };
 
 };

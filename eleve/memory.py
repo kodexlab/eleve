@@ -249,7 +249,10 @@ class MemoryTrie:
             return float('nan')
         nev = ev - mean
         if z_score:
-            nev /= stdev
+            try:
+                nev /= stdev
+            except ZeroDivisionError:
+                return float('nan')
         return nev
 
 if __name__ == '__main__':

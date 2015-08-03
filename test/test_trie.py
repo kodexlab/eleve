@@ -7,7 +7,7 @@ from eleve.memory import MemoryTrie
 from eleve.cstorages import MemoryTrie as CMemoryTrie
 
 def float_equal(a, b):
-    return (a != a and b != b) or abs(a - b) < 1e-6
+    return (a != a and b != b) or abs(a - b) < 1e-5
 
 def generate_random_ngrams():
     """ Generate list of random n-grams (of int)
@@ -25,9 +25,9 @@ def generate_random_ngrams():
 
     add([])
     random.shuffle(m)
-    return (depth, m)
+    return m
 
-def compare_nodes(ngram, ref_trie, test_trie):
+def compare_node(ngram, ref_trie, test_trie):
     """
     fails if the results of any measure is different for the query of a specific ngram
     """
@@ -44,29 +44,32 @@ def compare_nodes(ngram, ref_trie, test_trie):
             m_test = getattr(test_trie, measure)(ngram)
             assert float_equal(m_ref, m_test), "%s different for ngram %s" % (measure, ngram)
 
+def compare_nodes(ngrams, ref_trie, test_trie):
+    for n in ngrams:
+        for i in range(len(n)):
+            compare_node(n[:i+1], ref_trie, test_trie)
+            compare_node(n[:i] + [420001337], ref_trie, test_trie) # try a non-existent node
+        compare_node(n + [420001337], ref_trie, test_trie) # try a non-existent node
+
+    compare_node([], ref_trie, test_trie)
+    compare_node([420001337] * 10, ref_trie, test_trie)
+
 @pytest.mark.parametrize("trie_class", [CMemoryTrie])
 def test_trie_class(trie_class, reference_class=MemoryTrie):
     """ Compare implementation against reference class (on random ngrams lists)
     """
-    depth, ngrams = generate_random_ngrams()
+    ngrams = generate_random_ngrams()
     test_trie = trie_class()
     ref_trie = reference_class()
 
     test_trie.clear()
     ref_trie.clear()
-    for n in ngrams:
+    for i, n in enumerate(ngrams):
         test_trie.add_ngram(n)
         ref_trie.add_ngram(n)
-        compare_nodes(n, test_trie, ref_trie) # slow
-
-    for n in ngrams:
-        for i in range(len(n)):
-            compare_nodes(n[:i+1], test_trie, ref_trie)
-            compare_nodes(n[:i] + [420001337], test_trie, ref_trie) # try a non-existent node
-        compare_nodes(n + [420001337], test_trie, ref_trie) # try a non-existent node
-
-    compare_nodes([], test_trie, ref_trie)
-    compare_nodes([420001337] * 10, test_trie, ref_trie)
+        if i % (len(ngrams) // 3) == 0:
+            compare_nodes(ngrams, ref_trie, test_trie)
+    compare_nodes(ngrams, ref_trie, test_trie)
 
 @pytest.mark.parametrize("trie_class", [MemoryTrie])
 def test_basic_trie(trie_class):
@@ -86,4 +89,3 @@ def test_basic_trie(trie_class):
     assert m.query_entropy(('le', 'petit')) == m.query_entropy(('le', 'petit'))
 
 #TODO: test de remove
-#FIXME: on dirait que ça checke pas les cas ou l'entropie est pas définie (genre une feuille avec un fils, tout ça)
