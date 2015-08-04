@@ -1,7 +1,10 @@
 import pytest
+import re
 
 from eleve.storage import Storage
 from eleve.cstorages import MemoryStorage as CMemoryStorage
+
+from test_trie import compare_node
 
 @pytest.mark.parametrize("storage_class", [Storage, CMemoryStorage])
 def test_basic_entropy(storage_class):
@@ -23,3 +26,18 @@ def test_basic_entropy(storage_class):
     assert m.query_count(['le', 'petit']) == 4.0
     assert m.query_entropy(['le', 'petit']) == 1.75
 
+@pytest.mark.parametrize("storage_class", [CMemoryStorage])
+def test_storage(storage_class, ref_class=Storage):
+    test = storage_class(4)
+    ref = ref_class(4)
+
+    sentences = [re.findall(r'\w+', sentence) for sentence in open('fixtures/btree.txt').read().split('\n')]
+    for sentence in sentences:
+        test.add_sentence(sentence)
+        ref.add_sentence(sentence)
+
+    for sentence in sentences:
+        for start in range(len(sentence)):
+            for i in range(6):
+                ngram = sentence[start:start+i]
+                compare_node(ngram, ref, test)
