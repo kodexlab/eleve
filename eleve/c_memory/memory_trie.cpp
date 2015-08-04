@@ -50,8 +50,10 @@ void MemoryTrie::update_stats()
 
 void MemoryTrie::add_ngram(const std::vector<ID>& shingle, int freq)
 {
-    dirty = true;
+    if(freq == 0)
+        return;
 
+    dirty = true;
     root.add_shingle(shingle.begin(), shingle.end(), freq);
 };
 
