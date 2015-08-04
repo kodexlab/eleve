@@ -51,17 +51,20 @@ void MemoryStorage::add_ngram(strVec& s, int freq)
 
 void MemoryStorage::add_sentence(std::vector<std::string> s, int freq)
 {
+    if(! s.size())
+        return;
+
     s.insert(s.begin(), "^");
     s.push_back("$");
     auto ids = tokens_to_ids(s);
 
     for(auto it = ids.begin(); it < ids.end() - 1; it++)
     {
-        fwd.add_ngram(std::vector<ID>(it, std::min(it + ngram_length + 1, ids.end())), freq);
+        fwd.add_ngram(std::vector<ID>(it, std::min(it + ngram_length, ids.end())), freq);
     }
     for(auto it = ids.rbegin(); it < ids.rend() - 1; it++)
     {
-        bwd.add_ngram(std::vector<ID>(it, std::min(it + ngram_length + 1, ids.rend())), freq);
+        bwd.add_ngram(std::vector<ID>(it, std::min(it + ngram_length, ids.rend())), freq);
     }
 };
 
