@@ -1,4 +1,5 @@
 import logging
+import math
 
 logger = logging.getLogger(__name__)
 
@@ -28,7 +29,7 @@ class Segmenter:
                 if i - j < 0:
                     break
                 a = self.storage.query_autonomy(sentence[i-j:i])
-                if a != a:
+                if math.isnan(a):
                     a = -100.
                 score = best_score[i-j] + a * j
                 if score > best_score[i]:

@@ -1,4 +1,5 @@
 from eleve.memory import MemoryTrie
+import math
 
 # -*- coding:utf8 -*-
 """ Storage interface for LM
@@ -7,15 +8,17 @@ from eleve.memory import MemoryTrie
 class Storage:
     order = None
 
-    def __init__(self, order, path='', trie_class=MemoryTrie, *args, **kwargs):
-        assert order > 1
-        assert isinstance(path, str)
+    def __init__(self, order, trie_class=MemoryTrie, *args, **kwargs):
+        assert order > 0 and isinstance(order, int)
         self.order = order
 
-        self.bwd = trie_class(order, path + '_bwd', *args, **kwargs)
-        self.fwd = trie_class(order, path + '_fwd', *args, **kwargs)
+        self.bwd = trie_class(order, *args, **kwargs)
+        self.fwd = trie_class(order, *args, **kwargs)
 
     def add_sentence(self, sentence, freq=1):
+        if not sentence:
+            return
+
         token_list = ['^'] + sentence + ['$']
         for i in range(len(token_list) - 1):
             self.fwd.add_ngram(token_list[i:i+self.order], freq)
@@ -30,14 +33,14 @@ class Storage:
     def query_autonomy(self, ngram):
         result_fwd = self.fwd.query_autonomy(ngram)
         result_bwd = self.bwd.query_autonomy(ngram[::-1])
-        if result_fwd != result_fwd or result_bwd != result_bwd:
+        if math.isnan(result_fwd) or math.isnan(result_bwd):
             return float('nan')
         return (result_fwd + result_bwd) / 2
      
     def query_ev(self, ngram):
         result_fwd = self.fwd.query_ev(ngram)
         result_bwd = self.bwd.query_ev(ngram[::-1])
-        if result_fwd != result_fwd or result_bwd != result_bwd:
+        if math.isnan(result_fwd) or math.isnan(result_bwd):
             return float('nan')
         return (result_fwd + result_bwd) / 2
 
@@ -49,6 +52,6 @@ class Storage:
     def query_entropy(self, ngram):
         entropy_fwd = self.fwd.query_entropy(ngram)
         entropy_bwd = self.bwd.query_entropy(ngram[::-1])
-        if entropy_fwd != entropy_fwd or entropy_bwd != entropy_bwd:
+        if math.isnan(entropy_fwd) or math.isnan(entropy_bwd):
             return float('nan')
         return (entropy_fwd + entropy_bwd) / 2

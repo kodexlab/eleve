@@ -20,11 +20,12 @@ def entropy(counts):
     """
     c, psum = 0, 0
     for i in counts:
-        c += max(i, 0)
-        psum += i * math.log(max(i, 1), 2)
-    if c == 0:
-        return float('nan')
-    return math.log(c, 2) - psum / c
+        if i == 0:
+            continue
+        assert i >= 1
+        c += i
+        psum += i * math.log(i, 2)
+    return (math.log(c, 2) - psum / c) if c > 0 else float('nan')
 
 def mean_stdev(values):
     """ Calculate mean and standard deviation from values of an iterator.
@@ -36,8 +37,7 @@ def mean_stdev(values):
     """
     a, q, k = 0, 0, 0
     for v in values:
-        if v != v:
-            continue
+        assert math.isfinite(v)
         k += 1
         old_a = a
         a += (v - a) / k
@@ -70,7 +70,7 @@ class MemoryTrie:
     """ In-memory tree (made to be simple, no specific optimizations)
     """
 
-    def __init__(self, depth=10, path=None, terminals=['^', '$']):
+    def __init__(self, depth=10, terminals=['^', '$']):
         """
         :param depth: Maximum length of stored ngrams
         :param path: Path to the database (not used)
@@ -151,7 +151,7 @@ class MemoryTrie:
 
         def ve_for_depth(node, parent, depth):
             if depth == 0:
-                if node.entropy == node.entropy and (node.entropy != 0 or parent.entropy != 0):
+                if not math.isnan(node.entropy) and (node.entropy != 0 or parent.entropy != 0):
                     yield node.entropy - parent.entropy
             elif isinstance(node, MemoryNode):
                 for child in node.childs.values():
@@ -232,7 +232,7 @@ class MemoryTrie:
             last_node, node = self._lookup(ngram)
         except (KeyError, AttributeError):
             return float('nan')
-        if node.entropy == node.entropy and (node.entropy != 0 or last_node.entropy != 0):
+        if not math.isnan(node.entropy) and (node.entropy != 0 or last_node.entropy != 0):
             return node.entropy - last_node.entropy
         return float('nan')
 
