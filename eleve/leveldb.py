@@ -14,10 +14,10 @@ def to_bytes(o):
     return o if type(o) == bytes else str(o).encode()
 
 def ngram_to_key(ngram):
-    return bytes([len(ngram)]) + b''.join(b'@' + to_bytes(i) for i in ngram)
+    return bytes([len(ngram)]) + b''.join([b'@' + to_bytes(i) for i in ngram])
 
 def ngram_to_next_key(ngram):
-    return bytes([len(ngram) + 1]) + b''.join(b'@' + to_bytes(i) for i in ngram) + b'@'
+    return bytes([len(ngram) + 1]) + b''.join([b'@' + to_bytes(i) for i in ngram]) + b'@'
 
 class Node:
     def __init__(self, trie, ngram, data=None):
