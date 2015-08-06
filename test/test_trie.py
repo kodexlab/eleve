@@ -7,7 +7,7 @@ from eleve.memory import MemoryTrie
 from eleve.cstorages import MemoryTrie as CMemoryTrie
 
 def float_equal(a, b):
-    return (a != a and b != b) or abs(a - b) < 1e-5
+    return (a != a and b != b) or abs(a - b) < 1e-4
 
 def generate_random_ngrams():
     """ Generate list of random n-grams (of int)

@@ -1,6 +1,6 @@
 #include "child_list.hpp"
 
-ChildList::ChildList(shingle_const_iterator shingle_it, shingle_const_iterator shingle_end, COUNT count)
+ChildList::ChildList(shingle_const_iterator shingle_it, shingle_const_iterator shingle_end, const COUNT count)
 {
     auto token = *shingle_it;
     ++shingle_it;
@@ -33,7 +33,7 @@ Node* ChildList::search_child(shingle_const_iterator shingle_it, shingle_const_i
     return it->search_child(shingle_it + 1, shingle_end);
 };
 
-std::unique_ptr<List> ChildList::add_shingle(shingle_const_iterator shingle_it, shingle_const_iterator shingle_end, int count)
+std::unique_ptr<List> ChildList::add_shingle(shingle_const_iterator shingle_it, shingle_const_iterator shingle_end, const int count)
 {
     assert(shingle_it != shingle_end);
 
@@ -69,7 +69,7 @@ std::unique_ptr<List> ChildList::add_shingle(shingle_const_iterator shingle_it, 
 TokenListPair ChildList::split()
 {
     size_t new_size = data.size() / 2;
-    auto token = data[new_size].token();
+    auto token = data[new_size - 1].token();
     auto other = std::unique_ptr<ChildList>(new ChildList());
     for(auto it = data.begin() + new_size; it != data.end(); ++it)
     {

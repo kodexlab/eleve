@@ -36,12 +36,12 @@ class MemoryStorage
     void add_ngram(strVec& s, int freq=1);
 
     void clear();
+    void update_stats();
 
     float query_autonomy(strVec& ngram);
     float query_ev(strVec& ngram);
     float query_count(strVec& ngram);
     float query_entropy(strVec& ngram);
-
 };
 
 #endif

@@ -74,6 +74,12 @@ void MemoryStorage::clear()
     bwd.clear();
 };
 
+void MemoryStorage::update_stats()
+{
+    fwd.update_stats();
+    bwd.update_stats();
+};
+
 float MemoryStorage::query_autonomy(strVec& ngram)
 {
     auto ids = tokens_to_ids(ngram);

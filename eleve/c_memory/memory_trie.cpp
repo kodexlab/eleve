@@ -25,8 +25,15 @@ void MemoryTrie::update_stats_rec(float parent_entropy, int depth, Node* node)
         normalization.stdev += (ev - old_mean)*(ev - normalization.mean);
     }
 
+#ifndef NDEBUG
+    int64_t old_token = -1;
+#endif
     for(auto it = node->begin_childs(); it->get(); it->next())
     {
+#ifndef NDEBUG
+        assert(it->get()->token() > old_token);
+        old_token = it->get()->token();
+#endif
         update_stats_rec(entropy, depth + 1, it->get());
     }
 };
@@ -59,6 +66,7 @@ void MemoryTrie::add_ngram(const std::vector<ID>& shingle, int freq)
 
 COUNT MemoryTrie::query_count(const std::vector<ID>& shingle)
 {
+
     Node* n = root.search_child(shingle.cbegin(), shingle.cend());
     if(! n)
     {
@@ -69,6 +77,14 @@ COUNT MemoryTrie::query_count(const std::vector<ID>& shingle)
 
 float MemoryTrie::query_entropy(const std::vector<ID>& shingle)
 {
+    /* TODO: Remove
+    std::cerr << "ENTROPY" << std::endl;
+    for(auto it = root.begin_childs(); it->get(); it->next())
+    {
+        std::cerr << it->get()->token() << " " << it->get()->count() << std::endl;
+    };
+    */
+
     Node* n = root.search_child(shingle.cbegin(), shingle.cend());
     if(! n)
     {

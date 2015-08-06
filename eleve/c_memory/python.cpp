@@ -100,5 +100,6 @@ BOOST_PYTHON_MODULE(cstorages)
         .def("query_ev", &PyMemoryStorage::query_ev_)
         .def("query_autonomy", &PyMemoryStorage::query_autonomy_)
         .def("clear", &PyMemoryStorage::clear)
+        .def("update_stats", &PyMemoryStorage::update_stats)
     ;
 }

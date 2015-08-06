@@ -30,6 +30,10 @@ class Storage:
         self.bwd.clear()
         self.fwd.clear()
 
+    def update_stats(self):
+        self.bwd.update_stats()
+        self.fwd.update_stats()
+
     def query_autonomy(self, ngram):
         result_fwd = self.fwd.query_autonomy(ngram)
         result_bwd = self.bwd.query_autonomy(ngram[::-1])

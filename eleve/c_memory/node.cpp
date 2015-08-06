@@ -29,10 +29,10 @@ void Node::add_shingle(shingle_const_iterator shingle_it, shingle_const_iterator
     {
         // tb is the right part of the splitted list + the token in the middle
         // tb2 is the token in the middle + the left part.
-        auto tb = m_childs->split();
-        auto tb2 = TokenListPair(m_token, std::move(m_childs));
-        auto last = std::move(tb.list);
-        m_childs = std::unique_ptr<List>(new IndexList(tb2, last));
+        auto right_part = m_childs->split();
+        auto left_part = TokenListPair(right_part.token, std::move(m_childs));
+        auto last = std::move(right_part.list);
+        m_childs = std::unique_ptr<List>(new IndexList(left_part, last));
     }
 
 };
