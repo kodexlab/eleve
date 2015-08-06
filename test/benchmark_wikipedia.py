@@ -2,7 +2,7 @@ from mw.xml_dump import Iterator
 import bz2
 import regex as re
 import datetime
-from eleve import Eleve
+from eleve.storage import Storage
 import random
 import logging
 
@@ -14,7 +14,7 @@ def main():
 
     RE_WORD = re.compile(r"[\w-]{1,30}", re.IGNORECASE)
 
-    l = Eleve(2, 'wikipedia').clear()
+    l = Storage(3).clear()
 
     i = 0
     wcount = 0

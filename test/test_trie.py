@@ -4,6 +4,7 @@ import tempfile
 import os
 
 from eleve.memory import MemoryTrie
+from eleve.leveldb import LevelTrie
 from eleve.cstorages import MemoryTrie as CMemoryTrie
 
 def float_equal(a, b):
@@ -12,12 +13,12 @@ def float_equal(a, b):
 def generate_random_ngrams():
     """ Generate list of random n-grams (of int)
     """
-    depth = random.randint(3,4)
+    depth = random.randint(3,5)
     m = []
 
     def add(prefix):
-        for i in range(int(random.expovariate(0.2) + 1)):
-            k = int(random.expovariate(0.2))
+        for i in range(int(random.expovariate(0.1) + 1)):
+            k = int(random.expovariate(0.1))
             if len(prefix) < depth - 1:
                 add(prefix + [k])
             else:
@@ -54,12 +55,15 @@ def compare_nodes(ngrams, ref_trie, test_trie):
     compare_node([], ref_trie, test_trie)
     compare_node([420001337] * 10, ref_trie, test_trie)
 
-@pytest.mark.parametrize("trie_class", [CMemoryTrie])
+@pytest.mark.parametrize("trie_class", [LevelTrie, CMemoryTrie])
 def test_trie_class(trie_class, reference_class=MemoryTrie):
     """ Compare implementation against reference class (on random ngrams lists)
     """
     ngrams = generate_random_ngrams()
-    test_trie = trie_class()
+    if trie_class == LevelTrie:
+        test_trie = trie_class(path="/tmp/test_trie")
+    else:
+        test_trie = trie_class()
     ref_trie = reference_class()
 
     test_trie.clear()
@@ -71,7 +75,7 @@ def test_trie_class(trie_class, reference_class=MemoryTrie):
             compare_nodes(ngrams, ref_trie, test_trie)
     compare_nodes(ngrams, ref_trie, test_trie)
 
-@pytest.mark.parametrize("trie_class", [MemoryTrie])
+@pytest.mark.parametrize("trie_class", [MemoryTrie, LevelTrie])
 def test_basic_trie(trie_class):
     """ Minimal test on simple example
     """

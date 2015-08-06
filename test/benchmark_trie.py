@@ -1,19 +1,23 @@
 import datetime
 
-from test_storage import generate_random_ngrams
-from eleve.memory import MemoryStorage
-from eleve.neo4j import Neo4jStorage
-from eleve.merge import MergeStorage
+from test_trie import generate_random_ngrams
+from eleve.memory import MemoryTrie
+from eleve.cstorages import MemoryTrie as CMemoryTrie
+from eleve.leveldb import LevelTrie
 
-def benchmark_trie_class(trie_class, reference_class=MemoryStorage):
-    depth, ngrams = generate_random_ngrams()
+import random
+random.seed('palkeo')
+
+def benchmark_trie_class(trie_class, reference_class=MemoryTrie):
+    ngrams = generate_random_ngrams()
     print('{} ngrams.'.format(len(ngrams)))
-    test_trie = trie_class(depth)
-    ref_trie = reference_class(depth)
+    test_trie = trie_class(path='/tmp/test_trie')
+    test_trie.clear()
+    ref_trie = reference_class(5)
 
     t = datetime.datetime.now()
     for n in ngrams:
-        ref_trie.add_ngram(n, 1)
+        ref_trie.add_ngram(n)
     time_construct_ref = datetime.datetime.now() - t
     print('Time to construct reference : {}'.format(time_construct_ref))
 
@@ -46,4 +50,4 @@ def benchmark_trie_class(trie_class, reference_class=MemoryStorage):
     print('Time to query test : {}'.format(time_query_test))
 
 if __name__ == '__main__':
-    benchmark_trie_class(MergeStorage)
+    benchmark_trie_class(LevelTrie)

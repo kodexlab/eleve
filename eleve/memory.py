@@ -245,7 +245,7 @@ class MemoryTrie:
         except IndexError:
             return float('nan')
         ev = self.query_ev(ngram)
-        if ev != ev:
+        if math.isnan(ev):
             return float('nan')
         nev = ev - mean
         if z_score:

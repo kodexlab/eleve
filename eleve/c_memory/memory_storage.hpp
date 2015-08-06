@@ -15,12 +15,12 @@ class MemoryStorage
     std::vector<ID> tokens_to_ids(strVec& tokens);
     strVec ids_to_tokens(const std::vector<ID>& ids);
 
+    public:
+
     inline static std::vector<ID> reverse(const std::vector<ID>& ids)
     {
         return std::vector<ID>(ids.rbegin(), ids.rend());
     };
-
-    public:
     
     MemoryStorage(size_t order, strVec& terminals): ngram_length(order)
     {
