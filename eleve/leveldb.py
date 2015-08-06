@@ -3,7 +3,6 @@ import math
 import collections
 import logging
 import sys
-from contextlib import contextmanager
 
 import plyvel
 
@@ -16,31 +15,25 @@ def to_bytes(o):
 def ngram_to_key(ngram):
     return bytes([len(ngram)]) + b''.join([b'@' + to_bytes(i) for i in ngram])
 
-def ngram_to_next_key(ngram):
-    return bytes([len(ngram) + 1]) + b''.join([b'@' + to_bytes(i) for i in ngram]) + b'@'
-
 class Node:
-    def __init__(self, trie, ngram, data=None):
+    def __init__(self, trie, key, data=None):
         self.trie = trie
-        self.ngram = ngram
+        self.key = key
 
         if data is None:
-            data = trie.db.get(ngram_to_key(ngram))
+            data = trie.db.get(key)
         if data is None:
             self.count, self.entropy = 0, NaN
         else:
             self.count, self.entropy = PACKER.unpack(data)
 
-        self.old_count, self.old_entropy = self.count, self.entropy
-
     def childs(self):
-        start = ngram_to_next_key(self.ngram)
+        start = bytes([self.key[0] + 1]) + self.key[1:] + b'@'
         stop = start[:-1] + b'A' #
         for key, value in self.trie.db.iterator(start=start, stop=stop):
-            ngram = self.ngram + [key.split(b'@')[-1]]
-            yield Node(self.trie, ngram, value)
+            yield Node(self.trie, key, value)
 
-    def calculate_entropy(self, terminals):
+    def update_entropy(self, terminals):
         if self.count == 0:
             self.entropy = NaN
             return
@@ -49,18 +42,24 @@ class Node:
         sum_counts = 0
         for child in self.childs():
             sum_counts += child.count
-            if child.ngram[-1] in terminals:
+            if child.key.split(b'@')[-1] in terminals:
                 entropy += (child.count / self.count) * math.log2(self.count)
             else:
                 entropy -= (child.count / self.count) * math.log2(child.count / self.count)
         assert entropy >= 0
-        assert sum_counts == self.count or sum_counts == 0
-        self.entropy = entropy if sum_counts else NaN
+
+        if not sum_counts:
+            entropy = NaN
+        else:
+            assert sum_counts == self.count
+
+        if self.entropy != entropy and not(math.isnan(self.entropy) and math.isnan(entropy)):
+            self.entropy = entropy
+            self.save()
     
     def save(self):
-        if self.count != self.old_count or (self.entropy != self.old_entropy and not (math.isnan(self.entropy) and math.isnan(self.old_entropy))):
-            value = PACKER.pack(self.count, self.entropy)
-            self.trie.db.put(ngram_to_key(self.ngram), value)
+        value = PACKER.pack(self.count, self.entropy)
+        self.trie.db.put(self.key, value)
     
 class LevelTrie:
     def __init__(self, path, terminals=['^', '$'], delete=False):
@@ -92,25 +91,24 @@ class LevelTrie:
         print('-- END DEBUG DUMP --', file=sys.stderr)
 
     def update_stats(self):
-        def rec(parent_entropy, depth, ngram):
-            with self.node(ngram) as node:
-                node.calculate_entropy(self.terminals)
+        def rec(parent_entropy, depth, node):
+            node.update_entropy(self.terminals)
 
-                if not math.isnan(node.entropy) and (node.entropy or parent_entropy):
-                    ev = node.entropy - parent_entropy
+            if not math.isnan(node.entropy) and (node.entropy or parent_entropy):
+                ev = node.entropy - parent_entropy
 
-                    mean, stdev, count = self.normalization[depth]
-                    old_mean = mean
-                    count += 1
-                    mean += (ev - old_mean) / count
-                    stdev += (ev - old_mean)*(ev - mean)
-                    self.normalization[depth] = mean, stdev, count
+                mean, stdev, count = self.normalization[depth]
+                old_mean = mean
+                count += 1
+                mean += (ev - old_mean) / count
+                stdev += (ev - old_mean)*(ev - mean)
+                self.normalization[depth] = mean, stdev, count
 
-                for child in node.childs():
-                    rec(node.entropy, depth + 1, child.ngram)
+            for child in node.childs():
+                rec(node.entropy, depth + 1, child)
 
         self.normalization = collections.defaultdict(lambda: (0.,0.,0))
-        rec(NaN, 0, [])
+        rec(NaN, 0, Node(self, b'\x00'))
         for k, (mean, stdev, count) in self.normalization.items():
             self.normalization[k] = (mean, math.sqrt(stdev / (count if count else 1)), count)
 
@@ -121,40 +119,33 @@ class LevelTrie:
             logging.warning("Updating the tree statistics (update_stats method), as we query it while dirty. This is a slow operation.")
             self.update_stats()
 
-    @contextmanager
     def node(self, ngram):
-        try:
-            n = Node(self, ngram)
-            yield n
-        finally:
-            n.save()
+        return Node(self, ngram_to_key(ngram))
 
     def add_ngram(self, ngram, freq=1):
         self.dirty = True
 
         for i in range(len(ngram) + 1):
-            n = ngram[:i]
-
-            with self.node(n) as node:
-                node.count += freq
+            node = self.node(ngram[:i])
+            node.count += freq
+            node.save()
 
     def query_count(self, ngram):
-        with self.node(ngram) as node:
-            return node.count
+        return self.node(ngram).count
 
     def query_entropy(self, ngram):
         self._check_dirty()
-        with self.node(ngram) as node:
-            return node.entropy
+        return self.node(ngram).entropy
 
     def query_ev(self, ngram):
         self._check_dirty()
         if not ngram:
             return NaN
-        with self.node(ngram) as node, self.node(ngram[:-1]) as parent:
-            if not math.isnan(node.entropy) and (node.entropy != 0 or parent.entropy != 0):
-                return node.entropy - parent.entropy
-            return NaN
+        node = self.node(ngram)
+        parent = self.node(ngram[:-1])
+        if not math.isnan(node.entropy) and (node.entropy != 0 or parent.entropy != 0):
+            return node.entropy - parent.entropy
+        return NaN
 
     def query_autonomy(self, ngram):
         self._check_dirty()
