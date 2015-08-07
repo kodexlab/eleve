@@ -26,7 +26,7 @@ cdef class LevelTrie:
     cdef object normalization
     cdef object terminals
 
-    @cython.locals(b=bytearray, w=object, node=Node, i=cython.int)
+    @cython.locals(b=bytearray, w=object, node=Node, i=cython.int, create=bint)
     cpdef add_ngram(self, list ngram, int freq=*)
     
     @cython.locals(ev=float, mean=float, stdev=float, count=int, old_mean=float)
