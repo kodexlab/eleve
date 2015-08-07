@@ -4,6 +4,7 @@ import collections
 import logging
 
 import plyvel
+from cpython cimport bool
 
 NaN = float('nan')
 PACKER = struct.Struct('<Lf')
@@ -14,8 +15,13 @@ def to_bytes(o):
 def ngram_to_key(ngram):
     return bytes([len(ngram)]) + b''.join([b'@' + to_bytes(i) for i in ngram])
 
-class Node:
-    def __init__(self, trie, key, data=None):
+cdef class Node:
+    cdef public int count
+    cdef public float entropy
+    cdef object trie
+    cdef public bytes key
+
+    def __init__(self, trie, bytes key, data=None):
         self.trie = trie
         self.key = key
 
@@ -26,11 +32,14 @@ class Node:
 
     def childs(self):
         start = bytes([self.key[0] + 1]) + self.key[1:] + b'@'
-        stop = start[:-1] + b'A' #
+        stop = start[:-1] + b'A'
         for key, value in self.trie.db.iterator(start=start, stop=stop):
             yield Node(self.trie, key, value)
 
     def update_entropy(self, terminals):
+        cdef float entropy
+        cdef int sum_counts
+
         if self.count == 0:
             self.entropy = NaN
             return
@@ -58,7 +67,14 @@ class Node:
         value = PACKER.pack(self.count, self.entropy)
         self.trie.db.put(self.key, value)
     
-class LevelTrie:
+cdef class LevelTrie:
+    cdef bool dirty
+    cdef int root_add
+    cdef public object db
+    cdef set terminals
+    cdef str path
+    cdef object normalization
+
     def __init__(self, path, terminals=['^', '$'], delete=False):
         self.terminals = set(to_bytes(i) for i in terminals)
 
@@ -96,7 +112,10 @@ class LevelTrie:
         if not self.dirty:
             return
 
-        def rec(parent_entropy, depth, node):
+        def rec(float parent_entropy, int depth, node):
+            cdef float ev, mean, stdev, old_mean
+            cdef int count
+
             node.update_entropy(self.terminals)
 
             if not math.isnan(node.entropy) and (node.entropy or parent_entropy):
@@ -128,7 +147,9 @@ class LevelTrie:
     def node(self, ngram):
         return Node(self, ngram_to_key(ngram))
 
-    def add_ngram(self, ngram, freq=1):
+    def add_ngram(self, ngram, int freq=1):
+        cdef int i
+
         self.dirty = True
         b = bytearray(b'\x00')
 
