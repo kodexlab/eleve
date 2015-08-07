@@ -2,7 +2,6 @@ import struct
 import math
 import collections
 import logging
-import sys
 
 import plyvel
 
@@ -76,13 +75,27 @@ class LevelTrie:
                 self.db.delete(key)
         self.normalization = collections.defaultdict(lambda: (0.,0.,0))
         self.dirty = False
+        self.root_add = 0
         self.path = path
 
     def clear(self):
         self.db.close()
         self.__init__(self.path, self.terminals, delete=True)
 
+    def _update_root(self):
+        """ Update the counter of the root node """
+        if self.root_add == 0:
+            return
+
+        root = Node(self, b'\x00')
+        root.count += self.root_add
+        root.save()
+        self.root_add = 0
+
     def update_stats(self):
+        if not self.dirty:
+            return
+
         def rec(parent_entropy, depth, node):
             node.update_entropy(self.terminals)
 
@@ -100,6 +113,7 @@ class LevelTrie:
                 rec(node.entropy, depth + 1, child)
 
         self.normalization = collections.defaultdict(lambda: (0.,0.,0))
+        self._update_root()
         rec(NaN, 0, Node(self, b'\x00'))
         for k, (mean, stdev, count) in self.normalization.items():
             self.normalization[k] = (mean, math.sqrt(stdev / (count if count else 1)), count)
@@ -118,19 +132,19 @@ class LevelTrie:
         self.dirty = True
         b = bytearray(b'\x00')
 
-        node = Node(self, bytes(b))
-        node.count += freq
-        node.save()
+        # we bypass updating of the root because it's a constant cost that can be avoided.
+        self.root_add += freq
 
         for i in range(1, len(ngram) + 1):
             b[0] = i
-            b.append(64)
-            b.extend(str(ngram[i - 1]).encode())
+            b.extend(b'@' + str(ngram[i - 1]).encode())
             node = Node(self, bytes(b))
             node.count += freq
             node.save()
 
     def query_count(self, ngram):
+        if not ngram:
+            self._update_root()
         return self.node(ngram).count
 
     def query_entropy(self, ngram):
