@@ -79,22 +79,11 @@ class LevelTrie:
                 self.db.delete(key)
         self.normalization = collections.defaultdict(lambda: (0.,0.,0))
         self.dirty = False
-        self.root_add = 0
         self.path = path
 
     def clear(self):
         self.db.close()
         self.__init__(self.path, self.terminals, delete=True)
-
-    def _update_root(self):
-        """ Update the counter of the root node """
-        if self.root_add == 0:
-            return
-
-        root = Node(self.db, b'\x00')
-        root.count += self.root_add
-        root.save()
-        self.root_add = 0
 
     def update_stats(self):
         if not self.dirty:
@@ -117,7 +106,6 @@ class LevelTrie:
                 rec(node.entropy, depth + 1, child)
 
         self.normalization = collections.defaultdict(lambda: (0.,0.,0))
-        self._update_root()
         rec(NaN, 0, Node(self.db, b'\x00'))
         for k, (mean, stdev, count) in self.normalization.items():
             self.normalization[k] = (mean, math.sqrt(stdev / (count if count else 1)), count)
@@ -137,8 +125,9 @@ class LevelTrie:
         b = bytearray(b'\x00')
         w = self.db.write_batch()
 
-        # we bypass updating of the root because it's a constant cost that can be avoided.
-        self.root_add += freq
+        node = Node(self.db, b'\x00')
+        node.count += freq
+        node.save(w)
 
         for i in range(1, len(ngram) + 1):
             b[0] = i
@@ -150,8 +139,6 @@ class LevelTrie:
         w.write()
 
     def query_count(self, ngram):
-        if not ngram:
-            self._update_root()
         return self.node(ngram).count
 
     def query_entropy(self, ngram):
@@ -163,8 +150,10 @@ class LevelTrie:
         if not ngram:
             return NaN
         node = self.node(ngram)
+        if math.isnan(node.entropy):
+            return NaN
         parent = self.node(ngram[:-1])
-        if not math.isnan(node.entropy) and (node.entropy != 0 or parent.entropy != 0):
+        if node.entropy != 0 or parent.entropy != 0:
             return node.entropy - parent.entropy
         return NaN
 
