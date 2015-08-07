@@ -124,9 +124,17 @@ class LevelTrie:
 
     def add_ngram(self, ngram, freq=1):
         self.dirty = True
+        b = bytearray(b'\x00')
 
-        for i in range(len(ngram) + 1):
-            node = self.node(ngram[:i])
+        node = Node(self, bytes(b))
+        node.count += freq
+        node.save()
+
+        for i in range(1, len(ngram) + 1):
+            b[0] = i
+            b.append(64)
+            b.extend(str(ngram[i - 1]).encode())
+            node = Node(self, bytes(b))
             node.count += freq
             node.save()
 
