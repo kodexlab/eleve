@@ -4,7 +4,6 @@ import collections
 import logging
 
 import plyvel
-from cpython cimport bool
 
 NaN = float('nan')
 PACKER = struct.Struct('<Lf')
@@ -15,13 +14,8 @@ def to_bytes(o):
 def ngram_to_key(ngram):
     return bytes([len(ngram)]) + b''.join([b'@' + to_bytes(i) for i in ngram])
 
-cdef class Node:
-    cdef public int count
-    cdef public float entropy
-    cdef object trie
-    cdef public bytes key
-
-    def __init__(self, trie, bytes key, data=None):
+class Node:
+    def __init__(self, trie, key, data=None):
         self.trie = trie
         self.key = key
 
@@ -37,9 +31,6 @@ cdef class Node:
             yield Node(self.trie, key, value)
 
     def update_entropy(self, terminals):
-        cdef float entropy
-        cdef int sum_counts
-
         if self.count == 0:
             self.entropy = NaN
             return
@@ -47,6 +38,8 @@ cdef class Node:
         entropy = 0
         sum_counts = 0
         for child in self.childs():
+            if child.count == 0:
+                continue
             sum_counts += child.count
             if child.key.split(b'@')[-1] in terminals:
                 entropy += (child.count / self.count) * math.log2(self.count)
@@ -67,15 +60,8 @@ cdef class Node:
         value = PACKER.pack(self.count, self.entropy)
         self.trie.db.put(self.key, value)
     
-cdef class LevelTrie:
-    cdef bool dirty
-    cdef int root_add
-    cdef public object db
-    cdef set terminals
-    cdef str path
-    cdef object normalization
-
-    def __init__(self, path, terminals=['^', '$'], delete=False):
+class LevelTrie:
+    def __init__(self, path="/tmp/level_trie", terminals=['^', '$'], delete=False):
         self.terminals = set(to_bytes(i) for i in terminals)
 
         self.db = plyvel.DB(path,
@@ -112,10 +98,7 @@ cdef class LevelTrie:
         if not self.dirty:
             return
 
-        def rec(float parent_entropy, int depth, node):
-            cdef float ev, mean, stdev, old_mean
-            cdef int count
-
+        def rec(parent_entropy, depth, node):
             node.update_entropy(self.terminals)
 
             if not math.isnan(node.entropy) and (node.entropy or parent_entropy):
@@ -147,9 +130,7 @@ cdef class LevelTrie:
     def node(self, ngram):
         return Node(self, ngram_to_key(ngram))
 
-    def add_ngram(self, ngram, int freq=1):
-        cdef int i
-
+    def add_ngram(self, ngram, freq=1):
         self.dirty = True
         b = bytearray(b'\x00')
 

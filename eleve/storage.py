@@ -1,19 +1,20 @@
 from eleve.memory import MemoryTrie
+from eleve.leveldb import LevelTrie
 import math
 
 # -*- coding:utf8 -*-
 """ Storage interface for LM
 """
 
-class Storage:
+class MemoryStorage:
     order = None
 
-    def __init__(self, order, trie_class=MemoryTrie, *args, **kwargs):
+    def __init__(self, order):
         assert order > 0 and isinstance(order, int)
         self.order = order
 
-        self.bwd = trie_class(order, *args, **kwargs)
-        self.fwd = trie_class(order, *args, **kwargs)
+        self.bwd = MemoryTrie(order)
+        self.fwd = MemoryTrie(order)
 
     def add_sentence(self, sentence, freq=1):
         if not sentence:
@@ -59,3 +60,15 @@ class Storage:
         if math.isnan(entropy_fwd) or math.isnan(entropy_bwd):
             return float('nan')
         return (entropy_fwd + entropy_bwd) / 2
+
+class LevelStorage(MemoryStorage):
+
+    def __init__(self, order, path=None):
+        assert order > 0 and isinstance(order, int)
+        self.order = order
+
+        if path is None:
+            path = '/tmp/level_storage'
+
+        self.bwd = LevelTrie(path=(path + '_bwd'))
+        self.fwd = LevelTrie(path=(path + '_fwd'))
