@@ -88,28 +88,28 @@ class LevelTrie:
         self.db.close()
         self.__init__(self.path, self.terminals, delete=True)
 
+    def _update_stats_rec(self, parent_entropy, depth, node):
+        node.update_entropy(self.terminals)
+
+        if not math.isnan(node.entropy) and (node.entropy or parent_entropy):
+            ev = node.entropy - parent_entropy
+
+            mean, stdev, count = self.normalization[depth]
+            old_mean = mean
+            count += 1
+            mean += (ev - old_mean) / count
+            stdev += (ev - old_mean)*(ev - mean)
+            self.normalization[depth] = mean, stdev, count
+
+        for child in node.childs():
+            self._update_stats_rec(node.entropy, depth + 1, child)
+
     def update_stats(self):
         if not self.dirty:
             return
 
-        def rec(parent_entropy, depth, node):
-            node.update_entropy(self.terminals)
-
-            if not math.isnan(node.entropy) and (node.entropy or parent_entropy):
-                ev = node.entropy - parent_entropy
-
-                mean, stdev, count = self.normalization[depth]
-                old_mean = mean
-                count += 1
-                mean += (ev - old_mean) / count
-                stdev += (ev - old_mean)*(ev - mean)
-                self.normalization[depth] = mean, stdev, count
-
-            for child in node.childs():
-                rec(node.entropy, depth + 1, child)
-
         self.normalization = collections.defaultdict(lambda: (0.,0.,0))
-        rec(NaN, 0, Node(self.db, b'\x00'))
+        self._update_stats_rec(NaN, 0, Node(self.db, b'\x00'))
         for k, (mean, stdev, count) in self.normalization.items():
             self.normalization[k] = (mean, math.sqrt(stdev / (count if count else 1)), count)
 
