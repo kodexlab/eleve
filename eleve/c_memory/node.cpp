@@ -79,6 +79,9 @@ float Node::entropy(HStats& hstats)
 #ifndef NDEBUG
         sum_count += node->count();
 #endif
+        if(! node->count())
+            continue;
+
         if(hstats.terminals.count(node->token()))
         {
             // terminals are counted only once
