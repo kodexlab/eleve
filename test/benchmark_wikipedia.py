@@ -11,7 +11,7 @@ def main():
 
     RE_WORD = re.compile(r"[\w-]{1,30}", re.IGNORECASE)
 
-    l = LevelStorage(3, path='/home/palkeo/Divers/stage_wikipedia')
+    l = LevelStorage(3) #, path='/home/palkeo/Divers/stage_wikipedia')
     l.clear()
 
     i = 0

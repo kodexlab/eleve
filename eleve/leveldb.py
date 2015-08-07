@@ -7,6 +7,7 @@ import plyvel
 
 NaN = float('nan')
 PACKER = struct.Struct('<Lf')
+NORMALIZATION_PACKER = struct.Struct('<ff')
 
 SEPARATOR = b'\x00'
 SEPARATOR_PLUS_ONE = bytes((SEPARATOR[0]+1,))
@@ -80,7 +81,7 @@ class LevelTrie:
         if delete:
             for key in self.db.iterator(include_value=False):
                 self.db.delete(key)
-        self.normalization = collections.defaultdict(lambda: (0.,0.,0))
+
         self.dirty = False
         self.path = path
 
@@ -109,10 +110,14 @@ class LevelTrie:
             return
 
         self.normalization = collections.defaultdict(lambda: (0.,0.,0))
-        self._update_stats_rec(NaN, 0, Node(self.db, b'\x00'))
-        for k, (mean, stdev, count) in self.normalization.items():
-            self.normalization[k] = (mean, math.sqrt(stdev / (count if count else 1)), count)
 
+        self._update_stats_rec(NaN, 0, Node(self.db, b'\x00'))
+
+        for k, (mean, stdev, count) in self.normalization.items():
+            stdev = math.sqrt(stdev / (count or 1))
+            self.db.put(b'\xff' + bytes((k,)),  NORMALIZATION_PACKER.pack(mean, stdev))
+
+        self.normalization = None
         self.dirty = False
         
     def _check_dirty(self):
@@ -162,9 +167,12 @@ class LevelTrie:
 
     def query_autonomy(self, ngram):
         self._check_dirty()
-        mean, stdev, count = self.normalization[len(ngram)]
-        if not count:
+
+        normalization = self.db.get(b'\xff' + bytes((len(ngram),)))
+        if normalization is None:
             return NaN
+        mean, stdev = NORMALIZATION_PACKER.unpack(normalization)
+
         ev = self.query_ev(ngram)
         if math.isnan(ev):
             return NaN
