@@ -15,20 +15,26 @@ def ngram_to_key(ngram):
     return bytes([len(ngram)]) + b''.join([b'@' + to_bytes(i) for i in ngram])
 
 class Node:
-    def __init__(self, trie, key, data=None):
-        self.trie = trie
+    def __init__(self, db, key, data=None):
+        self.db = db
         self.key = key
 
         if data is None:
-            data = trie.db.get(key)
+            data = db.get(key)
 
         self.count, self.entropy = (0, NaN) if data is None else PACKER.unpack(data)
 
     def childs(self):
         start = bytes([self.key[0] + 1]) + self.key[1:] + b'@'
         stop = start[:-1] + b'A'
-        for key, value in self.trie.db.iterator(start=start, stop=stop):
-            yield Node(self.trie, key, value)
+        for key, value in self.db.iterator(start=start, stop=stop):
+            yield Node(self.db, key, value)
+
+    def save(self, db=None):
+        if db is None:
+            db = self.db
+        value = PACKER.pack(self.count, self.entropy)
+        db.put(self.key, value)
 
     def update_entropy(self, terminals):
         if self.count == 0:
@@ -56,20 +62,16 @@ class Node:
             self.entropy = entropy
             self.save()
     
-    def save(self):
-        value = PACKER.pack(self.count, self.entropy)
-        self.trie.db.put(self.key, value)
-    
 class LevelTrie:
     def __init__(self, path="/tmp/level_trie", terminals=['^', '$'], delete=False):
         self.terminals = set(to_bytes(i) for i in terminals)
 
         self.db = plyvel.DB(path,
                 create_if_missing=True,
-                #write_buffer_size=16*1024**2,
+                #write_buffer_size=32*1024**2,
                 #block_size=16*1024,
                 #lru_cache_size=512*1024**2,
-                #bloom_filter_bits=10,
+                #bloom_filter_bits=8,
         )
 
         if delete:
@@ -89,7 +91,7 @@ class LevelTrie:
         if self.root_add == 0:
             return
 
-        root = Node(self, b'\x00')
+        root = Node(self.db, b'\x00')
         root.count += self.root_add
         root.save()
         self.root_add = 0
@@ -116,7 +118,7 @@ class LevelTrie:
 
         self.normalization = collections.defaultdict(lambda: (0.,0.,0))
         self._update_root()
-        rec(NaN, 0, Node(self, b'\x00'))
+        rec(NaN, 0, Node(self.db, b'\x00'))
         for k, (mean, stdev, count) in self.normalization.items():
             self.normalization[k] = (mean, math.sqrt(stdev / (count if count else 1)), count)
 
@@ -128,11 +130,12 @@ class LevelTrie:
             self.update_stats()
 
     def node(self, ngram):
-        return Node(self, ngram_to_key(ngram))
+        return Node(self.db, ngram_to_key(ngram))
 
     def add_ngram(self, ngram, freq=1):
         self.dirty = True
         b = bytearray(b'\x00')
+        w = self.db.write_batch()
 
         # we bypass updating of the root because it's a constant cost that can be avoided.
         self.root_add += freq
@@ -140,9 +143,11 @@ class LevelTrie:
         for i in range(1, len(ngram) + 1):
             b[0] = i
             b.extend(b'@' + str(ngram[i - 1]).encode())
-            node = Node(self, bytes(b))
+            node = Node(self.db, bytes(b))
             node.count += freq
-            node.save()
+            node.save(w)
+
+        w.write()
 
     def query_count(self, ngram):
         if not ngram:
