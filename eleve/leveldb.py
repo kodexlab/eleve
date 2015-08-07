@@ -8,11 +8,14 @@ import plyvel
 NaN = float('nan')
 PACKER = struct.Struct('<Lf')
 
+SEPARATOR = b'\x00'
+SEPARATOR_PLUS_ONE = bytes((SEPARATOR[0]+1,))
+
 def to_bytes(o):
     return o if type(o) == bytes else str(o).encode()
 
 def ngram_to_key(ngram):
-    return bytes([len(ngram)]) + b''.join([b'@' + to_bytes(i) for i in ngram])
+    return bytes([len(ngram)]) + b''.join([SEPARATOR + to_bytes(i) for i in ngram])
 
 class Node:
     def __init__(self, db, key, data=None):
@@ -25,8 +28,8 @@ class Node:
         self.count, self.entropy = (0, NaN) if data is None else PACKER.unpack(data)
 
     def childs(self):
-        start = bytes([self.key[0] + 1]) + self.key[1:] + b'@'
-        stop = start[:-1] + b'A'
+        start = bytes([self.key[0] + 1]) + self.key[1:] + SEPARATOR
+        stop = start[:-1] + SEPARATOR_PLUS_ONE
         for key, value in self.db.iterator(start=start, stop=stop):
             yield Node(self.db, key, value)
 
@@ -47,7 +50,7 @@ class Node:
             if child.count == 0:
                 continue
             sum_counts += child.count
-            if child.key.split(b'@')[-1] in terminals:
+            if child.key.split(SEPARATOR)[-1] in terminals:
                 entropy += (child.count / self.count) * math.log2(self.count)
             else:
                 entropy -= (child.count / self.count) * math.log2(child.count / self.count)
@@ -131,7 +134,7 @@ class LevelTrie:
 
         for i in range(1, len(ngram) + 1):
             b[0] = i
-            b.extend(b'@' + str(ngram[i - 1]).encode())
+            b.extend(SEPARATOR + str(ngram[i - 1]).encode())
             node = Node(self.db, bytes(b))
             node.count += freq
             node.save(w)
