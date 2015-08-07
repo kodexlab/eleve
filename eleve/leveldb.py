@@ -26,7 +26,7 @@ class Node:
         if data is None:
             data = db.get(key)
 
-        self.count, self.entropy = (0, NaN) if data is None else PACKER.unpack(data)
+        self.count, self.entropy = PACKER.unpack(data) if data else (0, NaN)
 
     def childs(self):
         start = bytes([self.key[0] + 1]) + self.key[1:] + SEPARATOR
@@ -133,6 +133,10 @@ class LevelTrie:
         b = bytearray(b'\x00')
         w = self.db.write_batch()
 
+        # shortcut : if we encounter a node with a counter to zero, we will
+        #            set data to False and avoid doing queries for the following nodes.
+        create = False
+
         node = Node(self.db, b'\x00')
         node.count += freq
         node.save(w)
@@ -140,7 +144,9 @@ class LevelTrie:
         for i in range(1, len(ngram) + 1):
             b[0] = i
             b.extend(SEPARATOR + str(ngram[i - 1]).encode())
-            node = Node(self.db, bytes(b))
+            node = Node(self.db, bytes(b), data=(False if create else None))
+            if node.count == 0:
+                create = True
             node.count += freq
             node.save(w)
 
