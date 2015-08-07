@@ -50,4 +50,9 @@ def benchmark_trie_class(trie_class, reference_class=MemoryTrie):
     print('Time to query test : {}'.format(time_query_test))
 
 if __name__ == '__main__':
-    benchmark_trie_class(LevelTrie)
+    import pstats, cProfile
+    import pyximport
+    pyximport.install()
+    cProfile.runctx("benchmark_trie_class(LevelTrie)", globals(), locals(), 'profile.prof')
+    s = pstats.Stats('profile.prof')
+    s.strip_dirs().sort_stats('time').print_stats()

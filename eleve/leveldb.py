@@ -22,10 +22,8 @@ class Node:
 
         if data is None:
             data = trie.db.get(key)
-        if data is None:
-            self.count, self.entropy = 0, NaN
-        else:
-            self.count, self.entropy = PACKER.unpack(data)
+
+        self.count, self.entropy = (0, NaN) if data is None else PACKER.unpack(data)
 
     def childs(self):
         start = bytes([self.key[0] + 1]) + self.key[1:] + b'@'
@@ -83,12 +81,6 @@ class LevelTrie:
     def clear(self):
         self.db.close()
         self.__init__(self.path, self.terminals, delete=True)
-
-    def _debug_dump(self):
-        print('-- BEGIN DEBUG DUMP --', file=sys.stderr)
-        for key, value in self.db.iterator(fill_cache=False):
-            print(key, value, file=sys.stderr)
-        print('-- END DEBUG DUMP --', file=sys.stderr)
 
     def update_stats(self):
         def rec(parent_entropy, depth, node):
