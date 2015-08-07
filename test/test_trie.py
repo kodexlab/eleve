@@ -2,6 +2,7 @@ import pytest
 import random
 import tempfile
 import os
+import gc
 
 from eleve.memory import MemoryTrie
 from eleve.leveldb import LevelTrie
@@ -59,15 +60,14 @@ def compare_nodes(ngrams, ref_trie, test_trie):
 def test_trie_class(trie_class, reference_class=MemoryTrie):
     """ Compare implementation against reference class (on random ngrams lists)
     """
+    gc.collect()
     ngrams = generate_random_ngrams()
-    if trie_class == LevelTrie:
-        test_trie = trie_class(path="/tmp/test_trie")
-    else:
-        test_trie = trie_class()
+    test_trie = trie_class()
     ref_trie = reference_class()
 
     test_trie.clear()
     ref_trie.clear()
+
     for i, n in enumerate(ngrams):
         test_trie.add_ngram(n)
         ref_trie.add_ngram(n)
@@ -75,21 +75,23 @@ def test_trie_class(trie_class, reference_class=MemoryTrie):
             compare_nodes(ngrams, ref_trie, test_trie)
     compare_nodes(ngrams, ref_trie, test_trie)
 
-@pytest.mark.parametrize("trie_class", [MemoryTrie, LevelTrie])
+@pytest.mark.parametrize("trie_class", [MemoryTrie, LevelTrie, CMemoryTrie])
 def test_basic_trie(trie_class):
     """ Minimal test on simple example
     """
+    gc.collect()
     m = trie_class()
     m.clear()
-    m.add_ngram(('le','petit','chat'))
-    m.add_ngram(('le','petit','chien'))
-    m.add_ngram(('le','gros','chien'))
-    assert m.query_count(('le', 'petit')) == 2
-    assert m.query_entropy(('le', 'petit')) == 1.0
-    assert m.query_count(None) == 3
-    assert m.query_count(('le', 'petit')) != m.query_count(('le', 'gros'))
-    m.add_ngram(('le','petit','chat'), freq=-1)
-    assert m.query_count(('le', 'petit')) == m.query_count(('le', 'petit'))
-    assert m.query_entropy(('le', 'petit')) == m.query_entropy(('le', 'petit'))
 
-#TODO: test de remove
+    LE, PETIT, GROS, CHAT, CHIEN = range(1, 6)
+
+    m.add_ngram([LE,PETIT,CHAT])
+    m.add_ngram([LE,PETIT,CHIEN])
+    m.add_ngram([LE,GROS,CHIEN])
+    assert m.query_count([LE, PETIT]) == 2
+    assert m.query_entropy([LE, PETIT]) == 1.0
+    assert m.query_count([]) == 3
+    assert m.query_count([LE, PETIT]) != m.query_count([LE, GROS])
+    m.add_ngram([LE,PETIT,CHAT], -1)
+    assert m.query_count([LE, PETIT]) == m.query_count([LE, GROS])
+    assert m.query_entropy([LE, PETIT]) == m.query_entropy([LE, GROS])
