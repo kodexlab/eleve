@@ -71,7 +71,7 @@ class LevelTrie:
 
         self.db = plyvel.DB(path,
                 create_if_missing=True,
-                #write_buffer_size=32*1024**2,
+                write_buffer_size=32*1024**2,
                 #block_size=16*1024,
                 #lru_cache_size=512*1024**2,
                 #bloom_filter_bits=8,
