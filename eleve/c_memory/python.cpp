@@ -8,6 +8,8 @@ class PyMemoryTrie: public MemoryTrie
 {
     public:
 
+    using MemoryTrie::MemoryTrie;
+
     void add_ngram_(py::list ngram, int freq)
     {
         add_ngram(std::vector<ID>{pyIdIt(ngram), pyIdIt()}, freq);
@@ -38,7 +40,7 @@ class PyMemoryStorage: public MemoryStorage
 {
     public:
 
-    PyMemoryStorage(size_t o): MemoryStorage(o) {};
+    using MemoryStorage::MemoryStorage;
 
     float query_autonomy_(py::list ngram)
     {
