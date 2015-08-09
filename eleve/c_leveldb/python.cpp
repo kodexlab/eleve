@@ -1,5 +1,6 @@
 #include "python.hpp"
 #include "leveldb_storage.hpp"
+#include "Python.h"
 
 inline std::vector<std::string> convert(py::list& ngram)
 {
@@ -7,11 +8,17 @@ inline std::vector<std::string> convert(py::list& ngram)
     r.reserve(py::len(ngram));
     for(int i = 0; i < py::len(ngram); ++i)
     {
-        py::extract<int> e(ngram[i]);
-        if(e.check())
-            r.push_back(std::to_string(e));
+        PyObject* o = py::api::object(ngram[i]).ptr();
+        if(PyLong_Check(o))
+        {
+            r.push_back(std::to_string(PyLong_AsLong(o)));
+        }
         else
-            r.push_back(py::extract<std::string>(ngram[i]));
+        {
+            Py_ssize_t s;
+            char* u = PyUnicode_AsUTF8AndSize(o, &s);
+            r.push_back(std::string(u, s));
+        }
     }
     return std::move(r);
 };
