@@ -41,6 +41,8 @@ LeveldbTrie::LeveldbTrie(const std::string& path)
 
 void LeveldbTrie::update_stats_rec(float parent_entropy, size_t depth, Node& node)
 {
+    node.update_entropy(terminals);
+
     if(!isnan(node.entropy) && (node.entropy != 0. || parent_entropy != 0.))
     {
         float ev = node.entropy - parent_entropy;
@@ -58,19 +60,13 @@ void LeveldbTrie::update_stats_rec(float parent_entropy, size_t depth, Node& nod
         normalization[depth] = n;
     }
 
-    leveldb::WriteBatch write_batch;
-
     auto it = db->NewIterator(read_options);
     auto end = node.end_childs();
     for(it->Seek(leveldb::Slice(node.begin_childs())); it->Valid() && it->key().compare(end) < 0; it->Next())
     {
         Node child = Node(db, it->key().ToString(), it->value().data());
-        node.update_entropy(terminals, &write_batch);
         update_stats_rec(node.entropy, depth + 1, child);
     }
-
-    auto status = db->Write(write_options, &write_batch);
-    assert(status.ok());
 };
 
 void LeveldbTrie::update_stats()

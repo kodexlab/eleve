@@ -59,7 +59,7 @@ std::string Node::end_childs() const
     return std::move(s);
 };
 
-void Node::update_entropy(std::set<std::string>& terminals, leveldb::WriteBatch* batch)
+void Node::update_entropy(std::set<std::string>& terminals)
 {
     if(count == 0)
     {
@@ -105,6 +105,6 @@ void Node::update_entropy(std::set<std::string>& terminals, leveldb::WriteBatch*
     if(e != entropy && !(isnan(entropy) && isnan(e)))
     {
         entropy = e;
-        save(batch);
+        save();
     }
 };
