@@ -5,6 +5,9 @@
 #include "leveldb/slice.h"
 #include "leveldb/write_batch.h"
 
+static const leveldb::ReadOptions read_options;
+static const leveldb::WriteOptions write_options;
+
 class Node
 {
     protected:

@@ -7,7 +7,7 @@ Node::Node(leveldb::DB* db, const std::string& key, const char* data): db(db), k
     if(data == nullptr)
     {
         std::string value;
-        auto s = db->Get(leveldb::ReadOptions(), leveldb::Slice(key), &value);
+        auto s = db->Get(read_options, leveldb::Slice(key), &value);
         if(! s.ok())
         {
             assert(s.IsNotFound());
@@ -34,7 +34,7 @@ void Node::save(leveldb::WriteBatch* batch) const
 
     if(batch == nullptr)
     {
-        auto status = db->Put(leveldb::WriteOptions(), key, leveldb::Slice(data.data(), data.size()));
+        auto status = db->Put(write_options, key, leveldb::Slice(data.data(), data.size()));
         assert(status.ok());
     }
     else
@@ -70,7 +70,7 @@ void Node::update_entropy(std::set<std::string>& terminals)
     float e = 0;
     COUNT sum_counts = 0;
     
-    auto it = db->NewIterator(leveldb::ReadOptions());
+    auto it = db->NewIterator(read_options);
     auto end = end_childs();
     for(it->Seek(leveldb::Slice(begin_childs())); it->Valid() && it->key().compare(end) < 0; it->Next())
     {

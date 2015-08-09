@@ -22,7 +22,7 @@ void LeveldbTrie::update_stats_rec(float parent_entropy, size_t depth, Node& nod
         normalization[depth] = n;
     }
 
-    auto it = db->NewIterator(leveldb::ReadOptions());
+    auto it = db->NewIterator(read_options);
     auto end = node.end_childs();
     for(it->Seek(leveldb::Slice(node.begin_childs())); it->Valid() && it->key().compare(end) < 0; it->Next())
     {
@@ -56,7 +56,7 @@ void LeveldbTrie::update_stats()
         *(float*)value.data() = n.mean;
         *(float*)(value.data() + sizeof(float)) = n.stdev;
 
-        db->Put(leveldb::WriteOptions(),
+        db->Put(write_options,
                 leveldb::Slice(key.data(), 2),
                 leveldb::Slice(value.data(), sizeof(float) * 2));
     };
@@ -99,7 +99,7 @@ void LeveldbTrie::add_ngram(const std::vector<std::string>& ngram, int freq)
         node.save(&write_batch);
     };
 
-    auto status = db->Write(leveldb::WriteOptions(), &write_batch);
+    auto status = db->Write(write_options, &write_batch);
     assert(status.ok());
 };
 
@@ -141,7 +141,7 @@ float LeveldbTrie::query_autonomy(const std::vector<std::string>& ngram)
         key[0] = 0xff;
         key[1] = ngram.size();
         std::string value;
-        auto s = db->Get(leveldb::ReadOptions(), leveldb::Slice(key.data(), 2), &value);
+        auto s = db->Get(read_options, leveldb::Slice(key.data(), 2), &value);
         if(! s.ok())
         {
             return NAN;
@@ -156,8 +156,7 @@ float LeveldbTrie::query_autonomy(const std::vector<std::string>& ngram)
 
 void LeveldbTrie::clear()
 {
-    auto it = db->NewIterator(leveldb::ReadOptions());
-    auto write_options = leveldb::WriteOptions();
+    auto it = db->NewIterator(read_options);
     for(it->SeekToFirst(); it->Valid(); it->Next())
     {
         db->Delete(write_options, it->key());
