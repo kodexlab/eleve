@@ -4,6 +4,7 @@ import regex as re
 import datetime
 from eleve.storage import LevelStorage
 from eleve.cstorages import MemoryStorage
+from eleve.c_leveldb.cleveldb import LeveldbStorage as LevelStorage
 import random
 
 def main():

@@ -4,10 +4,11 @@ import gc
 
 from eleve.storage import MemoryStorage, LevelStorage
 from eleve.cstorages import MemoryStorage as CMemoryStorage
+from eleve.cleveldb import LeveldbStorage as CLevelStorage
 
 from test_trie import compare_node
 
-@pytest.mark.parametrize("storage_class", [MemoryStorage, CMemoryStorage, LevelStorage])
+@pytest.mark.parametrize("storage_class", [MemoryStorage, CMemoryStorage, LevelStorage, CLevelStorage])
 def test_basic_entropy(storage_class):
     """
     Forward that begins by « le petit »:
@@ -29,7 +30,7 @@ def test_basic_entropy(storage_class):
     assert m.query_count(['le', 'petit']) == 4.0
     assert m.query_entropy(['le', 'petit']) == 1.75
 
-@pytest.mark.parametrize("storage_class", [CMemoryStorage, LevelStorage])
+@pytest.mark.parametrize("storage_class", [CMemoryStorage, LevelStorage, CLevelStorage])
 def test_storage(storage_class, ref_class=MemoryStorage):
     gc.collect()
     test = storage_class(4)

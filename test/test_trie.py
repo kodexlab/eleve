@@ -6,6 +6,7 @@ import gc
 
 from eleve.memory import MemoryTrie
 from eleve.leveldb import LevelTrie
+from eleve.cleveldb import LeveldbTrie as CLevelTrie
 from eleve.cstorages import MemoryTrie as CMemoryTrie
 
 def float_equal(a, b):
@@ -56,7 +57,7 @@ def compare_nodes(ngrams, ref_trie, test_trie):
     compare_node([], ref_trie, test_trie)
     compare_node([420001337] * 10, ref_trie, test_trie)
 
-@pytest.mark.parametrize("trie_class", [LevelTrie, CMemoryTrie])
+@pytest.mark.parametrize("trie_class", [LevelTrie, CMemoryTrie, CLevelTrie])
 def test_trie_class(trie_class, reference_class=MemoryTrie):
     """ Compare implementation against reference class (on random ngrams lists)
     """
@@ -75,7 +76,7 @@ def test_trie_class(trie_class, reference_class=MemoryTrie):
             compare_nodes(ngrams, ref_trie, test_trie)
     compare_nodes(ngrams, ref_trie, test_trie)
 
-@pytest.mark.parametrize("trie_class", [MemoryTrie, LevelTrie, CMemoryTrie])
+@pytest.mark.parametrize("trie_class", [MemoryTrie, LevelTrie, CMemoryTrie, CLevelTrie])
 def test_basic_trie(trie_class):
     """ Minimal test on simple example
     """
@@ -95,3 +96,4 @@ def test_basic_trie(trie_class):
     m.add_ngram([LE,PETIT,CHAT], -1)
     assert m.query_count([LE, PETIT]) == m.query_count([LE, GROS])
     assert m.query_entropy([LE, PETIT]) == m.query_entropy([LE, GROS])
+

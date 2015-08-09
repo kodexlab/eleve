@@ -4,6 +4,7 @@ from test_trie import generate_random_ngrams
 from eleve.memory import MemoryTrie
 from eleve.cstorages import MemoryTrie as CMemoryTrie
 from eleve.leveldb import LevelTrie
+from eleve.c_leveldb.cleveldb import LeveldbTrie as LevelTrie
 
 import random
 random.seed('palkeo')
@@ -11,7 +12,7 @@ random.seed('palkeo')
 def benchmark_trie_class(trie_class, reference_class=MemoryTrie):
     ngrams = generate_random_ngrams()
     print('{} ngrams.'.format(len(ngrams)))
-    test_trie = trie_class(path='/tmp/test_trie')
+    test_trie = trie_class('/tmp/test_trie')
     test_trie.clear()
     ref_trie = reference_class(5)
 
@@ -34,7 +35,7 @@ def benchmark_trie_class(trie_class, reference_class=MemoryTrie):
 
     t = datetime.datetime.now()
     for n in ngrams:
-        test_trie.add_ngram(n, 1)
+        test_trie.add_ngram(n)
     time_construct_test = datetime.datetime.now() - t
     print('Time to construct test : {}'.format(time_construct_test))
 
