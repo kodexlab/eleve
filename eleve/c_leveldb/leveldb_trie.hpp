@@ -4,6 +4,7 @@
 #include "config.hpp"
 #include "leveldb_node.hpp"
 #include <iostream>
+#include <array>
 
 struct Normalization
 {
@@ -35,28 +36,30 @@ class LeveldbTrie
 
     void update_stats_rec(float parent_entropy, size_t depth, Node& node);
 
-    inline void check_dirty()
+    inline void set_dirty()
+    {
+        if(! dirty)
+        {
+            std::array<char, 2> key;
+            key[0] = 0xff;
+            key[1] = 0;
+            db->Delete(write_options, leveldb::Slice(key.data(), 2));
+
+            dirty = true;
+        }
+    };
+
+    inline void set_clean()
     {
         if(dirty)
+        {
             update_stats();
+        }
     };
 
     public:
 
-    LeveldbTrie(const std::string& path = "/tmp/test_trie") : dirty(false)
-    {
-        leveldb::Options options;
-        options.create_if_missing = true;
-        options.write_buffer_size = 64*1024*1024;
-        //options.block_size = 16*1024;
-
-        auto status = leveldb::DB::Open(options, path, &db);
-        if(! status.ok())
-        {
-            std::cerr << "Unable to open the database at " << path << ": " << status.ToString() << std::endl;
-            exit(EXIT_FAILURE);
-        }
-    };
+    LeveldbTrie(const std::string& path = "/tmp/test_trie");
 
     LeveldbTrie(const std::string& path, const std::set<std::string>& terms) : LeveldbTrie(path)
     {
