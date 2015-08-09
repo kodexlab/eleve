@@ -38,7 +38,7 @@ class Node
 
     void save(leveldb::WriteBatch* batch = nullptr) const;
 
-    void update_entropy(std::set<std::string>& terminals);
+    void update_entropy(std::set<std::string>& terminals, leveldb::WriteBatch* batch = nullptr);
 
     std::string begin_childs() const;
     std::string end_childs() const; // key PAST the childs
