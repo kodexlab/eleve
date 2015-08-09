@@ -2,7 +2,7 @@
 #include "leveldb_storage.hpp"
 #include "Python.h"
 
-inline std::vector<std::string> convert(py::list& ngram)
+std::vector<std::string> convert(py::list& ngram)
 {
     std::vector<std::string> r;
     r.reserve(py::len(ngram));
@@ -20,7 +20,7 @@ inline std::vector<std::string> convert(py::list& ngram)
             r.push_back(std::string(u, s));
         }
     }
-    return std::move(r);
+    return r;
 };
 
 class PyLeveldbTrie: public LeveldbTrie
