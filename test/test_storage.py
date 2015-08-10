@@ -3,7 +3,7 @@ import re
 import gc
 
 from eleve.storage import MemoryStorage, LevelStorage
-from eleve.cstorages import MemoryStorage as CMemoryStorage
+from eleve.cmemory import MemoryStorage as CMemoryStorage
 from eleve.cleveldb import LeveldbStorage as CLevelStorage
 
 from test_trie import compare_node

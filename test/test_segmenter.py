@@ -3,7 +3,7 @@ import gc
 import pytest
 
 from eleve.storage import MemoryStorage, LevelStorage
-from eleve.cstorages import MemoryStorage as CMemoryStorage
+from eleve.cmemory import MemoryStorage as CMemoryStorage
 from eleve.cleveldb import LeveldbStorage as CLevelStorage
 from eleve.segment import Segmenter
 

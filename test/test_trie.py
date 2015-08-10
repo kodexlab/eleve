@@ -7,7 +7,7 @@ import gc
 from eleve.memory import MemoryTrie
 from eleve.leveldb import LevelTrie
 from eleve.cleveldb import LeveldbTrie as CLevelTrie
-from eleve.cstorages import MemoryTrie as CMemoryTrie
+from eleve.cmemory import MemoryTrie as CMemoryTrie
 
 def float_equal(a, b):
     return (a != a and b != b) or abs(a - b) < 1e-4
