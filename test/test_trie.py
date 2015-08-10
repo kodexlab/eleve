@@ -6,7 +6,7 @@ import gc
 
 from eleve.memory import MemoryTrie
 from eleve.leveldb import LevelTrie
-from eleve.c_leveldb.cleveldb import LeveldbTrie as CLevelTrie
+from eleve.cleveldb import LeveldbTrie as CLevelTrie
 from eleve.cstorages import MemoryTrie as CMemoryTrie
 
 def float_equal(a, b):

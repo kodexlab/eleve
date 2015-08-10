@@ -11,7 +11,6 @@ random.seed('palkeo')
 
 def benchmark_trie_class(trie_class, reference_class=MemoryTrie):
     ngrams = generate_random_ngrams()
-    ngrams = [list(map(str, i)) for i in ngrams]
     print('{} ngrams.'.format(len(ngrams)))
     test_trie = trie_class('/tmp/test_trie')
     test_trie.clear()
