@@ -77,7 +77,7 @@ class PyMemoryStorage: public MemoryStorage
 
 };
 
-BOOST_PYTHON_MODULE(cstorages)
+BOOST_PYTHON_MODULE(cmemory)
 {
     using namespace boost::python;
 

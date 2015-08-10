@@ -12,12 +12,21 @@ std::vector<std::string> convert(py::list& ngram)
         if(PyLong_Check(o))
         {
             r.push_back(std::to_string(PyLong_AsLong(o)));
+            continue;
         }
-        else
+        else if(PyUnicode_Check(o))
         {
             Py_ssize_t s;
             char* u = PyUnicode_AsUTF8AndSize(o, &s);
             r.push_back(std::string(u, s));
+        }
+        else
+        {
+            o = PyObject_Str(o);
+            Py_ssize_t s;
+            char* u = PyUnicode_AsUTF8AndSize(o, &s);
+            r.push_back(std::string(u, s));
+            Py_DECREF(o);
         }
     }
     return r;

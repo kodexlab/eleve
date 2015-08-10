@@ -67,7 +67,7 @@ class Node:
             self.save()
     
 class LevelTrie:
-    def __init__(self, path="/tmp/level_trie", terminals=['^', '$'], delete=False):
+    def __init__(self, path="/tmp/level_trie", terminals=['^', '$']):
         self.terminals = set(to_bytes(i) for i in terminals)
 
         self.db = plyvel.DB(path,
@@ -78,16 +78,20 @@ class LevelTrie:
                 #bloom_filter_bits=8,
         )
 
-        if delete:
-            for key in self.db.iterator(include_value=False):
-                self.db.delete(key)
-
-        self.dirty = False
-        self.path = path
-
+        self.dirty = True
+        i = 0
+        while True:
+            ndata = self.db.get(b'\xff' + bytes((i,)))
+            if ndata is None:
+                break
+            self.normalization.append(NORMALIZATION_PACKER.unpack(ndata))
+            self.dirty = False
+            i += 1
+        
     def clear(self):
-        self.db.close()
-        self.__init__(self.path, self.terminals, delete=True)
+        for key in self.db.iterator(include_value=False):
+            self.db.delete(key)
+        self.dirty = True
 
     def _update_stats_rec(self, parent_entropy, depth, node):
         node.update_entropy(self.terminals)
@@ -95,6 +99,8 @@ class LevelTrie:
         if not math.isnan(node.entropy) and (node.entropy or parent_entropy):
             ev = node.entropy - parent_entropy
 
+            while len(self.normalization) <= depth:
+                self.normalization.append((0., 0., 0))
             mean, stdev, count = self.normalization[depth]
             old_mean = mean
             count += 1
@@ -109,27 +115,31 @@ class LevelTrie:
         if not self.dirty:
             return
 
-        self.normalization = collections.defaultdict(lambda: (0.,0.,0))
+        self.normalization = []
 
         self._update_stats_rec(NaN, 0, Node(self.db, b'\x00'))
 
-        for k, (mean, stdev, count) in self.normalization.items():
+        for k, (mean, stdev, count) in enumerate(self.normalization):
             stdev = math.sqrt(stdev / (count or 1))
+            self.normalization[k] = (mean, stdev)
             self.db.put(b'\xff' + bytes((k,)),  NORMALIZATION_PACKER.pack(mean, stdev))
 
-        self.normalization = None
+        self.db.compact_range()
+
         self.dirty = False
-        
+
     def _check_dirty(self):
         if self.dirty:
-            logging.warning("Updating the tree statistics (update_stats method), as we query it while dirty. This is a slow operation.")
             self.update_stats()
 
     def node(self, ngram):
         return Node(self.db, ngram_to_key(ngram))
 
     def add_ngram(self, ngram, freq=1):
-        self.dirty = True
+        if not self.dirty:
+            self.dirty = True
+            self.db.delete(b'\xff\x00')
+
         b = bytearray(b'\x00')
         w = self.db.write_batch()
 
@@ -174,16 +184,13 @@ class LevelTrie:
     def query_autonomy(self, ngram):
         self._check_dirty()
 
-        normalization = self.db.get(b'\xff' + bytes((len(ngram),)))
-        if normalization is None:
-            return NaN
-        mean, stdev = NORMALIZATION_PACKER.unpack(normalization)
-
         ev = self.query_ev(ngram)
         if math.isnan(ev):
             return NaN
+
         try:
+            mean, stdev = self.normalization[len(ngram)]
             return (ev - mean) / stdev
-        except ZeroDivisionError:
+        except (ZeroDivisionError, IndexError):
             return NaN
 

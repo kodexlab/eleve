@@ -6,6 +6,7 @@ ENV/
 *.pyc
 *.so
 .gdb_history
+*.o
 
 # ignore _rep in documentation dir
 /docs/_*

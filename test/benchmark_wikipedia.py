@@ -2,9 +2,10 @@ from mw.xml_dump import Iterator
 import bz2
 import regex as re
 import datetime
-from eleve.storage import LevelStorage
-from eleve.cstorages import MemoryStorage
-from eleve.c_leveldb.cleveldb import LeveldbStorage as LevelStorage
+from eleve.storage import LevelStorage, MemoryStorage
+from eleve.cmemory import MemoryStorage as CMemoryStorage
+from eleve.cleveldb import LeveldbStorage as CLevelStorage
+
 import random
 
 def main():
