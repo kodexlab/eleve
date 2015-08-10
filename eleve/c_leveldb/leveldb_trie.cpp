@@ -6,7 +6,7 @@ LeveldbTrie::LeveldbTrie(const std::string& path)
     leveldb::Options options;
     options.create_if_missing = true;
     options.write_buffer_size = 64*1024*1024;
-    //options.block_size = 16*1024;
+    options.block_size = 16*1024;
 
     auto status = leveldb::DB::Open(options, path, &db);
     if(! status.ok())
@@ -100,6 +100,9 @@ void LeveldbTrie::update_stats()
                 leveldb::Slice(key.data(), 2),
                 leveldb::Slice(value.data(), sizeof(float) * 2));
     };
+
+    // compact the database
+    db->CompactRange(NULL, NULL);
 
     dirty = false;
 };
