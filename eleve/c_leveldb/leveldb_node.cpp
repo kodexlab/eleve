@@ -92,6 +92,7 @@ void Node::update_entropy(std::set<std::string>& terminals)
             e -= (child.count / float(count)) * log2f(child.count / float(count));
         }
     }
+    delete it;
     assert(e >= 0);
     if(! sum_counts)
     {

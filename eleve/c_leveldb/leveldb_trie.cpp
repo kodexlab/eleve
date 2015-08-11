@@ -67,6 +67,7 @@ void LeveldbTrie::update_stats_rec(float parent_entropy, size_t depth, Node& nod
         Node child = Node(db, it->key().ToString(), it->value().data());
         update_stats_rec(node.entropy, depth + 1, child);
     }
+    delete it;
 };
 
 void LeveldbTrie::update_stats()
@@ -190,5 +191,6 @@ void LeveldbTrie::clear()
     {
         db->Delete(write_options, it->key());
     }
+    delete it;
     dirty = true;
 };
