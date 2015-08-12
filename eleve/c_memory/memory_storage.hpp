@@ -1,6 +1,7 @@
 #ifndef _MEMORY_STORAGE_HPP_
 #define _MEMORY_STORAGE_HPP_
 #include "memory_trie.hpp"
+#include <unordered_map>
 
 typedef const std::vector<std::string> strVec;
 
@@ -10,7 +11,7 @@ class MemoryStorage
     size_t ngram_length;
     MemoryTrie fwd;
     MemoryTrie bwd;
-    std::map<std::size_t, std::string> hash_to_token;
+    std::unordered_map<std::size_t, std::string> hash_to_token;
 
     std::vector<ID> tokens_to_ids(strVec& tokens);
     strVec ids_to_tokens(const std::vector<ID>& ids);

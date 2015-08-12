@@ -22,9 +22,8 @@ cdef class Node:
 cdef class LevelTrie:
     cdef object db
     cdef bint dirty
-    cdef str path
-    cdef object normalization
-    cdef object terminals
+    cdef list normalization
+    cdef set terminals
 
     @cython.locals(b=bytearray, w=object, node=Node, i=cython.int, create=bint)
     cpdef add_ngram(self, list ngram, int freq=*)

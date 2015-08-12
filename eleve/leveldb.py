@@ -78,7 +78,7 @@ class LevelTrie:
                 #bloom_filter_bits=8,
         )
 
-        self.dirty = True
+        self.normalization = []
         i = 0
         while True:
             ndata = self.db.get(b'\xff' + bytes((i,)))
@@ -87,6 +87,8 @@ class LevelTrie:
             self.normalization.append(NORMALIZATION_PACKER.unpack(ndata))
             self.dirty = False
             i += 1
+
+        self.dirty = len(self.normalization) == 0
         
     def clear(self):
         for key in self.db.iterator(include_value=False):
