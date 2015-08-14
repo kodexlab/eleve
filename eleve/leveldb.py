@@ -6,20 +6,46 @@ import logging
 import plyvel
 
 NaN = float('nan')
+
 PACKER = struct.Struct('<Lf')
 NORMALIZATION_PACKER = struct.Struct('<ff')
 
-SEPARATOR = b'\x00'
+SEPARATOR = b'\x00' # before every word that is inserted we put that byte, so that they are separated.
 SEPARATOR_PLUS_ONE = bytes((SEPARATOR[0]+1,))
 
 def to_bytes(o):
+    """
+    Encode the object as a bytes object :
+     - if it's already a bytes object, don't do nothing
+     - else, take its string representation and encode it as a bytes
+    """
     return o if type(o) == bytes else str(o).encode()
 
 def ngram_to_key(ngram):
+    """
+    Convert a ngram to a leveldb key (a bytes object).
+
+    The first byte is the length of the ngram, then we have SEPARATOR
+    and the bytes representation of the token, for each token.
+    """
+    assert len(ngram) < 256
     return bytes([len(ngram)]) + b''.join([SEPARATOR + to_bytes(i) for i in ngram])
 
 class Node:
+    """
+    Represents a node of the trie in Leveldb. Loaded by its key.
+    Can update its entropy, and save it in leveldb.
+    Can list its childs.
+    """
+
     def __init__(self, db, key, data=None):
+        """
+        :param db: the leveldb object (used to retrieve/save the nodes)
+        :param key (bytes): the key of the node in the database
+        :param data: should be generally kept as a None.
+                     if you have the data, you can pass them as a bytes object.
+                     if you pass False, we won't try to retrieve them and assume the node doesn't exists.
+        """
         self.db = db
         self.key = key
 
@@ -29,22 +55,31 @@ class Node:
         self.count, self.entropy = PACKER.unpack(data) if data else (0, NaN)
 
     def childs(self):
+        """
+        :returns: the childs of the node as other Node objects.
+        """
         start = bytes([self.key[0] + 1]) + self.key[1:] + SEPARATOR
         stop = start[:-1] + SEPARATOR_PLUS_ONE
         for key, value in self.db.iterator(start=start, stop=stop):
             yield Node(self.db, key, value)
 
     def save(self, db=None):
-        if db is None:
-            db = self.db
+        """
+        Save the node in the database.
+        :param db: You can optionally pass a database if you want to save
+                   it here instead of the default database.
+        """
         value = PACKER.pack(self.count, self.entropy)
-        db.put(self.key, value)
+        (db or self.db).put(self.key, value)
 
     def update_entropy(self, terminals):
-        if self.count == 0:
-            self.entropy = NaN
-            return
+        """
+        Update the entropy of the node (and save it if it changed).
 
+        :param terminals: a set of bytes. If a token is inside that set,
+                          it will count as N different tokens instead of a token
+                          with count N.
+        """
         entropy = 0
         sum_counts = 0
         for child in self.childs():
@@ -65,7 +100,8 @@ class Node:
         if self.entropy != entropy and not(math.isnan(self.entropy) and math.isnan(entropy)):
             self.entropy = entropy
             self.save()
-    
+
+
 class LevelTrie:
     def __init__(self, path="/tmp/level_trie", terminals=['^', '$']):
         self.terminals = set(to_bytes(i) for i in terminals)
@@ -78,6 +114,7 @@ class LevelTrie:
                 #bloom_filter_bits=8,
         )
 
+        # retrieve the normalization constants from leveldb
         self.normalization = []
         i = 0
         while True:
@@ -85,12 +122,13 @@ class LevelTrie:
             if ndata is None:
                 break
             self.normalization.append(NORMALIZATION_PACKER.unpack(ndata))
-            self.dirty = False
             i += 1
 
+        # set the dirty flag
         self.dirty = len(self.normalization) == 0
         
     def clear(self):
+        """ Delete the trie that's in the database. """
         for key in self.db.iterator(include_value=False):
             self.db.delete(key)
         self.dirty = True

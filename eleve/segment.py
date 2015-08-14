@@ -5,11 +5,26 @@ logger = logging.getLogger(__name__)
 
 class Segmenter:
     def __init__(self, storage, order):
+        """
+        Create a segmenter.
+
+        :param storage: A storage object
+        :param order: The maximum length of n-gram you can query the autonomy of.
+                      Generally, it should be the number you passed to the storage minus one.
+        """
         assert hasattr(storage, 'query_autonomy'), "The storage object should have a query_autonomy method."
+        assert isinstance(order, int) and order > 1, "The order should be an integer bigger than one"
         self.storage = storage
         self.order = order
 
     def segment(self, sentence): 
+        """
+        Segment a sentence.
+
+        :param sentence: A list of tokens.
+        :returns: A list of sentence fragments. A sentence fragment is a list of tokens.
+        """
+
         if len(sentence) > 1000:
             logger.warning("The sentence you want to segment is HUGE. This will take a lot of memory.")
 

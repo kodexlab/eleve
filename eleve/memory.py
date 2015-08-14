@@ -1,8 +1,6 @@
 from __future__ import division
 import math
 import logging
-import pickle
-import gzip
 
 def entropy(counts):
     """ Calculate entropy from an iterator containing
@@ -92,20 +90,6 @@ class MemoryTrie:
         self.dirty = True
         return self
 
-    @classmethod
-    def load(cls, path):
-        depth, root, normalization = pickle.load(gzip.GzipFile(path, 'rb'))
-        s = cls(depth)
-        s.root = root
-        s.normalization = normalization
-        return s
-
-    def save(self, path):
-        self.update_stats()
-        o = (self.depth, self.root, self.normalization)
-        with gzip.GzipFile(path, 'wb') as f:
-            pickle.dump(o, f)
-
     def iter_leafs(self):
         def _rec(ngram, node):
             if node.childs:
@@ -116,21 +100,11 @@ class MemoryTrie:
 
         for i in _rec([], self.root): yield i
 
-    def __iter__(self):
-        """ Iterator on all the ngrams in the trie.
-        Including partial ngrams (not leafs). So it gives a ngram for every node.
-        """
-        def _rec(ngram, node):
-            yield (ngram, node.count)
-            if isinstance(node, MemoryNode):
-                for k, c in node.childs.items():
-                    for i in _rec(ngram + [k], c): yield i
-
-        for i in _rec([], self.root): yield i
-
     def update_stats(self):
-        """ Update the internal statistics (like entropy, and stdev & means
-        for the entropy variations. """
+        """
+        Update the internal statistics (like entropy, and stdev & means
+        for the entropy variations.
+        """
         if not self.dirty:
             return
 
@@ -171,8 +145,9 @@ class MemoryTrie:
             self.update_stats()
 
     def add_ngram(self, ngram, freq=1):
-        """ Add a ngram to the tree.
-        You can specify the number of times you add (or substract) that ngram by using the `freq` argument.
+        """
+        Add a ngram to the tree.
+        :param freq: specify the number of times you add (or substract) that ngram.
         """
 
         if not 0 < len(ngram) <= self.depth:
@@ -196,7 +171,11 @@ class MemoryTrie:
         assert isinstance(node, MemoryLeaf), str(ngram)
 
     def _lookup(self, ngram):
-        """ Search for a node and raises KeyError if the node doesn't exists """
+        """
+        Search for a node.
+        :returns: a couple with the parent node and the node.
+        :raises KeyError: if the node doesn't exists.
+        """
         node = self.root
         last_node = node
         while ngram:
@@ -221,7 +200,8 @@ class MemoryTrie:
         return node.entropy
     
     def query_ev(self, ngram):
-        """ Return the entropy variation for the ngram.
+        """
+        :returns: the entropy variation for the ngram.
         """
         self._check_dirty()
 
@@ -237,7 +217,8 @@ class MemoryTrie:
         return float('nan')
 
     def query_autonomy(self, ngram, z_score=True):
-        """ Return the autonomy (normalized entropy variation) for the ngram.
+        """
+        :returns: the autonomy (normalized entropy variation) for the ngram.
         """
         self._check_dirty()
         try:
