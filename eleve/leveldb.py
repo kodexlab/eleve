@@ -87,9 +87,9 @@ class Node:
                 continue
             sum_counts += child.count
             if child.key.split(SEPARATOR)[-1] in terminals:
-                entropy += (child.count / self.count) * math.log2(self.count)
+                entropy += (child.count / self.count) * math.log(self.count, 2)
             else:
-                entropy -= (child.count / self.count) * math.log2(child.count / self.count)
+                entropy -= (child.count / self.count) * math.log(child.count / self.count, 2)
         assert entropy >= 0
 
         if not sum_counts:
