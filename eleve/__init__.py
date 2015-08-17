@@ -1,4 +1,3 @@
-__version__ = '1.0'
 __all__ = ["MemoryStorage", "LeveldbStorage", "Segmenter",
            "CMemoryStorage", "PyMemoryStorage", "CLeveldbStorage", "PyLeveldbStorage"]
 
