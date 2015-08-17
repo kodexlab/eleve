@@ -2,6 +2,8 @@ __version__ = '1.0'
 __all__ = ["MemoryStorage", "LeveldbStorage", "Segmenter",
            "CMemoryStorage", "PyMemoryStorage", "CLeveldbStorage", "PyLeveldbStorage"]
 
+from segment import Segmenter
+
 from memory_storage import MemoryStorage as PyMemoryStorage
 from leveldb_storage import LeveldbStorage as PyLeveldbStorage
 

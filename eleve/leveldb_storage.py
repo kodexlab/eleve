@@ -1,6 +1,7 @@
 import math
 
 from eleve.memory_storage import MemoryStorage
+from eleve.leveldb import LeveldbTrie
 
 class LeveldbStorage(MemoryStorage):
     def __init__(self, order, path=None):

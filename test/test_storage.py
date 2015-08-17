@@ -2,13 +2,10 @@ import pytest
 import re
 import gc
 
-from eleve.storage import MemoryStorage, LevelStorage
-from eleve.cmemory import MemoryStorage as CMemoryStorage
-from eleve.cleveldb import LeveldbStorage as CLevelStorage
-
+from eleve import PyMemoryStorage, PyLeveldbStorage, CMemoryStorage, CLeveldbStorage
 from test_trie import compare_node
 
-@pytest.mark.parametrize("storage_class", [MemoryStorage, CMemoryStorage, LevelStorage, CLevelStorage])
+@pytest.mark.parametrize("storage_class", [PyMemoryStorage, CMemoryStorage, PyLeveldbStorage, CLeveldbStorage])
 def test_basic_entropy(storage_class):
     """
     Forward that begins by « le petit »:
@@ -30,8 +27,8 @@ def test_basic_entropy(storage_class):
     assert m.query_count(['le', 'petit']) == 4.0
     assert m.query_entropy(['le', 'petit']) == 1.75
 
-@pytest.mark.parametrize("storage_class", [CMemoryStorage, LevelStorage, CLevelStorage])
-def test_storage(storage_class, ref_class=MemoryStorage):
+@pytest.mark.parametrize("storage_class", [CMemoryStorage, PyLeveldbStorage, CLeveldbStorage])
+def test_storage(storage_class, ref_class=PyMemoryStorage):
     gc.collect()
     test = storage_class(4)
     ref = ref_class(4)

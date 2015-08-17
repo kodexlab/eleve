@@ -5,9 +5,9 @@ import os
 import gc
 
 from eleve.memory import MemoryTrie
-from eleve.leveldb import LevelTrie
-from eleve.cleveldb import LeveldbTrie as CLevelTrie
-from eleve.cmemory import MemoryTrie as CMemoryTrie
+from eleve.leveldb import LeveldbTrie
+from eleve.c_leveldb.cleveldb import LeveldbTrie as CLeveldbTrie
+from eleve.c_memory.cmemory import MemoryTrie as CMemoryTrie
 
 def float_equal(a, b):
     return (a != a and b != b) or abs(a - b) < 1e-4
@@ -57,7 +57,7 @@ def compare_nodes(ngrams, ref_trie, test_trie):
     compare_node([], ref_trie, test_trie)
     compare_node([420001337] * 10, ref_trie, test_trie)
 
-@pytest.mark.parametrize("trie_class", [LevelTrie, CMemoryTrie, CLevelTrie])
+@pytest.mark.parametrize("trie_class", [LeveldbTrie, CMemoryTrie, CLeveldbTrie])
 def test_trie_class(trie_class, reference_class=MemoryTrie):
     """ Compare implementation against reference class (on random ngrams lists)
     """
@@ -76,7 +76,7 @@ def test_trie_class(trie_class, reference_class=MemoryTrie):
             compare_nodes(ngrams, ref_trie, test_trie)
     compare_nodes(ngrams, ref_trie, test_trie)
 
-@pytest.mark.parametrize("trie_class", [MemoryTrie, LevelTrie, CMemoryTrie, CLevelTrie])
+@pytest.mark.parametrize("trie_class", [MemoryTrie, LeveldbTrie, CMemoryTrie, CLeveldbTrie])
 def test_basic_trie(trie_class):
     """ Minimal test on simple example
     """
