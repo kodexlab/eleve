@@ -19,7 +19,7 @@ cdef class Node:
     @cython.locals(entropy=cython.float, sum_counts=cython.int)
     cdef update_entropy(self, terminals)
 
-cdef class LevelTrie:
+cdef class LeveldbTrie:
     cdef object db
     cdef bint dirty
     cdef list normalization

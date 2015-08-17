@@ -102,7 +102,7 @@ class Node:
             self.save()
 
 
-class LevelTrie:
+class LeveldbTrie:
     def __init__(self, path="/tmp/level_trie", terminals=['^', '$']):
         self.terminals = set(to_bytes(i) for i in terminals)
 

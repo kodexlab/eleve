@@ -1,10 +1,6 @@
-from eleve.memory import MemoryTrie
-from eleve.leveldb import LevelTrie
 import math
 
-# -*- coding:utf8 -*-
-""" Storage interface for LM
-"""
+from eleve.memory import MemoryTrie
 
 class MemoryStorage:
     order = None
@@ -60,15 +56,3 @@ class MemoryStorage:
         if math.isnan(entropy_fwd) or math.isnan(entropy_bwd):
             return float('nan')
         return (entropy_fwd + entropy_bwd) / 2
-
-class LevelStorage(MemoryStorage):
-
-    def __init__(self, order, path=None):
-        assert order > 0 and isinstance(order, int)
-        self.order = order
-
-        if path is None:
-            path = '/tmp/level_storage'
-
-        self.bwd = LevelTrie(path=(path + '_bwd'))
-        self.fwd = LevelTrie(path=(path + '_fwd'))
