@@ -7,6 +7,8 @@
 struct List;
 class ListIterator;
 
+// packed because it's an internal structure that is instancied a LOT, so packing
+// it really memory consumption.
 class __attribute__((packed)) Node
 {
     private:

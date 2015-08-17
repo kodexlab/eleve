@@ -9,12 +9,7 @@ std::vector<std::string> convert(py::list& ngram)
     for(int i = 0; i < py::len(ngram); ++i)
     {
         PyObject* o = py::api::object(ngram[i]).ptr();
-        if(PyLong_Check(o))
-        {
-            r.push_back(std::to_string(PyLong_AsLong(o)));
-            continue;
-        }
-        else if(PyUnicode_Check(o))
+        if(PyUnicode_Check(o))
         {
             Py_ssize_t s;
             char* u = PyUnicode_AsUTF8AndSize(o, &s);

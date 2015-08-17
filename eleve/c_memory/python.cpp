@@ -1,8 +1,33 @@
 #include "python.hpp"
 #include "memory_storage.hpp"
+#include "Python.h"
 
-typedef py::stl_input_iterator<std::string> pyStrIt;
 typedef py::stl_input_iterator<ID> pyIdIt;
+
+std::vector<std::string> convert(py::list& ngram)
+{
+    std::vector<std::string> r;
+    r.reserve(py::len(ngram));
+    for(int i = 0; i < py::len(ngram); ++i)
+    {
+        PyObject* o = py::api::object(ngram[i]).ptr();
+        if(PyUnicode_Check(o))
+        {
+            Py_ssize_t s;
+            char* u = PyUnicode_AsUTF8AndSize(o, &s);
+            r.push_back(std::string(u, s));
+        }
+        else
+        {
+            o = PyObject_Str(o);
+            Py_ssize_t s;
+            char* u = PyUnicode_AsUTF8AndSize(o, &s);
+            r.push_back(std::string(u, s));
+            Py_DECREF(o);
+        }
+    }
+    return r;
+};
 
 class PyMemoryTrie: public MemoryTrie
 {
@@ -44,35 +69,35 @@ class PyMemoryStorage: public MemoryStorage
 
     float query_autonomy_(py::list ngram)
     {
-        return query_autonomy(strVec{pyStrIt(ngram), pyStrIt()});
+        return query_autonomy(convert(ngram));
     };
     float query_ev_(py::list ngram)
     {
-        return query_ev(strVec{pyStrIt(ngram), pyStrIt()});
+        return query_ev(convert(ngram));
     };
     float query_count_(py::list ngram)
     {
-        return query_count(strVec{pyStrIt(ngram), pyStrIt()});
+        return query_count(convert(ngram));
     };
     float query_entropy_(py::list ngram)
     {
-        return query_entropy(strVec{pyStrIt(ngram), pyStrIt()});
+        return query_entropy(convert(ngram));
     };
     void add_sentence_(py::list s, int freq)
     {
-        add_sentence(strVec{pyStrIt(s), pyStrIt()}, freq);
+        add_sentence(convert(s), freq);
     };
     void add_sentence__(py::list s)
     {
-        add_sentence_(s, 1);
+        add_sentence(convert(s), 1);
     };
     void add_ngram_(py::list s, int freq)
     {
-        add_ngram(strVec{pyStrIt(s), pyStrIt()}, freq);
+        add_ngram(convert(s), freq);
     };
     void add_ngram__(py::list s)
     {
-        add_ngram(strVec{pyStrIt(s), pyStrIt()}, 1);
+        add_ngram(convert(s), 1);
     };
 
 };

@@ -7,6 +7,8 @@
 
 struct List;
 
+// packed because it's an internal structure that is instancied a LOT, so packing
+// it really memory consumption.
 struct __attribute__((packed)) TokenListPair
 {
     ID token;
