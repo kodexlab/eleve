@@ -4,8 +4,8 @@ project( cleveldb )
 
 SET(CMAKE_CXX_FLAGS "-std=c++0x")
 
-foreach(Boost_Python_Lib "python3" "python-py3")
-    find_package(Boost COMPONENTS python3 QUIET )
+foreach(Boost_Python_Lib "python3" "python-py3" "python-py34" "python-py33" "python-py35" "python-py36")
+    find_package(Boost COMPONENTS ${Boost_Python_Lib} QUIET )
     if(Boost_FOUND)
         break()
     endif()
