@@ -1,19 +1,27 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 import os
-from distutils.core import setup
-from distutils.command.install import install
+import glob
+from distutils.core import setup, Extension
 
-"""
-class my_install(install):
-    def run(self):
-        install.run(self)
+c_memory = Extension(
+        name='eleve.c_memory.cmemory',
+        sources=glob.glob('eleve/c_memory/*.cpp'),
+        extra_compile_args=['--std=c++11'],
+        libraries=['boost_python3', 'python3.4m'],
+        include_dirs=['/usr/include/python3.4m'],
+        undef_macros=['NDEBUG'], # I prefer to keep the assertions in the final code, just in case. Remove it if you want maximum perfs.
+)
 
-        os.chdir('eleve/c_memory')
-        os.system('cmake . && make')
-        os.chdir('../c_leveldb')
-        os.system('cmake . && make')
-"""
+c_leveldb = Extension(
+        name='eleve.c_leveldb.cleveldb',
+        sources=glob.glob('eleve/c_leveldb/*.cpp'),
+        extra_compile_args=['--std=c++11'],
+        libraries=['boost_python3', 'python3.4m'],
+        include_dirs=['/usr/include/python3.4m'],
+        language='c++',
+        undef_macros=['NDEBUG'], # I prefer to keep the assertions in the final code, just in case. (',) it if you want maximum perfs.
+)
 
 cwd = os.path.abspath(os.path.dirname(__file__))
 readme = open(os.path.join(cwd, 'README.md')).read()
@@ -36,6 +44,6 @@ setup(
         "Programming Language :: Python :: 3.2",
         "Topic :: Scientific/Engineering",
     ],
-    #cmdclass={'install': my_install},
+    ext_modules=[c_memory, c_leveldb],
 )
 
