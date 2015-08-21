@@ -2,9 +2,8 @@ from mw.xml_dump import Iterator
 import bz2
 import regex as re
 import datetime
-from eleve.storage import LevelStorage, MemoryStorage
-from eleve.cmemory import MemoryStorage as CMemoryStorage
-from eleve.cleveldb import LeveldbStorage as CLevelStorage
+
+from eleve import LeveldbStorage, MemoryStorage
 
 import random
 
@@ -13,7 +12,7 @@ def main():
 
     RE_WORD = re.compile(r"[\w-]{1,30}", re.IGNORECASE)
 
-    l = LevelStorage(3) #, path='/home/palkeo/Divers/stage_wikipedia')
+    l = LeveldbStorage(3) #, path='/home/palkeo/Divers/stage_wikipedia')
     l.clear()
 
     i = 0

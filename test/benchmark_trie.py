@@ -1,15 +1,16 @@
 import datetime
 
 from test_trie import generate_random_ngrams
+
 from eleve.memory import MemoryTrie
-from eleve.cstorages import MemoryTrie as CMemoryTrie
-from eleve.leveldb import LevelTrie
-from eleve.c_leveldb.cleveldb import LeveldbTrie as LevelTrie
+from eleve.leveldb import LeveldbTrie
+from eleve.c_leveldb.cleveldb import LeveldbTrie as CLeveldbTrie
+from eleve.c_memory.cmemory import MemoryTrie as CMemoryTrie
 
 import random
 random.seed('palkeo')
 
-def benchmark_trie_class(trie_class, reference_class=MemoryTrie):
+def benchmark_trie_class(trie_class, reference_class=CMemoryTrie):
     ngrams = generate_random_ngrams()
     print('{} ngrams.'.format(len(ngrams)))
     test_trie = trie_class('/tmp/test_trie')
@@ -54,6 +55,6 @@ if __name__ == '__main__':
     import pstats, cProfile
     import pyximport
     pyximport.install()
-    cProfile.runctx("benchmark_trie_class(LevelTrie)", globals(), locals(), 'profile.prof')
+    cProfile.runctx("benchmark_trie_class(CLeveldbTrie)", globals(), locals(), 'profile.prof')
     s = pstats.Stats('profile.prof')
     s.strip_dirs().sort_stats('time').print_stats()

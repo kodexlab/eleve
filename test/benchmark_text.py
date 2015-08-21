@@ -1,10 +1,7 @@
 from reliure_nlp.tokenisation.fr import tokeniser_fr
 from nltk.corpus import reuters
 
-from eleve.segment import Segmenter
-from eleve.storage import MemoryStorage, LevelStorage
-from eleve.cleveldb import LeveldbStorage
-from eleve.cmemory import MemoryStorage
+from eleve import Segmenter, MemoryStorage, LeveldbStorage
 
 def benchmark(storage_class, create=True):
     m = storage_class(4)
@@ -23,4 +20,9 @@ def benchmark(storage_class, create=True):
         print(s.segment(tokens[i:i+30]))
 
 if __name__ == '__main__':
-    benchmark(MemoryStorage)
+    import pstats, cProfile
+    import pyximport
+    pyximport.install()
+    cProfile.runctx("benchmark(MemoryStorage)", globals(), locals(), 'profile.prof')
+    s = pstats.Stats('profile.prof')
+    s.strip_dirs().sort_stats('time').print_stats()
