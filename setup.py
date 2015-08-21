@@ -1,15 +1,35 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-import os
+import os, sys
 import glob
 from distutils.core import setup, Extension
+
+def get_boost_lib():
+    major_minor = ''.join(map(str, sys.version_info[:2]))
+    major = str(sys.version_info[0])
+
+    libs = list(filter(lambda x: 'boost_python' in x, map(lambda x: x.split('/')[-1][3:].split('.')[0], glob.glob('/usr/lib/**/*'))))
+    libs.sort()
+
+    for l in libs:
+        if major_minor in l:
+            return l
+
+    if boost_python_lib is None:
+        for l in libs:
+            if major in l:
+                return l
+
+    assert len(libs) == 1, "You should have boost_python installed. We found these libs : %s" % libs
+    return libs[0]
+
+boost_python_lib = get_boost_lib()
 
 c_memory = Extension(
         name='eleve.c_memory.cmemory',
         sources=glob.glob('eleve/c_memory/*.cpp'),
         extra_compile_args=['--std=c++11'],
-        libraries=['boost_python3', 'python3.4m'],
-        include_dirs=['/usr/include/python3.4m'],
+        libraries=[boost_python_lib],
         undef_macros=['NDEBUG'], # I prefer to keep the assertions in the final code, just in case. Remove it if you want maximum perfs.
 )
 
@@ -17,8 +37,7 @@ c_leveldb = Extension(
         name='eleve.c_leveldb.cleveldb',
         sources=glob.glob('eleve/c_leveldb/*.cpp'),
         extra_compile_args=['--std=c++11'],
-        libraries=['boost_python3', 'python3.4m'],
-        include_dirs=['/usr/include/python3.4m'],
+        libraries=[boost_python_lib],
         language='c++',
         undef_macros=['NDEBUG'], # I prefer to keep the assertions in the final code, just in case. (',) it if you want maximum perfs.
 )
