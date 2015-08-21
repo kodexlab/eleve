@@ -4,6 +4,8 @@ import os, sys
 import glob
 from distutils.core import setup, Extension
 
+assert sys.version_info[0] >= 3, "For python >= 3 only"
+
 def get_boost_lib():
     """
     Try to find the appropriate option to pass to the linker, as it depends on the distribution.
