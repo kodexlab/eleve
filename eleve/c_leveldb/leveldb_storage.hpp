@@ -4,6 +4,8 @@
 
 typedef const std::vector<std::string> strVec;
 
+#define DEFAULT_TERMINALS {"^", "$"}
+
 class LeveldbStorage
 {
     protected:
@@ -25,7 +27,7 @@ class LeveldbStorage
         bwd.set_terminals(t);
     };
 
-    LeveldbStorage(size_t o, std::string path = "/tmp/level_trie") : LeveldbStorage(o, path, {"^", "$"}) {};
+    LeveldbStorage(size_t o, std::string path = DEFAULT_PATH) : LeveldbStorage(o, path, DEFAULT_TERMINALS) {};
 
     void add_sentence(std::vector<std::string> s, int freq=1);
     void add_ngram(strVec& s, int freq=1);

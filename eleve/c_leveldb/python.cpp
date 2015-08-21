@@ -65,6 +65,11 @@ class PyLeveldbStorage: public LeveldbStorage
 
     using LeveldbStorage::LeveldbStorage;
 
+    PyLeveldbStorage(size_t order, std::string path, py::list terminals) :
+        LeveldbStorage(order, path, convert(terminals))
+    {
+    };
+
     void add_ngram_(py::list ngram, int freq)
     {
         add_ngram(convert(ngram), freq);
@@ -103,7 +108,7 @@ BOOST_PYTHON_MODULE(cleveldb)
 {
     using namespace boost::python;
 
-    class_<PyLeveldbTrie, boost::noncopyable>("LeveldbTrie", init<optional<std::string>>())
+    class_<PyLeveldbTrie, boost::noncopyable>("LeveldbTrie", init<optional<std::string> >())
         .def("add_ngram", &PyLeveldbTrie::add_ngram_)
         .def("add_ngram", &PyLeveldbTrie::add_ngram__)
         .def("query_count", &PyLeveldbTrie::query_count_)
@@ -114,7 +119,7 @@ BOOST_PYTHON_MODULE(cleveldb)
         .def("clear", &PyLeveldbTrie::clear)
     ;
 
-   class_<PyLeveldbStorage, boost::noncopyable>("LeveldbStorage", init<size_t, optional<std::string>>())
+   class_<PyLeveldbStorage, boost::noncopyable>("LeveldbStorage", init<int, optional<std::string, py::list> >())
         .def("add_ngram", &PyLeveldbStorage::add_ngram_)
         .def("add_ngram", &PyLeveldbStorage::add_ngram__)
         .def("add_sentence", &PyLeveldbStorage::add_sentence_)
