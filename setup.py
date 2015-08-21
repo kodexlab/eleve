@@ -40,7 +40,7 @@ c_leveldb = Extension(
         name='eleve.c_leveldb.cleveldb',
         sources=glob.glob('eleve/c_leveldb/*.cpp'),
         extra_compile_args=['--std=c++11'],
-        libraries=[boost_python_lib],
+        libraries=[boost_python_lib, 'leveldb'],
         language='c++',
         undef_macros=['NDEBUG'], # I prefer to keep the assertions in the final code, just in case. (',) it if you want maximum perfs.
 )
