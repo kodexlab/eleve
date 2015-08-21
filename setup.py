@@ -5,20 +5,23 @@ import glob
 from distutils.core import setup, Extension
 
 def get_boost_lib():
+    """
+    Try to find the appropriate option to pass to the linker, as it depends on the distribution.
+    It's ugly, but it works...
+    """
     major_minor = ''.join(map(str, sys.version_info[:2]))
     major = str(sys.version_info[0])
 
-    libs = list(filter(lambda x: 'boost_python' in x, map(lambda x: x.split('/')[-1][3:].split('.')[0], glob.glob('/usr/lib/**/*'))))
+    libs = list(filter(lambda x: 'boost_python' in x, map(lambda x: x.split('/')[-1][3:].split('.')[0], glob.glob('/usr/lib/*') + glob.glob('/usr/lib/**/*'))))
     libs.sort()
 
     for l in libs:
         if major_minor in l:
             return l
 
-    if boost_python_lib is None:
-        for l in libs:
-            if major in l:
-                return l
+    for l in libs:
+        if major in l:
+            return l
 
     assert len(libs) == 1, "You should have boost_python installed. We found these libs : %s" % libs
     return libs[0]
@@ -61,6 +64,8 @@ setup(
         "Natural Language :: French",
         "Operating System :: OS Independent",
         "Programming Language :: Python :: 3.2",
+        "Programming Language :: Python :: 3.3",
+        "Programming Language :: Python :: 3.4",
         "Topic :: Scientific/Engineering",
     ],
     ext_modules=[c_memory, c_leveldb],
