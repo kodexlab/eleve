@@ -71,7 +71,7 @@ class MemoryTrie:
     def __init__(self, depth=10, terminals=['^', '$']):
         """
         :param depth: Maximum length of stored ngrams
-        :param path: Path to the database (not used)
+        :param terminals: Tokens that are in "terminals" array are counted as distinct in the entropy computation. By default, the symbols are for start and end of sentences.
         """
         self.depth = depth
         self.root = MemoryNode()
@@ -86,6 +86,8 @@ class MemoryTrie:
         self.dirty = False
 
     def clear(self):
+        """ Clear the trie.
+        """
         self.root = MemoryNode()
         self.dirty = True
         return self
@@ -102,8 +104,9 @@ class MemoryTrie:
 
     def update_stats(self):
         """
-        Update the internal statistics (like entropy, and stdev & means
+        Update the internal statistics (like entropy, and stdev & means)
         for the entropy variations.
+        Called automatically if the trie is modified and we then do queries on it.
         """
         if not self.dirty:
             return
@@ -146,7 +149,9 @@ class MemoryTrie:
 
     def add_ngram(self, ngram, freq=1):
         """
-        Add a ngram to the tree.
+        Add a ngram to the trie.
+
+        :param ngram: A list of tokens.
         :param freq: specify the number of times you add (or substract) that ngram.
         """
 
@@ -173,6 +178,7 @@ class MemoryTrie:
     def _lookup(self, ngram):
         """
         Search for a node.
+
         :returns: a couple with the parent node and the node.
         :raises KeyError: if the node doesn't exists.
         """
@@ -185,6 +191,11 @@ class MemoryTrie:
         return (last_node, node)
 
     def query_count(self, ngram):
+        """ Query for the number of occurences we have seen the n-gram in the training data.
+
+        :param ngram: A list of tokens.
+        :returns: An integer.
+        """
         try:
             _, node = self._lookup(ngram)
         except (KeyError, AttributeError):
@@ -192,6 +203,11 @@ class MemoryTrie:
         return node.count
 
     def query_entropy(self, ngram):
+        """ Query for the branching entropy.
+
+        :param ngram: A list of tokens.
+        :returns: A float, that can be NaN if it is not defined.
+        """
         self._check_dirty()
         try:
             _, node = self._lookup(ngram)
@@ -200,8 +216,10 @@ class MemoryTrie:
         return node.entropy
     
     def query_ev(self, ngram):
-        """
-        :returns: the entropy variation for the ngram.
+        """ Query for the branching entropy variation.
+
+        :param ngram: A list of tokens.
+        :returns: A float, that can be NaN if it is not defined.
         """
         self._check_dirty()
 
@@ -217,8 +235,11 @@ class MemoryTrie:
         return float('nan')
 
     def query_autonomy(self, ngram, z_score=True):
-        """
-        :returns: the autonomy (normalized entropy variation) for the ngram.
+        """ Query the autonomy (normalized entropy variation) for the n-gram.
+
+        :param ngram: A list of tokens.
+        :param z_score: If True, compute the z_score ((value - mean) / stdev). If False, just substract the mean.
+        :returns: A float, that can be NaN if it is not defined.
         """
         self._check_dirty()
         try:

@@ -8,7 +8,7 @@ class Segmenter:
         """
         Create a segmenter.
 
-        :param storage: A storage object
+        :param storage: A storage object that has been trained on a corpus (should have a ``query_autonomy`` method).
         :param order: The maximum length of n-gram you can query the autonomy of.
                       Generally, it should be the number you passed to the storage minus one.
         """

@@ -1,24 +1,25 @@
-***************************
-eleve documentation
-***************************
+===================
+ELeVE documentation
+===================
 
-TODO
+.. include:: ../README.rst
 
+Contents
+========
 
 .. toctree::
-    :maxdepth: 2
+    :glob:
 
-    api/api
-
+    *
 
 Get the source
-#########################
+==============
 
 TODO
 
 
 Indices and tables
-#########################
+==================
 
 * :ref:`genindex`
 * :ref:`modindex`
