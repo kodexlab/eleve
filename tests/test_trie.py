@@ -31,8 +31,7 @@ def generate_random_ngrams():
     return m
 
 def compare_node(ngram, ref_trie, test_trie):
-    """
-    fails if the results of any measure is different for the query of a specific ngram
+    """ Fails if the results of any measure is different for the query of a specific ngram
     """
 
     measures = ['query_count', 'query_entropy', 'query_ev', 'query_autonomy']
@@ -57,24 +56,6 @@ def compare_nodes(ngrams, ref_trie, test_trie):
     compare_node([], ref_trie, test_trie)
     compare_node([420001337] * 10, ref_trie, test_trie)
 
-@pytest.mark.parametrize("trie_class", [LeveldbTrie, CMemoryTrie, CLeveldbTrie])
-def test_trie_class(trie_class, reference_class=MemoryTrie):
-    """ Compare implementation against reference class (on random ngrams lists)
-    """
-    gc.collect()
-    ngrams = generate_random_ngrams()
-    test_trie = trie_class()
-    ref_trie = reference_class()
-
-    test_trie.clear()
-    ref_trie.clear()
-
-    for i, n in enumerate(ngrams):
-        test_trie.add_ngram(n)
-        ref_trie.add_ngram(n)
-        if i % (len(ngrams) // 3) == 0:
-            compare_nodes(ngrams, ref_trie, test_trie)
-    compare_nodes(ngrams, ref_trie, test_trie)
 
 @pytest.mark.parametrize("trie_class", [MemoryTrie, LeveldbTrie, CMemoryTrie, CLeveldbTrie])
 def test_basic_trie(trie_class):
@@ -96,4 +77,25 @@ def test_basic_trie(trie_class):
     m.add_ngram([LE,PETIT,CHAT], -1)
     assert m.query_count([LE, PETIT]) == m.query_count([LE, GROS])
     assert m.query_entropy([LE, PETIT]) == m.query_entropy([LE, GROS])
+
+
+@pytest.mark.parametrize("trie_class", [LeveldbTrie, CMemoryTrie, CLeveldbTrie])
+def test_trie_class(trie_class, reference_class=MemoryTrie):
+    """ Compare implementation against reference class (on random ngrams lists)
+    """
+    gc.collect()
+    ngrams = generate_random_ngrams()
+    test_trie = trie_class()
+    ref_trie = reference_class()
+
+    test_trie.clear()
+    ref_trie.clear()
+
+    for i, n in enumerate(ngrams):
+        test_trie.add_ngram(n)
+        ref_trie.add_ngram(n)
+        if i % (len(ngrams) // 3) == 0:
+            compare_nodes(ngrams, ref_trie, test_trie)
+    compare_nodes(ngrams, ref_trie, test_trie)
+
 

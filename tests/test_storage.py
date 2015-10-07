@@ -27,6 +27,7 @@ def test_basic_entropy(storage_class):
     assert m.query_count(['le', 'petit']) == 4.0
     assert m.query_entropy(['le', 'petit']) == 1.75
 
+
 @pytest.mark.parametrize("storage_class", [CMemoryStorage, PyLeveldbStorage, CLeveldbStorage])
 def test_storage(storage_class, ref_class=PyMemoryStorage):
     gc.collect()
