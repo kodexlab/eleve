@@ -9,3 +9,7 @@ the basic implementation in Python, it is also much faster.
 .. autoclass:: eleve.c_memory.cmemory.MemoryStorage
     :members:
 
+
+.. autoclass:: eleve.c_memory.cmemory.MemoryTrie
+    :members:
+
