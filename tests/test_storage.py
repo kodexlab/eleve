@@ -36,7 +36,7 @@ def test_storage(storage_class, ref_class=PyMemoryStorage):
     test.clear()
     ref.clear()
 
-    sentences = [re.findall(r'\w+', sentence) for sentence in open('fixtures/btree.txt').read().split('\n')]
+    sentences = [re.findall(r'\w+', sentence) for sentence in open('tests/fixtures/btree.txt').read().split('\n')]
     for sentence in sentences:
         test.add_sentence(sentence)
         ref.add_sentence(sentence)
