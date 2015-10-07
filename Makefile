@@ -1,6 +1,6 @@
 # Makefile for eleve
 
-.PHONY: help tests clean doc testall testdoc
+.PHONY: help test testlib testcov testdoc clean doc testall testdoc
 
 help:
 	@echo "Please use \`make <target>' where <target> is one of"
@@ -9,16 +9,17 @@ help:
 	@echo "  doc-notest     build doc without running all test (just documentations ones)"
 	@echo "  test           runs unit tests"
 	@echo "  testlib        runs doctests on lib only"
+	@echo "  testlib        runs doctests on documentation only"
 	@echo "  testall        runs all tests (unit+doc+rst) and generate html report for coverage"
 	@echo "  testcov        runs all tests and give copact coverage report"
 
 clean-doc:
 	rm -rf docs/_build/ docs/_templates/
 
-doc: testall
+doc: testdoc
 	make -C ./docs html
 
-doc-notest: testdoc
+doc-notest:
 	make -C ./docs html
 
 test:
@@ -28,13 +29,13 @@ testlib:
 	py.test -v ./eleve --doctest-module
 
 testdoc:
-	py.test -v ./docs --doctest-glob='*.rst'
+	py.test -v ./README.rst ./docs --doctest-glob='*.rst'
 
 testall: 
-	py.test -v ./tests ./eleve ./docs --doctest-module --doctest-glob='*.rst' --cov eleve --cov-report html
+	py.test -v ./tests ./eleve ./README.rst ./docs --doctest-module --doctest-glob='*.rst' --cov eleve --cov-report html
 
 testcov:
-	py.test -v ./tests ./eleve ./docs --doctest-module --doctest-glob='*.rst' --cov eleve --cov-report term-missing
+	py.test -v ./tests ./eleve ./README.rst ./docs --doctest-module --doctest-glob='*.rst' --cov eleve --cov-report term-missing
 
 clean:
 	# removing .pyc filesin
