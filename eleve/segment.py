@@ -1,3 +1,10 @@
+""" :mod:`eleve.segment`
+==========================
+
+The segmenter is available by importing ``eleve.Segmenter``.  It is used to
+segment sentences (regroup tokens that goes together).
+
+"""
 import logging
 import math
 
@@ -5,8 +12,7 @@ logger = logging.getLogger(__name__)
 
 class Segmenter:
     def __init__(self, storage, order):
-        """
-        Create a segmenter.
+        """ Create a segmenter.
 
         :param storage: A storage object that has been trained on a corpus (should have a ``query_autonomy`` method).
         :param order: The maximum length of n-gram you can query the autonomy of.
@@ -17,9 +23,8 @@ class Segmenter:
         self.storage = storage
         self.order = order
 
-    def segment(self, sentence): 
-        """
-        Segment a sentence.
+    def segment(self, sentence):
+        """ Segment a sentence.
 
         :param sentence: A list of tokens.
         :returns: A list of sentence fragments. A sentence fragment is a list of tokens.
@@ -59,3 +64,4 @@ class Segmenter:
         best_segmentation = list(filter(None, best_segmentation))
 
         return best_segmentation
+
