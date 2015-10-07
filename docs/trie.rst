@@ -1,6 +1,6 @@
-=================
-Internal Trie API
-=================
+=============
+Internal Trie
+=============
 
 **Internal data structure.**
 
@@ -12,6 +12,5 @@ The Leveldb trie have the same API. Refer to the source code for more informatio
 Memory Trie
 -----------
 
-.. autoclass:: eleve.memory.MemoryTrie
-    :members:
+The reference implementation of ``eleve`` Trie is provided by :class:`eleve.memory.MemoryTrie`.
 

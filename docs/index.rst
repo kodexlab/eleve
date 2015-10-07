@@ -4,18 +4,17 @@ ELeVE documentation
 
 .. include:: ../README.rst
 
+
 Contents
 ========
 
 .. toctree::
-    :glob:
+    :maxdepth: 2
 
-    *
-
-Get the source
-==============
-
-TODO
+    storage
+    segmenter
+    trie
+    api/api
 
 
 Indices and tables

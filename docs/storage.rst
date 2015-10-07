@@ -1,25 +1,25 @@
-===========
-Storage API
-===========
+=======
+Storage
+=======
+
+``ELeVE`` use different backend to store the model.
 
 Memory Storage
 --------------
 
-Available at ``eleve.MemoryStorage``.
+Available at :class:`eleve.MemoryStorage`.
 
-.. autoclass:: eleve.memory_storage.MemoryStorage
-    :members:
 
-Leveldb Storage
----------------
+Disk Storage (Leveldb)
+----------------------
 
-Available at ``eleve.LeveldbStorage``.
+Available at :class:`eleve.LeveldbStorage``.
 
 An on-disk storage. It is much slower than the in-memory storage.
 However, everything is stored on-disk, so the state can be restored by loading
 an existing storage.
 
-Use that storage in two cases :
+Use that storage in two cases:
 
 * If you want to create a model for a HUGE training corpus that don't fit in RAM.
 * If you don't want to re-train your model everytime on a corpus everytime you use it. Be aware that
@@ -31,7 +31,4 @@ Use that storage in two cases :
     second will fail.
 
 The API is the same as for the Memory storage. Only the constructor changes.
-
-.. autoclass:: eleve.leveldb_storage.LeveldbStorage
-    :members:
 
