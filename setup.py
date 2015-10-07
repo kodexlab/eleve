@@ -47,7 +47,7 @@ c_leveldb = Extension(
 )
 
 cwd = os.path.abspath(os.path.dirname(__file__))
-readme = open(os.path.join(cwd, 'README.md')).read()
+readme = open(os.path.join(cwd, 'README.rst')).read()
 
 setup(
     name='eleve',
