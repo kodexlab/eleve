@@ -1,9 +1,19 @@
+""":mod:`eleve.leveldb`
+======================
+
+Provide a Storage (:class:`eleve.leveldb.LeveldbStorage`) and a Trie
+(:class:`eleve.leveldb.LeveldbTrie`) that use LevelDB as disk backend.
+The implementation over LevelDB is done in python by using :mod:`plyvel`.
+"""
+
 import struct
 import math
 import collections
 import logging
 
 import plyvel
+
+from eleve.memory import MemoryStorage
 
 NaN = float('nan')
 
@@ -14,16 +24,14 @@ SEPARATOR = b'\x00' # before every word that is inserted we put that byte, so th
 SEPARATOR_PLUS_ONE = bytes((SEPARATOR[0]+1,))
 
 def to_bytes(o):
-    """
-    Encode the object as a bytes object :
-     - if it's already a bytes object, don't do nothing
-     - else, take its string representation and encode it as a bytes
+    """ Encode the object as a bytes object:
+    - if it's already a bytes object, don't do nothing
+    - else, take its string representation and encode it as a bytes
     """
     return o if type(o) == bytes else str(o).encode()
 
 def ngram_to_key(ngram):
-    """
-    Convert a ngram to a leveldb key (a bytes object).
+    """ Convert a ngram to a leveldb key (a bytes object).
 
     The first byte is the length of the ngram, then we have SEPARATOR
     and the bytes representation of the token, for each token.
@@ -32,8 +40,7 @@ def ngram_to_key(ngram):
     return bytes([len(ngram)]) + b''.join([SEPARATOR + to_bytes(i) for i in ngram])
 
 class Node:
-    """
-    Represents a node of the trie in Leveldb. Loaded by its key.
+    """ Represents a node of the trie in Leveldb. Loaded by its key.
     Can update its entropy, and save it in leveldb.
     Can list its childs.
     """
@@ -64,21 +71,20 @@ class Node:
             yield Node(self.db, key, value)
 
     def save(self, db=None):
-        """
-        Save the node in the database.
-        :param db: You can optionally pass a database if you want to save
-                   it here instead of the default database.
+        """ Save the node in the database.
+
+        :param db: You can optionally pass a database if you want to save it
+         here instead of the default database.
         """
         value = PACKER.pack(self.count, self.entropy)
         (db or self.db).put(self.key, value)
 
     def update_entropy(self, terminals):
-        """
-        Update the entropy of the node (and save it if it changed).
+        """ Update the entropy of the node (and save it if it changed).
 
-        :param terminals: a set of bytes. If a token is inside that set,
-                          it will count as N different tokens instead of a token
-                          with count N.
+        :param terminals: a set of bytes. If a token is inside that set, it will
+         count as N different tokens instead of a token
+         with count N.
         """
         entropy = 0
         sum_counts = 0
@@ -234,3 +240,21 @@ class LeveldbTrie:
         except (ZeroDivisionError, IndexError):
             return NaN
 
+
+class LeveldbStorage(MemoryStorage):
+    def __init__(self, order, path=None):
+        """ Initialize the model.
+
+        :param order: The maximum length of n-grams that can be stored.
+        :param path: Path to the database where to load and store the model.
+          If not specified, we use a temporary directory in /tmp (used for
+          testing). If the path is not existing an empty model will be created.
+        """
+        assert order > 0 and isinstance(order, int)
+        self.order = order
+
+        if path is None:
+            path = '/tmp/leveldb_storage'
+
+        self.bwd = LeveldbTrie(path=(path + '_bwd'))
+        self.fwd = LeveldbTrie(path=(path + '_fwd'))
