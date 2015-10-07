@@ -7,9 +7,8 @@ from distutils.core import setup, Extension
 assert sys.version_info[0] >= 3, "For python >= 3 only"
 
 def get_boost_lib():
-    """
-    Try to find the appropriate option to pass to the linker, as it depends on the distribution.
-    It's ugly, but it works...
+    """     Try to find the appropriate option to pass to the linker, as it
+    depends on the distribution. It's ugly, but it works...
     """
     major_minor = ''.join(map(str, sys.version_info[:2]))
     major = str(sys.version_info[0])
@@ -55,9 +54,9 @@ setup(
     version=0.1,
     description="Extraction de LExique par Variation d'Entropie - Lexicon extraction based on the variation of entropy",
     long_description=readme,
-    author='Pierre Magistry',
-    author_email='pierre@magistry.fr',
-    url='http://kodexlab.com/eleve/',
+    author='KodexLab, Pierre Magistry, Korantin Auguste, Emmanuel Navarro',
+    author_email='contact@kodexlab.com',
+    url='https://github.com/kodexlab/eleve',
     packages=['eleve'],
     classifiers=[
         "Programming Language :: Python",
