@@ -50,6 +50,7 @@ def mean_stdev(values):
         q += (v - old_a)*(v - a)
     return (a, math.sqrt(q / k))
 
+
 class MemoryNode(object):
     """ Node used by :class:`MemoryTrie`
     """
@@ -62,6 +63,7 @@ class MemoryNode(object):
         self.entropy = float('nan')
         self.childs = {}
 
+
 class MemoryLeaf(object):
     __slots__ = ['count']
 
@@ -71,6 +73,7 @@ class MemoryLeaf(object):
     @property
     def entropy(self):
         return float('nan')
+
 
 class MemoryTrie:
     """ In-memory tree (made to be simple, no specific optimizations)
@@ -83,14 +86,11 @@ class MemoryTrie:
         """
         self.depth = depth
         self.root = MemoryNode()
-
         # normalization params :
         # one for each level
         # on each level : mean, stdev
         self.normalization = [(0,0)] * depth
-
         self.terminals = set(terminals)
-
         self.dirty = False
 
     def clear(self):
@@ -110,6 +110,31 @@ class MemoryTrie:
 
         for i in _rec([], self.root): yield i
 
+    def _rec_update_entropy(self, node):
+        """ Recursif update of entropy
+        """
+        counts = []
+        for k, n in node.childs.items():
+            if k in self.terminals:
+                counts.extend(1 for _ in range(n.count))
+            else:
+                counts.append(n.count)
+        node.entropy = entropy(counts)
+
+        for child in node.childs.values():
+            if isinstance(child, MemoryNode):
+                self._rec_update_entropy(child)
+
+    def _rec_ve_for_depth(self, node, parent, depth):
+        """ Recursif generator of entropy variation (for a given level)
+        """
+        if depth == 0:
+            if not math.isnan(node.entropy) and (node.entropy != 0 or parent.entropy != 0):
+                yield node.entropy - parent.entropy
+        elif isinstance(node, MemoryNode):
+            for child in node.childs.values():
+                for i in self._rec_ve_for_depth(child, node, depth - 1): yield i
+
     def update_stats(self):
         """
         Update the internal statistics (like entropy, and stdev & means)
@@ -118,33 +143,10 @@ class MemoryTrie:
         """
         if not self.dirty:
             return
-
-        def update_entropy(node):
-            counts = []
-            for k, n in node.childs.items():
-                if k in self.terminals:
-                    counts.extend(1 for _ in range(n.count))
-                else:
-                    counts.append(n.count)
-            node.entropy = entropy(counts)
-
-            for child in node.childs.values():
-                if isinstance(child, MemoryNode):
-                    update_entropy(child)
-
-        update_entropy(self.root)
-
-        def ve_for_depth(node, parent, depth):
-            if depth == 0:
-                if not math.isnan(node.entropy) and (node.entropy != 0 or parent.entropy != 0):
-                    yield node.entropy - parent.entropy
-            elif isinstance(node, MemoryNode):
-                for child in node.childs.values():
-                    for i in ve_for_depth(child, node, depth - 1): yield i
-
+        self._rec_update_entropy(self.root)
         for i in range(self.depth):
             try:
-                self.normalization[i] = mean_stdev(ve_for_depth(self.root, None, i + 1))
+                self.normalization[i] = mean_stdev(self._rec_ve_for_depth(self.root, None, i + 1))
             except ZeroDivisionError:
                 pass
 
