@@ -80,9 +80,12 @@ class MemoryTrie:
     """
 
     def __init__(self, depth=10, terminals=['^', '$']):
-        """
+        """ Constructor
+
         :param depth: Maximum length of stored ngrams
-        :param terminals: Tokens that are in "terminals" array are counted as distinct in the entropy computation. By default, the symbols are for start and end of sentences.
+        :param terminals: Tokens that are in "terminals" array are counted as
+        distinct in the entropy computation. By default, the symbols are for
+        start and end of sentences.
         """
         self.depth = depth
         self.root = MemoryNode()
@@ -136,9 +139,9 @@ class MemoryTrie:
                 for i in self._rec_ve_for_depth(child, node, depth - 1): yield i
 
     def update_stats(self):
-        """
-        Update the internal statistics (like entropy, and stdev & means)
+        """ Update the internal statistics (like entropy, and stdev & means)
         for the entropy variations.
+
         Called automatically if the trie is modified and we then do queries on it.
         """
         if not self.dirty:
@@ -158,13 +161,11 @@ class MemoryTrie:
             self.update_stats()
 
     def add_ngram(self, ngram, freq=1):
-        """
-        Add a ngram to the trie.
+        """ Add a ngram to the trie.
 
         :param ngram: A list of tokens.
         :param freq: specify the number of times you add (or substract) that ngram.
         """
-
         if not 0 < len(ngram) <= self.depth:
             raise ValueError("The size of the ngram parameter must be in range(1, {} + 1)".format(self.depth))
 
@@ -186,8 +187,7 @@ class MemoryTrie:
         assert isinstance(node, MemoryLeaf), str(ngram)
 
     def _lookup(self, ngram):
-        """
-        Search for a node.
+        """ Search for a node.
 
         :returns: a couple with the parent node and the node.
         :raises KeyError: if the node doesn't exists.
@@ -209,7 +209,7 @@ class MemoryTrie:
         try:
             _, node = self._lookup(ngram)
         except (KeyError, AttributeError):
-            return 0
+            return 0.0
         return node.count
 
     def query_entropy(self, ngram):
@@ -271,7 +271,8 @@ class MemoryTrie:
 class MemoryStorage:
     """ Full-Python in-memory storage.
     """
-    order = None
+    sentence_start = '^'
+    sentence_end = '$'
 
     def __init__(self, order):
         """ Storage constructor.
@@ -281,8 +282,9 @@ class MemoryStorage:
         assert order > 0 and isinstance(order, int)
         self.order = order
 
-        self.bwd = MemoryTrie(order)
-        self.fwd = MemoryTrie(order)
+        terminals = [self.sentence_start, self.sentence_end]
+        self.bwd = MemoryTrie(order, terminals=terminals)
+        self.fwd = MemoryTrie(order, terminals=terminals)
 
     def add_sentence(self, sentence, freq=1):
         """ Add a sentence to the model.
@@ -293,7 +295,7 @@ class MemoryStorage:
         if not sentence:
             return
 
-        token_list = ['^'] + sentence + ['$']
+        token_list = [self.sentence_start] + sentence + [self.sentence_start]
         for i in range(len(token_list) - 1):
             self.fwd.add_ngram(token_list[i:i+self.order], freq)
         token_list = token_list[::-1]
