@@ -2,7 +2,8 @@
 Segmenter
 *********
 
+The ``ELeVE`` segmenter (:class:`eleve.segment.Segmenter`) used a trained
+:ref:`storage` to segment sequence (regroup tokens that goes together). It is available
+by importing :class:`eleve.Segmenter`::
 
-The segmenter is available by importing ``eleve.Segmenter``.
-It is used to segment sentences (regroup tokens that goes together).
-
+    >>> from eleve import Segmenter
