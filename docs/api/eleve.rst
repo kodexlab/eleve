@@ -7,7 +7,7 @@
 
     .. autoclass:: LeveldbStorage
 
-        alias of :class:`eleve.c_leveldb.cleveldb.CLeveldbStorage` if available :class:`eleve.leveldb.LeveldbStorage` either
+        alias of :class:`eleve.c_leveldb.cleveldb.LeveldbStorage` if available :class:`eleve.leveldb.LeveldbStorage` either
 
     .. autoclass:: Segmenter
     
