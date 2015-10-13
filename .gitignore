@@ -1,0 +1,18 @@
+#virtualenv
+ENV/
+venv3/
+data/
+.*
+*.egg-info/
+# ignore editor temp files
+*~
+# ignore pyc files
+*.pyc
+*.so
+.gdb_history
+*.o
+
+# ignore _rep in documentation dir
+/docs/_*
+
+htmlcov/
