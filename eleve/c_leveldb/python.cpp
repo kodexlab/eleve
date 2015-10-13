@@ -86,7 +86,7 @@ class PyLeveldbStorage: public LeveldbStorage
     {
         add_sentence(convert(sentence), 1);
     };
-    COUNT query_count_(py::list ngram)
+    float query_count_(py::list ngram)
     {
         return query_count(convert(ngram));
     };
