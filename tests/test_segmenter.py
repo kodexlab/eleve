@@ -1,15 +1,14 @@
-import gc
-
 import pytest
 
-from eleve import Segmenter, \
+from eleve import Segmenter
+
+from test_storage import \
     PyMemoryStorage, CMemoryStorage, PyLeveldbStorage, CLeveldbStorage
 
 from reliure_nlp.tokenisation.zh import engine_basic
 
 @pytest.mark.parametrize("storage_class", [PyMemoryStorage, PyLeveldbStorage, CMemoryStorage, CLeveldbStorage])
 def test_basic_segmentation(storage_class):
-    gc.collect()
     l = storage_class(3)
     l.clear()
     m = Segmenter(l, 2)
@@ -20,9 +19,9 @@ def test_basic_segmentation(storage_class):
 
     assert m.segment(['je', 'deteste', 'les', 'hot', 'dog']) == [['je'], ['deteste'], ['les'], ['hot', 'dog']]
 
+"""
 @pytest.mark.parametrize("storage_class", [CMemoryStorage, PyLeveldbStorage, CLeveldbStorage])
 def test_zh_segmentation(storage_class, ref_class=PyMemoryStorage):
-    gc.collect()
     test = storage_class(7)
     ref = ref_class(7)
     test.clear()
@@ -44,4 +43,4 @@ def test_zh_segmentation(storage_class, ref_class=PyMemoryStorage):
 
     for u in unsegmented:
         assert segmenter_test.segment(u) == segmenter_ref.segment(u)
-
+"""

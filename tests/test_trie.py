@@ -1,13 +1,26 @@
 import pytest
 import random
 import tempfile
-import os
-import gc
+import shutil
 
 from eleve.memory import MemoryTrie
-from eleve.leveldb import LeveldbTrie
-from eleve.c_leveldb.cleveldb import LeveldbTrie as CLeveldbTrie
+from eleve.leveldb import LeveldbTrie as BLeveldbTrie
+from eleve.c_leveldb.cleveldb import LeveldbTrie as BCLeveldbTrie
 from eleve.c_memory.cmemory import MemoryTrie as CMemoryTrie
+
+class TrieWithPath:
+    def __init__(self):
+        self.fs_path = tempfile.mkdtemp()
+        super().__init__(self.fs_path)
+
+    def __del__(self):
+        shutil.rmtree(self.fs_path)
+
+class LeveldbTrie(TrieWithPath, BLeveldbTrie):
+    pass
+
+class CLeveldbTrie(TrieWithPath, BCLeveldbTrie):
+    pass
 
 def float_equal(a, b):
     return (a != a and b != b) or abs(a - b) < 1e-4
@@ -56,12 +69,28 @@ def compare_nodes(ngrams, ref_trie, test_trie):
     compare_node([], ref_trie, test_trie)
     compare_node([420001337] * 10, ref_trie, test_trie)
 
+@pytest.mark.parametrize("trie_class", [LeveldbTrie, CMemoryTrie, CLeveldbTrie])
+def test_trie_class(trie_class, reference_class=MemoryTrie):
+    """ Compare implementation against reference class (on random ngrams lists)
+    """
+    ngrams = generate_random_ngrams()
+    test_trie = trie_class()
+    ref_trie = reference_class()
+
+    test_trie.clear()
+    ref_trie.clear()
+
+    for i, n in enumerate(ngrams):
+        test_trie.add_ngram(n)
+        ref_trie.add_ngram(n)
+        if i % (len(ngrams) // 3) == 0:
+            compare_nodes(ngrams, ref_trie, test_trie)
+    compare_nodes(ngrams, ref_trie, test_trie)
 
 @pytest.mark.parametrize("trie_class", [MemoryTrie, LeveldbTrie, CMemoryTrie, CLeveldbTrie])
 def test_basic_trie(trie_class):
     """ Minimal test on simple example
     """
-    gc.collect()
     m = trie_class()
     m.clear()
 
@@ -77,25 +106,4 @@ def test_basic_trie(trie_class):
     m.add_ngram([LE,PETIT,CHAT], -1)
     assert m.query_count([LE, PETIT]) == m.query_count([LE, GROS])
     assert m.query_entropy([LE, PETIT]) == m.query_entropy([LE, GROS])
-
-
-@pytest.mark.parametrize("trie_class", [LeveldbTrie, CMemoryTrie, CLeveldbTrie])
-def test_trie_class(trie_class, reference_class=MemoryTrie):
-    """ Compare implementation against reference class (on random ngrams lists)
-    """
-    gc.collect()
-    ngrams = generate_random_ngrams()
-    test_trie = trie_class()
-    ref_trie = reference_class()
-
-    test_trie.clear()
-    ref_trie.clear()
-
-    for i, n in enumerate(ngrams):
-        test_trie.add_ngram(n)
-        ref_trie.add_ngram(n)
-        if i % (len(ngrams) // 3) == 0:
-            compare_nodes(ngrams, ref_trie, test_trie)
-    compare_nodes(ngrams, ref_trie, test_trie)
-
 

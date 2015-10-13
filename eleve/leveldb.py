@@ -109,7 +109,7 @@ class Node:
 
 
 class LeveldbTrie:
-    def __init__(self, path="/tmp/level_trie", terminals=['^', '$']):
+    def __init__(self, path, terminals=['^', '$']):
         self.terminals = set(to_bytes(i) for i in terminals)
 
         self.db = plyvel.DB(path,
@@ -242,19 +242,16 @@ class LeveldbTrie:
 
 
 class LeveldbStorage(MemoryStorage):
-    def __init__(self, order, path=None):
+    def __init__(self, order, path):
         """ Initialize the model.
 
         :param order: The maximum length of n-grams that can be stored.
         :param path: Path to the database where to load and store the model.
-          If not specified, we use a temporary directory in /tmp (used for
-          testing). If the path is not existing an empty model will be created.
+                     If the path is not existing an empty model will be created.
         """
         assert order > 0 and isinstance(order, int)
         self.order = order
 
-        if path is None:
-            path = '/tmp/leveldb_storage'
+        self.bwd = LeveldbTrie(path=(path + '/bwd'))
+        self.fwd = LeveldbTrie(path=(path + '/fwd'))
 
-        self.bwd = LeveldbTrie(path=(path + '_bwd'))
-        self.fwd = LeveldbTrie(path=(path + '_fwd'))

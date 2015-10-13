@@ -6,8 +6,6 @@
 #include <iostream>
 #include <array>
 
-const std::string DEFAULT_PATH = "/tmp/level_trie";
-
 struct Normalization
 {
     float mean;
@@ -61,7 +59,7 @@ class LeveldbTrie
 
     public:
 
-    LeveldbTrie(const std::string& path = DEFAULT_PATH);
+    LeveldbTrie(const std::string& path);
 
     LeveldbTrie(const std::string& path, const std::set<std::string>& terms) : LeveldbTrie(path)
     {
