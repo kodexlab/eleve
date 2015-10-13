@@ -28,7 +28,7 @@ def float_equal(a, b):
 def generate_random_ngrams():
     """ Generate list of random n-grams (of int)
     """
-    depth = random.randint(3,5)
+    depth = random.randint(3,4)
     m = []
 
     def add(prefix):
