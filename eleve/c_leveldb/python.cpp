@@ -108,7 +108,7 @@ BOOST_PYTHON_MODULE(cleveldb)
 {
     using namespace boost::python;
 
-    class_<PyLeveldbTrie, boost::noncopyable>("LeveldbTrie", init<optional<std::string> >())
+    class_<PyLeveldbTrie, boost::noncopyable>("LeveldbTrie", init<std::string>())
         .def("add_ngram", &PyLeveldbTrie::add_ngram_)
         .def("add_ngram", &PyLeveldbTrie::add_ngram__)
         .def("query_count", &PyLeveldbTrie::query_count_)
@@ -119,7 +119,7 @@ BOOST_PYTHON_MODULE(cleveldb)
         .def("clear", &PyLeveldbTrie::clear)
     ;
 
-   class_<PyLeveldbStorage, boost::noncopyable>("LeveldbStorage", init<int, optional<std::string, py::list> >())
+   class_<PyLeveldbStorage, boost::noncopyable>("LeveldbStorage", init<int, std::string,  optional<py::list> >())
         .def("add_ngram", &PyLeveldbStorage::add_ngram_)
         .def("add_ngram", &PyLeveldbStorage::add_ngram__)
         .def("add_sentence", &PyLeveldbStorage::add_sentence_)

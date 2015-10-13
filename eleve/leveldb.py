@@ -103,7 +103,7 @@ class Node:
 
 
 class LeveldbTrie:
-    def __init__(self, path="/tmp/level_trie", terminals=['^', '$']):
+    def __init__(self, path, terminals=['^', '$']):
         self.terminals = set(to_bytes(i) for i in terminals)
 
         self.db = plyvel.DB(path,

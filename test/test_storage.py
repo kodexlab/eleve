@@ -1,9 +1,25 @@
 import pytest
 import re
-import gc
+import tempfile
+import shutil
 
-from eleve import PyMemoryStorage, PyLeveldbStorage, CMemoryStorage, CLeveldbStorage
+from eleve import PyMemoryStorage, PyLeveldbStorage as BPyLeveldbStorage, CMemoryStorage, CLeveldbStorage as BCLeveldbStorage
 from test_trie import compare_node
+
+class StorageWithPath:
+    def __init__(self, order):
+        self.fs_path = tempfile.mkdtemp()
+        super().__init__(order, self.fs_path)
+
+    def __del__(self):
+        shutil.rmtree(self.fs_path)
+
+class PyLeveldbStorage(StorageWithPath, BPyLeveldbStorage):
+    pass
+
+class CLeveldbStorage(StorageWithPath, BCLeveldbStorage):
+    pass
+
 
 @pytest.mark.parametrize("storage_class", [PyMemoryStorage, CMemoryStorage, PyLeveldbStorage, CLeveldbStorage])
 def test_basic_entropy(storage_class):
@@ -17,7 +33,6 @@ def test_basic_entropy(storage_class):
      - petit le pour * 2
     --> count is the mean of 4 and 4, and entropy is the mean of 2 (the None are counted separately) and 1.5.
     """
-    gc.collect()
     m = storage_class(3)
     m.clear()
 
@@ -29,7 +44,6 @@ def test_basic_entropy(storage_class):
 
 @pytest.mark.parametrize("storage_class", [CMemoryStorage, PyLeveldbStorage, CLeveldbStorage])
 def test_storage(storage_class, ref_class=PyMemoryStorage):
-    gc.collect()
     test = storage_class(4)
     ref = ref_class(4)
     test.clear()
