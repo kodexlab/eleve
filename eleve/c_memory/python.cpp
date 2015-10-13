@@ -121,7 +121,8 @@ BOOST_PYTHON_MODULE(cmemory)
         .def("clear", &PyMemoryTrie::clear)
     ;
 
-    class_<PyMemoryStorage, boost::noncopyable>("MemoryStorage", init<size_t, optional<py::list>>())
+    class_<PyMemoryStorage, boost::noncopyable>("MemoryStorage",
+        init<size_t, optional<py::list>>(py::args("order", "terminals")))
         .def("add_ngram", &PyMemoryStorage::add_ngram_)
         .def("add_ngram", &PyMemoryStorage::add_ngram__)
         .def("add_sentence", &PyMemoryStorage::add_sentence_)
