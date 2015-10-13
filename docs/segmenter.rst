@@ -1,6 +1,6 @@
-=========
+*********
 Segmenter
-=========
+*********
 
 
 The segmenter is available by importing ``eleve.Segmenter``.
