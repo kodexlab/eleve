@@ -12,52 +12,47 @@ It was mainly developed for segmentation of mandarin Chinese, but was successful
 In a nutshell
 ==============
 
-Here is simple "getting started".
+Here is simple "getting started". First you have to train a model::
 
-First you have to train a model :
+    >>> from eleve import MemoryStorage
+    >>>
+    >>> storage = MemoryStorage(5)
+    >>> # the parameter is the length of n-grams we will store.
+    >>> # In that case, we can calculate autonomy of 4-grams
+    >>> # (because we need to know what follows the 4-grams)
+    >>>
+    >>> # Then the training itself:
+    >>> storage.add_sentence(["I", "like", "New", "York", "city"])
+    >>> storage.add_sentence(["I", "like", "potatoes"])
+    >>> storage.add_sentence(["potatoes", "are", "fine"])
+    >>> storage.add_sentence(["New", "York", "is", "a", "fine", "city"])
 
->>> from eleve import MemoryStorage
->>>
->>> storage = MemoryStorage(5)
->>> # the parameter is the length of n-grams we will store.
->>> # In that case, we can calculate autonomy of 4-grams
->>> # (because we need to know what follows the 4-grams)
->>>
->>> # Then the training itself:
->>> storage.add_sentence(["I", "like", "New", "York", "city"])
->>> storage.add_sentence(["I", "like", "potatoes"])
->>> storage.add_sentence(["potatoes", "are", "fine"])
->>> storage.add_sentence(["New", "York", "is", "a", "fine", "city"])
+And then you cat query it::
 
-And then you cat query it:
+    >>> storage.query_autonomy(["New", "York"])
+    2.0369977951049805
+    >>> storage.query_autonomy(["like", "potatoes"])
+    -0.3227022886276245
 
->>> storage.query_autonomy(["New", "York"])
-2.0369977951049805
->>> storage.query_autonomy(["like", "potatoes"])
--0.3227022886276245
+Eleve also store n-gram's frequency::
 
-Eleve also store n-gram's frequency:
+    >>> storage.query_count(["New", "York"])
+    2.0
+    >>> storage.query_count(["New", "potatoes"])
+    0.0
+    >>> storage.query_count(["I", "like", "potatoes"])
+    1.0
+    >>> storage.query_count(["potatoes"])
+    2.0
 
->>> storage.query_count(["New", "York"])
-2.0
->>> storage.query_count(["New", "potatoes"])
-0.0
->>> storage.query_count(["I", "like", "potatoes"])
-1.0
->>> storage.query_count(["potatoes"])
-2.0
+The you can use it for segmentation::
 
-The you can use it for segmentation:
-
->>> from eleve import Segmenter
->>> s = Segmenter(storage, 4)
->>> # segment up to 4-grams, if we used the same storage as before.
->>>
->>> s.segment(["What", "do", "you", "know", "about", "New", "York"])
-[['What'], ['do'], ['you'], ['know'], ['about'], ['New', 'York']]
-
-
-For more information, refer to documenation.
+    >>> from eleve import Segmenter
+    >>> s = Segmenter(storage, 4)
+    >>> # segment up to 4-grams, if we used the same storage as before.
+    >>>
+    >>> s.segment(["What", "do", "you", "know", "about", "New", "York"])
+    [['What'], ['do'], ['you'], ['know'], ['about'], ['New', 'York']]
 
 
 
