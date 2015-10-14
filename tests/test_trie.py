@@ -81,6 +81,12 @@ def test_basic_trie(trie_class):
 
     LE, PETIT, GROS, CHAT, CHIEN = range(1, 6)
 
+    with pytest.raises(ValueError):
+        m.add_ngram([CHAT])
+
+    with pytest.raises(ValueError):
+        m.add_ngram([LE,PETIT,PETIT,PETIT,CHAT])
+
     m.add_ngram([LE,PETIT,CHAT])
     m.add_ngram([LE,PETIT,CHIEN])
     m.add_ngram([LE,GROS,CHIEN])
