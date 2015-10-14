@@ -5,7 +5,7 @@ Provide a Storage (:class:`eleve.leveldb.LeveldbStorage`) and a Trie
 (:class:`eleve.leveldb.LeveldbTrie`) that use LevelDB as disk backend.
 The implementation over LevelDB is done in python by using :mod:`plyvel`.
 """
-
+import os
 import struct
 import math
 import collections
@@ -109,9 +109,16 @@ class Node:
 
 
 class LeveldbTrie:
-    def __init__(self, path, terminals=['^', '$']):
+    def __init__(self, path, depth=None, terminals=['^', '$']):
+        """ Create a Trie using leveldb as backend.
+        
+        If `depth` is provided and `path` doesn't exist then a new trie is created,
+        else the existing one if open.
+        """
+        new_trie = not os.path.isdir(path)
+        if depth is None and new_trie:
+            raise AttributeError("Trie doesn't exist yet and no depth was provided")
         self.terminals = set(to_bytes(i) for i in terminals)
-
         self.db = plyvel.DB(path,
                 create_if_missing=True,
                 write_buffer_size=32*1024**2,
@@ -119,6 +126,11 @@ class LeveldbTrie:
                 #lru_cache_size=512*1024**2,
                 #bloom_filter_bits=8,
         )
+        # store the depth
+        if new_trie:
+            self.db.put(b'__depth__', str(depth).encode())
+        # allways get a local copy from the trie
+        self.depth = int(self.db.get(b'__depth__'))
 
         # retrieve the normalization constants from leveldb
         self.normalization = []
@@ -132,7 +144,7 @@ class LeveldbTrie:
 
         # set the dirty flag
         self.dirty = len(self.normalization) == 0
-        
+
     def clear(self):
         """ Delete the trie that's in the database. """
         for key in self.db.iterator(include_value=False):
@@ -182,6 +194,9 @@ class LeveldbTrie:
         return Node(self.db, ngram_to_key(ngram))
 
     def add_ngram(self, ngram, freq=1):
+        if not 0 < len(ngram) <= self.depth:
+            raise ValueError("The size of the ngram parameter must be in range(1, {} + 1)".format(self.depth))
+
         if not self.dirty:
             self.dirty = True
             self.db.delete(b'\xff\x00')
@@ -242,16 +257,25 @@ class LeveldbTrie:
 
 
 class LeveldbStorage(MemoryStorage):
-    def __init__(self, order, path):
+    def __init__(self, path, ngram_length=5):
         """ Initialize the model.
 
-        :param order: The maximum length of n-grams that can be stored.
         :param path: Path to the database where to load and store the model.
                      If the path is not existing an empty model will be created.
+        :param ngram_length: The maximum length of n-grams that can be stored.
         """
-        assert order > 0 and isinstance(order, int)
-        self.order = order
-
-        self.bwd = LeveldbTrie(path=(path + '/bwd'))
-        self.fwd = LeveldbTrie(path=(path + '/fwd'))
+        if not os.path.isdir(path):
+            # CREATE
+            assert ngram_length > 0 and isinstance(ngram_length, int)
+            os.makedirs(path)
+            self.ngram_length = ngram_length
+            # create the two Tries
+            self.bwd = LeveldbTrie(path=(path + '/bwd'), depth=self.ngram_length)
+            self.fwd = LeveldbTrie(path=(path + '/fwd'), depth=self.ngram_length)
+        else:
+            # LOADING : path already exist
+            self.bwd = LeveldbTrie(path=(path + '/bwd'))
+            self.fwd = LeveldbTrie(path=(path + '/fwd'))
+            assert self.bwd.depth == self.fwd.depth
+            self.ngram_length = self.fwd.depth
 
