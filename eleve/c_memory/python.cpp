@@ -104,6 +104,10 @@ class PyMemoryStorage: public MemoryStorage
         add_ngram(convert(s), 1);
     };
 
+    size_t get_ngram_length()
+    {
+        return ngram_length;
+    };
 };
 
 BOOST_PYTHON_MODULE(cmemory)
@@ -133,5 +137,6 @@ BOOST_PYTHON_MODULE(cmemory)
         .def("query_autonomy", &PyMemoryStorage::query_autonomy_)
         .def("clear", &PyMemoryStorage::clear)
         .def("update_stats", &PyMemoryStorage::update_stats)
+        .add_property("ngram_length", &PyMemoryStorage::get_ngram_length)
     ;
 }
