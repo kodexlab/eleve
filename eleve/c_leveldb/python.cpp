@@ -102,6 +102,11 @@ class PyLeveldbStorage: public LeveldbStorage
     {
         return query_autonomy(convert(ngram));
     };
+
+    size_t get_ngram_length()
+    {
+        return ngram_length;
+    };
 };
 
 BOOST_PYTHON_MODULE(cleveldb)
@@ -130,5 +135,6 @@ BOOST_PYTHON_MODULE(cleveldb)
         .def("query_ev", &PyLeveldbStorage::query_ev_)
         .def("query_autonomy", &PyLeveldbStorage::query_autonomy_)
         .def("clear", &PyLeveldbStorage::clear)
+        .add_property("ngram_length", &PyLeveldbStorage::get_ngram_length)
     ;
 }

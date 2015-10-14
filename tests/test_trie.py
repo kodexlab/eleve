@@ -8,6 +8,11 @@ from eleve.leveldb import LeveldbTrie as BLeveldbTrie
 from eleve.c_leveldb.cleveldb import LeveldbTrie as BCLeveldbTrie
 from eleve.c_memory.cmemory import MemoryTrie as CMemoryTrie
 
+@pytest.fixture()
+def pyram_trie(depth):
+    trie = MemoryTrie(depth)
+    return trie
+
 class TrieWithPath:
     def __init__(self):
         self.fs_path = tempfile.mkdtemp()

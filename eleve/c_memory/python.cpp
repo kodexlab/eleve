@@ -67,7 +67,7 @@ class PyMemoryStorage: public MemoryStorage
 
     using MemoryStorage::MemoryStorage;
 
-    PyMemoryStorage(size_t order, py::list terminals) : PyMemoryStorage(order, convert(terminals))
+    PyMemoryStorage(size_t ngram_length, py::list terminals) : PyMemoryStorage(ngram_length, convert(terminals))
     {
     };
 
@@ -104,6 +104,10 @@ class PyMemoryStorage: public MemoryStorage
         add_ngram(convert(s), 1);
     };
 
+    size_t get_ngram_length()
+    {
+        return ngram_length;
+    };
 };
 
 BOOST_PYTHON_MODULE(cmemory)
@@ -122,7 +126,7 @@ BOOST_PYTHON_MODULE(cmemory)
     ;
 
     class_<PyMemoryStorage, boost::noncopyable>("MemoryStorage",
-        init<size_t, optional<py::list>>(py::args("order", "terminals")))
+        init<size_t, optional<py::list>>(py::args("ngram_length", "terminals")))
         .def("add_ngram", &PyMemoryStorage::add_ngram_)
         .def("add_ngram", &PyMemoryStorage::add_ngram__)
         .def("add_sentence", &PyMemoryStorage::add_sentence_)
@@ -133,5 +137,6 @@ BOOST_PYTHON_MODULE(cmemory)
         .def("query_autonomy", &PyMemoryStorage::query_autonomy_)
         .def("clear", &PyMemoryStorage::clear)
         .def("update_stats", &PyMemoryStorage::update_stats)
+        .add_property("ngram_length", &PyMemoryStorage::get_ngram_length)
     ;
 }
