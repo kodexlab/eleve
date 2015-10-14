@@ -1,6 +1,7 @@
 #ifndef _LEVELDB_STORAGE_HPP_
 #define _LEVELDB_STORAGE_HPP_
 #include "leveldb_trie.hpp"
+#include <boost/filesystem.hpp>
 
 typedef const std::vector<std::string> strVec;
 
@@ -13,6 +14,25 @@ class LeveldbStorage
     LeveldbTrie fwd;
     LeveldbTrie bwd;
 
+    static std::string directory_add(const std::string& path, const std::string& subdir)
+    {
+        if(! boost::filesystem::is_directory(path))
+        {
+            if(! boost::filesystem::create_directory(path))
+            {
+                std::cerr << "Unable to create directory for database: " << path << std::endl;
+                exit(EXIT_FAILURE);
+            }
+        }
+
+        return path + "/" + subdir;
+    };
+
+    static inline std::set<std::string> strvec_to_set(strVec& terminals)
+    {
+        return std::set<std::string>(terminals.cbegin(), terminals.cend());
+    };
+
     public:
 
     inline static std::vector<std::string> reverse(const std::vector<std::string>& ids)
@@ -20,11 +40,10 @@ class LeveldbStorage
         return std::vector<std::string>(ids.rbegin(), ids.rend());
     };
     
-    LeveldbStorage(size_t order, std::string path, strVec& terminals): ngram_length(order), fwd(path + "/fwd"), bwd(path + "/bwd")
+    LeveldbStorage(size_t order, std::string path, strVec& terminals): ngram_length(order),
+                                                                       fwd(directory_add(path, "fwd"), strvec_to_set(terminals)),
+                                                                       bwd(directory_add(path, "bwd"), strvec_to_set(terminals))
     {
-        std::set<std::string> t = std::set<std::string>(terminals.cbegin(), terminals.cend());
-        fwd.set_terminals(t);
-        bwd.set_terminals(t);
     };
 
     LeveldbStorage(size_t o, std::string path) : LeveldbStorage(o, path, DEFAULT_TERMINALS) {};

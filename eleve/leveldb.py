@@ -10,6 +10,7 @@ import struct
 import math
 import collections
 import logging
+import os
 
 import plyvel
 
@@ -251,6 +252,9 @@ class LeveldbStorage(MemoryStorage):
         """
         assert order > 0 and isinstance(order, int)
         self.order = order
+
+        if not os.path.isdir(path):
+            os.mkdir(path)
 
         self.bwd = LeveldbTrie(path=(path + '/bwd'))
         self.fwd = LeveldbTrie(path=(path + '/fwd'))

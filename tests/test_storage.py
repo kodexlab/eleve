@@ -2,6 +2,8 @@ import pytest
 import re
 import tempfile
 import shutil
+import gc
+import os
 
 from eleve import PyMemoryStorage, PyLeveldbStorage as BPyLeveldbStorage, CMemoryStorage, CLeveldbStorage as BCLeveldbStorage
 from test_trie import compare_node
@@ -20,6 +22,14 @@ class PyLeveldbStorage(StorageWithPath, BPyLeveldbStorage):
 class CLeveldbStorage(StorageWithPath, BCLeveldbStorage):
     pass
 
+@pytest.mark.parametrize("storage_class", [BPyLeveldbStorage, BCLeveldbStorage])
+def test_empty_storage(storage_class):
+    p = tempfile.mkdtemp()
+    m = storage_class(3, os.path.join(p, 'test'))
+    m.add_sentence(['le', 'chat'])
+    del m
+    gc.collect()
+    shutil.rmtree(p)
 
 @pytest.mark.parametrize("storage_class", [PyMemoryStorage, CMemoryStorage, PyLeveldbStorage, CLeveldbStorage])
 def test_basic_entropy(storage_class):

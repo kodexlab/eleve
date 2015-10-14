@@ -71,11 +71,6 @@ class LeveldbTrie
         delete db;
     };
 
-    void set_terminals(std::set<std::string>& t)
-    {
-        terminals = t;
-    };
-
     void update_stats();
 
     void add_ngram(const std::vector<std::string>& ngram, int freq=1);
