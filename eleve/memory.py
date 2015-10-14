@@ -274,17 +274,16 @@ class MemoryStorage:
     sentence_start = '^'
     sentence_end = '$'
 
-    def __init__(self, order):
+    def __init__(self, ngram_length=5):
         """ Storage constructor.
 
-        :param order: The maximum length of n-grams that can be stored.
+        :param ngram_length: The maximum length of n-grams that can be stored.
         """
-        assert order > 0 and isinstance(order, int)
-        self.order = order
-
+        assert isinstance(self.ngram_length, int) and ngram_length > 0
+        self.ngram_length = ngram_length
         terminals = [self.sentence_start, self.sentence_end]
-        self.bwd = MemoryTrie(order, terminals=terminals)
-        self.fwd = MemoryTrie(order, terminals=terminals)
+        self.bwd = MemoryTrie(self.ngram_length, terminals=terminals)
+        self.fwd = MemoryTrie(self.ngram_length, terminals=terminals)
 
     def add_sentence(self, sentence, freq=1):
         """ Add a sentence to the model.
@@ -297,10 +296,10 @@ class MemoryStorage:
 
         token_list = [self.sentence_start] + sentence + [self.sentence_start]
         for i in range(len(token_list) - 1):
-            self.fwd.add_ngram(token_list[i:i+self.order], freq)
+            self.fwd.add_ngram(token_list[i:i+self.ngram_length], freq)
         token_list = token_list[::-1]
         for i in range(len(token_list) - 1):
-            self.bwd.add_ngram(token_list[i:i+self.order], freq)
+            self.bwd.add_ngram(token_list[i:i+self.ngram_length], freq)
 
     def clear(self):
         """ Clear the training data in the model, effectively resetting it.
@@ -359,3 +358,4 @@ class MemoryStorage:
         if math.isnan(entropy_fwd) or math.isnan(entropy_bwd):
             return float('nan')
         return (entropy_fwd + entropy_bwd) / 2
+
