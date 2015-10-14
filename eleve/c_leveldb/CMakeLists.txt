@@ -5,14 +5,14 @@ project( cleveldb )
 SET(CMAKE_CXX_FLAGS "-std=c++0x")
 
 foreach(Boost_Python_Lib "python3" "python-py3" "python-py34" "python-py33" "python-py35" "python-py36")
-    find_package(Boost COMPONENTS ${Boost_Python_Lib} QUIET )
+    find_package(Boost COMPONENTS ${Boost_Python_Lib} filesystem QUIET )
     if(Boost_FOUND)
         break()
     endif()
 endforeach()
 # If boost-python3 not found, just find boost-python and hope that it is compatible with python3
 if(NOT Boost_FOUND)
-  find_package(Boost COMPONENTS python REQUIRED)
+  find_package(Boost COMPONENTS python filesystem REQUIRED)
 endif()
 
 set(Python_ADDITIONAL_VERSIONS "3.2" "3.3" "3.4" "3.5" "3.6")

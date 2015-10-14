@@ -10,6 +10,7 @@ import struct
 import math
 import collections
 import logging
+import os
 
 import plyvel
 
