@@ -279,7 +279,7 @@ class MemoryStorage:
 
         :param ngram_length: The maximum length of n-grams that can be stored.
         """
-        assert isinstance(self.ngram_length, int) and ngram_length > 0
+        assert isinstance(ngram_length, int) and ngram_length > 0
         self.ngram_length = ngram_length
         terminals = [self.sentence_start, self.sentence_end]
         self.bwd = MemoryTrie(self.ngram_length, terminals=terminals)
