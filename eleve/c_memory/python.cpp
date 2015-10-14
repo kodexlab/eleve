@@ -67,7 +67,7 @@ class PyMemoryStorage: public MemoryStorage
 
     using MemoryStorage::MemoryStorage;
 
-    PyMemoryStorage(size_t order, py::list terminals) : PyMemoryStorage(order, convert(terminals))
+    PyMemoryStorage(size_t ngram_length, py::list terminals) : PyMemoryStorage(ngram_length, convert(terminals))
     {
     };
 
@@ -126,7 +126,7 @@ BOOST_PYTHON_MODULE(cmemory)
     ;
 
     class_<PyMemoryStorage, boost::noncopyable>("MemoryStorage",
-        init<size_t, optional<py::list>>(py::args("order", "terminals")))
+        init<size_t, optional<py::list>>(py::args("ngram_length", "terminals")))
         .def("add_ngram", &PyMemoryStorage::add_ngram_)
         .def("add_ngram", &PyMemoryStorage::add_ngram__)
         .def("add_sentence", &PyMemoryStorage::add_sentence_)

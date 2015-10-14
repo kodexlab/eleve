@@ -20,7 +20,7 @@ class LeveldbStorage
         return std::vector<std::string>(ids.rbegin(), ids.rend());
     };
     
-    LeveldbStorage(size_t order, std::string path, strVec& terminals): ngram_length(order), fwd(path + "/fwd"), bwd(path + "/bwd")
+    LeveldbStorage(size_t ngram_length, std::string path, strVec& terminals): ngram_length(ngram_length), fwd(path + "/fwd"), bwd(path + "/bwd")
     {
         std::set<std::string> t = std::set<std::string>(terminals.cbegin(), terminals.cend());
         fwd.set_terminals(t);

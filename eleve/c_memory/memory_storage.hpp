@@ -23,7 +23,7 @@ class MemoryStorage
         return std::vector<ID>(ids.rbegin(), ids.rend());
     };
     
-    MemoryStorage(size_t order, strVec& terminals): ngram_length(order)
+    MemoryStorage(size_t ngram_length, strVec& terminals): ngram_length(ngram_length)
     {
         auto terminals_ids = tokens_to_ids(terminals);
         std::set<ID> t = std::set<ID>(terminals_ids.cbegin(), terminals_ids.cend());
