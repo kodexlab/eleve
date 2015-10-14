@@ -95,6 +95,14 @@ Only the C++ one should be used. The best practice is to use
 fail back one the full-Python one if compilation of C++ one has failed.
 
 
+.. note:: If you want to import and use explicitely Python or C++ memory storage,
+  you can import it with the following alias::
+    >>> from eleve import PyMemoryStorage, CMemoryStorage
+    >>> PyMemoryStorage
+    <class 'eleve.memory.MemoryStorage'>
+    >>> CMemoryStorage
+    <class 'eleve.c_memory.cmemory.MemoryStorage'>
+
 Disk Storage (*Leveldb*)
 ========================
 
@@ -146,9 +154,9 @@ Then everything is the same than with memory storage::
     >>> hdd_storage.add_sentence(["big", "black", "cat"])
     >>> hdd_storage.add_sentence(["crazy", "dog"])
     >>> hdd_storage.query_count(["black", "cat"])
-    2
+    2.0
     >>> hdd_storage.query_count(["very", "small", "black", "cat"])
-    0
+    0.0
     >>> hdd_storage.query_autonomy(["black", "cat"])
     1.9537...
     >>> hdd_storage.query_autonomy(["small", "black"])
@@ -174,4 +182,24 @@ Finaly if you want to remove a storage ::
    >>> hdd_storage2.clear()
    >>> hdd_storage2.query_autonomy(["black", "cat"])
    nan
+
+
+Python and C++ implementations
+------------------------------
+
+Two implementations of disk storage are provided: :class:`eleve.leveldb.LeveldbStorage` and 
+:class:`eleve.c_leveldb.cleveldb.LeveldbStorage`. The former is writen in Python
+(for eleve parts) and use generic leveldb wrapper `plyvel <https://plyvel.readthedocs.org/>`_,
+the latter is fully writen in C++ and directly use  leveldb C++ API.
+
+C++ version is a bit faster and more efficient than python version.
+
+.. note:: If you want to import and use explicitely Python or C++ implementation
+  of disk storage, you can import it with the following alias::
+    >>> from eleve import PyLeveldbStorage, CLeveldbStorage
+    >>> PyLeveldbStorage
+    <class 'eleve.leveldb.LeveldbStorage'>
+    >>> CLeveldbStorage
+    <class 'eleve.c_leveldb.cleveldb.LeveldbStorage'>
+
 
