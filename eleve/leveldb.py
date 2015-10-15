@@ -110,38 +110,28 @@ class Node:
 
 
 class LeveldbTrie:
-    def __init__(self, path, depth=None, terminals=['^', '$']):
-        """ Create a Trie using leveldb as backend.
-        
-        If `depth` is provided and `path` doesn't exist then a new trie is created,
-        else the existing one if open.
+    DEPTH_KEY = b'\xff__depth__'
+
+    def __init__(self, path, terminals=['^', '$']):
+        """ Create or opent a Trie using leveldb as backend.
         """
-        new_trie = not os.path.isdir(path)
-        if depth is None and new_trie:
-            raise AttributeError("Trie doesn't exist yet and no depth was provided")
         self.terminals = set(to_bytes(i) for i in terminals)
         self.db = plyvel.DB(path,
-                create_if_missing=True,
-                write_buffer_size=32*1024**2,
-                #block_size=16*1024,
-                #lru_cache_size=512*1024**2,
-                #bloom_filter_bits=8,
+            create_if_missing=True,
+            write_buffer_size=32*1024**2,
+            #block_size=16*1024,
+            #lru_cache_size=512*1024**2,
+            #bloom_filter_bits=8,
         )
-        # store the depth
-        if new_trie:
-            self.db.put(b'__depth__', str(depth).encode())
-        # allways get a local copy from the trie
-        self.depth = int(self.db.get(b'__depth__'))
-
         # retrieve the normalization constants from leveldb
         self.normalization = []
-        i = 0
+        depth_level = 0
         while True:
-            ndata = self.db.get(b'\xff' + bytes((i,)))
+            ndata = self.db.get(b'\xff' + bytes((depth_level,)))
             if ndata is None:
                 break
             self.normalization.append(NORMALIZATION_PACKER.unpack(ndata))
-            i += 1
+            depth_level += 1
 
         # set the dirty flag
         self.dirty = len(self.normalization) == 0
@@ -195,8 +185,8 @@ class LeveldbTrie:
         return Node(self.db, ngram_to_key(ngram))
 
     def add_ngram(self, ngram, freq=1):
-        if not 0 < len(ngram) <= self.depth:
-            raise ValueError("The size of the ngram parameter must be in range(1, {} + 1)".format(self.depth))
+        if len(ngram) <= 1:
+            raise ValueError("The size of the ngram should be more than 1")
 
         if not self.dirty:
             self.dirty = True
