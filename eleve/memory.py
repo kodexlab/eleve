@@ -10,51 +10,11 @@ import logging
 
 __all__ = ["MemoryTrie", "MemoryStorage"]
 
-def entropy(counts):
-    """ Calculate entropy from an iterator containing
-    count of occurence for each value.
-
-    Each count must be greater or equal to 1. If it is
-    not the case, it will be set to 1.
-
-    >>> entropy([1,1])
-    1.0
-    >>> entropy([1])
-    0.0
-    >>> print('{:.4f}'.format(entropy([1,1,0,5,2])))
-    1.6577
-    """
-    c, psum = 0, 0
-    for i in counts:
-        if i == 0:
-            continue
-        assert i >= 1
-        c += i
-        psum += i * math.log(i, 2)
-    return (math.log(c, 2) - psum / c) if c > 0 else float('nan')
-
-def mean_stdev(values):
-    """ Calculate mean and standard deviation from values of an iterator.
-
-    >>> mean_stdev([1,3])
-    (2.0, 1.0)
-    >>> mean_stdev([2,2])
-    (2.0, 0.0)
-    """
-    a, q, k = 0, 0, 0
-    for v in values:
-        assert math.isfinite(v)
-        k += 1
-        old_a = a
-        a += (v - a) / k
-        q += (v - old_a)*(v - a)
-    return (a, math.sqrt(q / k))
-
+NaN = float('nan')
 
 class MemoryNode(object):
     """ Node used by :class:`MemoryTrie`
     """
-    
     # to take a little less memory
     __slots__ = ['count', 'entropy', 'childs']
 
@@ -62,6 +22,29 @@ class MemoryNode(object):
         self.count = count
         self.entropy = float('nan')
         self.childs = {}
+
+    def update_entropy(self, terminals):
+        """ Update the entropy of the node.
+
+        :param terminals: a set of bytes. If a token is inside that set, it will
+         count as N different tokens instead of a token with count N.
+        """
+        entropy = 0
+        sum_counts = 0
+        for token, child in self.childs.items():
+            if child.count == 0:
+                continue
+            sum_counts += child.count
+            if token in terminals:
+                entropy += (child.count / self.count) * math.log(self.count, 2)
+            else:
+                entropy -= (child.count / self.count) * math.log(child.count / self.count, 2)
+        if not sum_counts:
+            entropy = NaN
+        else:
+            assert sum_counts == self.count
+        if self.entropy != entropy and not(math.isnan(self.entropy) and math.isnan(entropy)):
+            self.entropy = entropy
 
 
 class MemoryLeaf(object):
@@ -79,22 +62,32 @@ class MemoryTrie:
     """ In-memory tree (made to be simple, no specific optimizations)
     """
 
-    def __init__(self, depth=10, terminals=['^', '$']):
+    def __init__(self, terminals=['^', '$']):
         """ Constructor
 
-        :param depth: Maximum length of stored ngrams
         :param terminals: Tokens that are in "terminals" array are counted as
         distinct in the entropy computation. By default, the symbols are for
         start and end of sentences.
         """
-        self.depth = depth
         self.root = MemoryNode()
         # normalization params :
         # one for each level
         # on each level : mean, stdev
-        self.normalization = [(0,0)] * depth
+        self.normalization = None
         self.terminals = set(terminals)
         self.dirty = False
+
+    def max_depth(self):
+        """ Returns the maximum depth of the Trie
+        
+        >>> trie = MemoryTrie()
+        >>> trie.max_depth()
+        0
+        >>> trie.add_ngram(["A", "B", "C"])
+        3
+        """
+        self._check_dirty()
+        return len(self.normalization)
 
     def clear(self):
         """ Clear the trie.
@@ -106,37 +99,33 @@ class MemoryTrie:
     def iter_leafs(self):
         def _rec(ngram, node):
             if node.childs:
-                for k, c in node.childs.items():
-                    for i in _rec(ngram + [k], c): yield i
+                for token, child in node.childs.items():
+                    for i in _rec(ngram + [token], child): yield i
             elif node is not self.root:
                 yield ngram
 
         for i in _rec([], self.root): yield i
 
-    def _rec_update_entropy(self, node):
-        """ Recursif update of entropy
+    def _update_stats_rec(self, parent_entropy, depth, node):
+        """ Recurively update both entropy and normalization vector
         """
-        counts = []
-        for k, n in node.childs.items():
-            if k in self.terminals:
-                counts.extend(1 for _ in range(n.count))
-            else:
-                counts.append(n.count)
-        node.entropy = entropy(counts)
-
+        if isinstance(node, MemoryLeaf):
+            return
+        node.update_entropy(self.terminals)
+        if not math.isnan(node.entropy) and (node.entropy or parent_entropy):
+            ev = node.entropy - parent_entropy
+            # extend normalization vector if needed
+            while len(self.normalization) <= depth:
+                self.normalization.append((0., 0., 0))
+            mean, stdev, count = self.normalization[depth]
+            old_mean = mean
+            count += 1
+            mean += (ev - old_mean) / count
+            stdev += (ev - old_mean) * (ev - mean)
+            self.normalization[depth] = mean, stdev, count
+        # recurifs calls
         for child in node.childs.values():
-            if isinstance(child, MemoryNode):
-                self._rec_update_entropy(child)
-
-    def _rec_ve_for_depth(self, node, parent, depth):
-        """ Recursif generator of entropy variation (for a given level)
-        """
-        if depth == 0:
-            if not math.isnan(node.entropy) and (node.entropy != 0 or parent.entropy != 0):
-                yield node.entropy - parent.entropy
-        elif isinstance(node, MemoryNode):
-            for child in node.childs.values():
-                for i in self._rec_ve_for_depth(child, node, depth - 1): yield i
+            self._update_stats_rec(node.entropy, depth + 1, child)
 
     def update_stats(self):
         """ Update the internal statistics (like entropy, and stdev & means)
@@ -146,13 +135,11 @@ class MemoryTrie:
         """
         if not self.dirty:
             return
-        self._rec_update_entropy(self.root)
-        for i in range(self.depth):
-            try:
-                self.normalization[i] = mean_stdev(self._rec_ve_for_depth(self.root, None, i + 1))
-            except ZeroDivisionError:
-                pass
-
+        self.normalization = []
+        self._update_stats_rec(NaN, 0, self.root)
+        for depth, (mean, _stdev, count) in enumerate(self.normalization):
+            stdev = math.sqrt(_stdev / (count or 1))
+            self.normalization[depth] = (mean, stdev)
         self.dirty = False
 
     def _check_dirty(self):
@@ -166,14 +153,11 @@ class MemoryTrie:
         :param ngram: A list of tokens.
         :param freq: specify the number of times you add (or substract) that ngram.
         """
-        if not 0 < len(ngram) <= self.depth:
-            raise ValueError("The size of the ngram parameter must be in range(1, {} + 1)".format(self.depth))
-
+        if len(ngram) <= 1:
+            raise ValueError("The size of the ngram should be more than 1")
         self.dirty = True
-
         node = self.root
         node.count += freq
-
         for i, token in enumerate(ngram):
             try:
                 node = node.childs[token]
@@ -183,7 +167,6 @@ class MemoryTrie:
                 assert isinstance(node, MemoryNode)
                 node.childs[token] = child
                 node = child
-
         assert isinstance(node, MemoryLeaf), str(ngram)
 
     def _lookup(self, ngram):
@@ -232,10 +215,8 @@ class MemoryTrie:
         :returns: A float, that can be NaN if it is not defined.
         """
         self._check_dirty()
-
         if not ngram:
             return float('nan')
-
         try:
             last_node, node = self._lookup(ngram)
         except (KeyError, AttributeError):
@@ -274,32 +255,31 @@ class MemoryStorage:
     sentence_start = '^'
     sentence_end = '$'
 
-    def __init__(self, ngram_length=5):
+    def __init__(self):
         """ Storage constructor.
-
-        :param ngram_length: The maximum length of n-grams that can be stored.
         """
         assert isinstance(ngram_length, int) and ngram_length > 0
         self.ngram_length = ngram_length
         terminals = [self.sentence_start, self.sentence_end]
-        self.bwd = MemoryTrie(self.ngram_length, terminals=terminals)
-        self.fwd = MemoryTrie(self.ngram_length, terminals=terminals)
+        self.bwd = MemoryTrie(terminals=terminals)
+        self.fwd = MemoryTrie(terminals=terminals)
 
-    def add_sentence(self, sentence, freq=1):
+    def add_sentence(self, sentence, freq=1, ngram_length=5):
         """ Add a sentence to the model.
 
         :param sentence: The sentence to add. Should be a list of tokens.
         :param freq: The number of times to add this sentence. One by default. May be negative to "remove" a sentence.
+        :param ngram_length: The length of n-grams that are stored.
         """
         if not sentence:
             return
 
         token_list = [self.sentence_start] + sentence + [self.sentence_start]
         for i in range(len(token_list) - 1):
-            self.fwd.add_ngram(token_list[i:i+self.ngram_length], freq)
+            self.fwd.add_ngram(token_list[i:i+ngram_length], freq)
         token_list = token_list[::-1]
         for i in range(len(token_list) - 1):
-            self.bwd.add_ngram(token_list[i:i+self.ngram_length], freq)
+            self.bwd.add_ngram(token_list[i:i+ngram_length], freq)
 
     def clear(self):
         """ Clear the training data in the model, effectively resetting it.
