@@ -16,14 +16,14 @@ def trie(request):
     elif request.param == "cram":
         return CMemoryTrie()
     elif request.param == "pyleveldb":
-        fs_path = tempfile.mkdtemp()
+        fs_path = tempfile.mkdtemp(prefix="tmp_eleve_pyldb_")
         trie = PyLeveldbTrie(path=fs_path)
         def fin():
             print ("teardown pyleveldb")
             shutil.rmtree(fs_path)
         request.addfinalizer(fin)
     elif request.param == "cleveldb":
-        fs_path = tempfile.mkdtemp()
+        fs_path = tempfile.mkdtemp(prefix="tmp_eleve_cldb_")
         trie = CLeveldbTrie(path=fs_path)
         def fin():
             print ("teardown cleveldb")
@@ -33,8 +33,14 @@ def trie(request):
         raise ValueError("invalid internal test config")
     return trie
 
+
+all_backends = ["pyram", "cram", "pyleveldb", "cleveldb"]
+tested_backends = ["cram", "pyleveldb", "cleveldb"] # against pyram
+EPSILON = 0.0001
+
+
 def float_equal(a, b):
-    return (a != a and b != b) or abs(a - b) < 1e-4
+    return (a != a and b != b) or abs(a - b) < EPSILON
 
 def generate_random_ngrams():
     """ Generate list of random n-grams (of int)
@@ -88,31 +94,44 @@ def compare_nodes(ngrams, ref_trie, test_trie):
         compare_node(n + [420001337], ref_trie, test_trie) # try a non-existent node
 
 
-@pytest.mark.parametrize("trie", ["pyram", "cram", "pyleveldb", "cleveldb"], indirect=True)
+
+@pytest.mark.parametrize("trie", all_backends, indirect=True)
 def test_basic_trie(trie):
     """ Minimal test on simple example
     """
     trie.clear()
-    LE, PETIT, GROS, CHAT, CHIEN = range(1, 6)
-
-    #with pytest.raises(ValueError):
-    #    trie.add_ngram([])
-    with pytest.raises(ValueError):
-        trie.add_ngram([CHAT])
+    LE, PETIT, GROS, CHAT, CHIEN, RAT = range(1, 7)
 
     trie.add_ngram([LE,PETIT,CHAT])
     trie.add_ngram([LE,PETIT,CHIEN])
-    trie.add_ngram([LE,GROS,CHIEN])
-    assert trie.query_count([LE, PETIT]) == 2
-    assert trie.query_entropy([LE, PETIT]) == 1.0
-    assert trie.query_count([]) == 3
-    assert trie.query_count([LE, PETIT]) != trie.query_count([LE, GROS])
+    trie.add_ngram([LE,PETIT,RAT])
+    trie.add_ngram([LE,GROS,RAT])
+    assert trie.query_count([LE, PETIT]) == 3
+    assert float_equal(trie.query_entropy([LE, PETIT]), 1.584962500721156)
+    assert float_equal(trie.query_autonomy([LE, PETIT]), 1.0)
+    assert trie.query_count([]) == 4
+
+    # test removing a n-gramm
     trie.add_ngram([LE,PETIT,CHAT], -1)
-    assert trie.query_count([LE, PETIT]) == trie.query_count([LE, GROS])
-    assert trie.query_entropy([LE, PETIT]) == trie.query_entropy([LE, GROS])
+    assert trie.query_count([LE, PETIT]) == 2
+    assert float_equal(trie.query_entropy([LE, PETIT]), 1.0)
+    assert float_equal(trie.query_autonomy([LE, PETIT]), 1.0)
 
 
-@pytest.mark.parametrize("trie", ["cram", "pyleveldb", "cleveldb"], indirect=True)
+@pytest.mark.parametrize("trie", all_backends, indirect=True)
+def test_robustness(trie):
+    """ Test robustness of Tries
+    """
+    trie.clear()
+    
+    #XXX seg fault for now : #16 https://git.kodexlab.com/kodexlab/eleve/issues/16
+    #with pytest.raises(ValueError):
+    #    trie.add_ngram([])
+    with pytest.raises(ValueError):
+        trie.add_ngram(["oneword"])
+
+
+@pytest.mark.parametrize("trie", tested_backends, indirect=True)
 def test_trie_class(trie, reference_class=MemoryTrie):
     """ Compare implementation against reference class (on random ngrams lists)
     """
