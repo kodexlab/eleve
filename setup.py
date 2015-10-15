@@ -6,28 +6,32 @@ from distutils.core import setup, Extension
 
 assert sys.version_info[0] >= 3, "For python >= 3 only"
 
-def get_boost_lib():
-    """     Try to find the appropriate option to pass to the linker, as it
+def get_libs(name):
+    libs = glob.glob('/usr/lib/*') + glob.glob('/usr/lib/**/*')
+    libs = (lib.split('/')[-1][3:].split('.')[0] for lib in libs)
+    libs = [lib for lib in libs if name in lib]
+    libs.sort()
+    print(name, libs)
+    return libs
+
+def get_boost_python_lib():
+    """ Try to find the appropriate option to pass to the linker, as it
     depends on the distribution. It's ugly, but it works...
     """
+    libs = get_libs('boost_python')
     major_minor = ''.join(map(str, sys.version_info[:2]))
     major = str(sys.version_info[0])
-
-    libs = list(filter(lambda x: 'boost_python' in x, map(lambda x: x.split('/')[-1][3:].split('.')[0], glob.glob('/usr/lib/*') + glob.glob('/usr/lib/**/*'))))
-    libs.sort()
-
     for l in libs:
         if major_minor in l:
             return l
-
     for l in libs:
         if major in l:
             return l
-
-    assert len(libs) == 1, "You should have boost_python installed. We found these libs : %s" % libs
+    if len(libs) != 1:
+        raise EnvironmentError("You should have boost_python installed. We found these libs : %s" % libs)
     return libs[0]
 
-boost_python_lib = get_boost_lib()
+boost_python_lib = get_boost_python_lib()
 
 c_memory = Extension(
         name='eleve.c_memory.cmemory',
