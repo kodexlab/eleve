@@ -110,7 +110,7 @@ void LeveldbTrie::update_stats()
 
 void LeveldbTrie::add_ngram(const std::vector<std::string>& ngram, int freq)
 {
-    if(freq == 0)
+    if(freq == 0 || ngram.cbegin() == ngram.cend())
         return;
 
     set_dirty();
