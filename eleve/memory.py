@@ -234,7 +234,7 @@ class MemoryTrie:
         """
         self._check_dirty()
         try:
-            mean, stdev = self.normalization[len(ngram) - 1]
+            mean, stdev = self.normalization[len(ngram)]
         except IndexError:
             return float('nan')
         ev = self.query_ev(ngram)
