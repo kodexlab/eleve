@@ -110,8 +110,6 @@ class Node:
 
 
 class LeveldbTrie:
-    DEPTH_KEY = b'\xff__depth__'
-
     def __init__(self, path, terminals=['^', '$']):
         """ Create or opent a Trie using leveldb as backend.
         """
