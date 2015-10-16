@@ -246,25 +246,20 @@ class LeveldbTrie:
 
 
 class LeveldbStorage(MemoryStorage):
-    def __init__(self, path, ngram_length=5):
+    def __init__(self, path, default_ngram_length=5):
         """ Initialize the model.
 
         :param path: Path to the database where to load and store the model.
                      If the path is not existing an empty model will be created.
-        :param ngram_length: The maximum length of n-grams that can be stored.
+        :param default_ngram_length: the default maximum lenght of n-gram beeing
+          stored. May be overriden in :func:`add_sentence`.
         """
+        assert isinstance(default_ngram_length, int) and default_ngram_length > 0
+        self.default_ngram_length = default_ngram_length
         if not os.path.isdir(path):
-            # CREATE
-            assert ngram_length > 0 and isinstance(ngram_length, int)
             os.makedirs(path)
-            self.ngram_length = ngram_length
-            # create the two Tries
-            self.bwd = LeveldbTrie(path=(path + '/bwd'), depth=self.ngram_length)
-            self.fwd = LeveldbTrie(path=(path + '/fwd'), depth=self.ngram_length)
-        else:
-            # LOADING : path already exist
-            self.bwd = LeveldbTrie(path=(path + '/bwd'))
-            self.fwd = LeveldbTrie(path=(path + '/fwd'))
-            assert self.bwd.depth == self.fwd.depth
-            self.ngram_length = self.fwd.depth
+        self.bwd = LeveldbTrie(path=(path + '/bwd'))
+        self.fwd = LeveldbTrie(path=(path + '/fwd'))
+        #TODO: if loading (path exist?) then read the default_ngram_lenght from DD
+
 

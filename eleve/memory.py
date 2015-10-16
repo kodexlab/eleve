@@ -255,25 +255,30 @@ class MemoryStorage:
     sentence_start = '^'
     sentence_end = '$'
 
-    def __init__(self):
+    def __init__(self, default_ngram_length=5):
         """ Storage constructor.
+        
+        :param default_ngram_length: the default maximum lenght of n-gram beeing
+          stored. May be overriden in :func:`add_sentence`.
         """
-        assert isinstance(ngram_length, int) and ngram_length > 0
-        self.ngram_length = ngram_length
+        assert isinstance(default_ngram_length, int) and default_ngram_length > 0
+        self.default_ngram_length = default_ngram_length
         terminals = [self.sentence_start, self.sentence_end]
         self.bwd = MemoryTrie(terminals=terminals)
         self.fwd = MemoryTrie(terminals=terminals)
 
-    def add_sentence(self, sentence, freq=1, ngram_length=5):
+    def add_sentence(self, sentence, freq=1, ngram_length=None):
         """ Add a sentence to the model.
 
         :param sentence: The sentence to add. Should be a list of tokens.
         :param freq: The number of times to add this sentence. One by default. May be negative to "remove" a sentence.
-        :param ngram_length: The length of n-grams that are stored.
+        :param ngram_length: The length of n-grams that are stored. If None the 
+          default value setup in __init__ is used.
         """
         if not sentence:
             return
-
+        if ngram_length is None:
+            ngram_length = self.default_ngram_length
         token_list = [self.sentence_start] + sentence + [self.sentence_start]
         for i in range(len(token_list) - 1):
             self.fwd.add_ngram(token_list[i:i+ngram_length], freq)
