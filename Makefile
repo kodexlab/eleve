@@ -39,10 +39,10 @@ testcov:
 
 clean:
 	# removing .pyc filesin
-	rm -r build
-	find ./ -iname *.pyc | xargs rm
-	find ./ -iname *.py~ | xargs rm
-	find ./eleve -iname *.so | xargs rm
+	-rm -r build
+	-find ./ -iname *.pyc | xargs rm
+	-find ./ -iname *.py~ | xargs rm
+	-find ./eleve -iname *.so | xargs rm
 
 all: help
 
