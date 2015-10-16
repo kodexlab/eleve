@@ -57,7 +57,7 @@ void MemoryTrie::update_stats()
 
 void MemoryTrie::add_ngram(const std::vector<ID>& shingle, int freq)
 {
-    if(freq == 0)
+    if(freq == 0 || shingle.cbegin() == shingle.cend())
         return;
 
     dirty = true;
