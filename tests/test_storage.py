@@ -1,38 +1,14 @@
 import pytest
 import re
-import tempfile
-import shutil
-import gc
-import os
 
-from eleve import PyMemoryStorage, PyLeveldbStorage as BPyLeveldbStorage, CMemoryStorage, CLeveldbStorage as BCLeveldbStorage
-from test_trie import compare_node
+from eleve import PyMemoryStorage
 
-class StorageWithPath:
-    def __init__(self, order):
-        self.fs_path = tempfile.mkdtemp()
-        super().__init__(order, self.fs_path)
+from utils import float_equal, compare_node
+from conftest import all_storage, all_storage_nocreate, tested_storage, storage_name
 
-    def __del__(self):
-        shutil.rmtree(self.fs_path)
 
-class PyLeveldbStorage(StorageWithPath, BPyLeveldbStorage):
-    pass
-
-class CLeveldbStorage(StorageWithPath, BCLeveldbStorage):
-    pass
-
-@pytest.mark.parametrize("storage_class", [BPyLeveldbStorage, BCLeveldbStorage])
-def test_empty_storage(storage_class):
-    p = tempfile.mkdtemp()
-    m = storage_class(3, os.path.join(p, 'test'))
-    m.add_sentence(['le', 'chat'])
-    del m
-    gc.collect()
-    shutil.rmtree(p)
-
-@pytest.mark.parametrize("storage_class", [PyMemoryStorage, CMemoryStorage, PyLeveldbStorage, CLeveldbStorage])
-def test_basic_entropy(storage_class):
+@pytest.mark.parametrize("storage", all_storage, indirect=True, ids=storage_name)
+def test_basic(storage):
     """
     Forward that begins by « le petit »:
      - le petit chat
@@ -43,30 +19,72 @@ def test_basic_entropy(storage_class):
      - petit le pour * 2
     --> count is the mean of 4 and 4, and entropy is the mean of 2 (the None are counted separately) and 1.5.
     """
-    m = storage_class(3)
-    m.clear()
+    storage.clear()
 
-    m.add_sentence(['le','petit','chat'])
-    m.add_sentence(['le','petit','chien'])
-    m.add_sentence(['pour','le','petit'], 2)
-    assert m.query_count(['le', 'petit']) == 4.0
-    assert m.query_entropy(['le', 'petit']) == 1.75
+    storage.add_sentence(['le','petit','chat'])
+    storage.add_sentence(['le','petit','chien'])
+    storage.add_sentence(['pour','le','petit'], freq=2)
+
+    assert float_equal(storage.query_count(['le', 'petit']), 4.0)
+    assert float_equal(storage.query_count(['pour']), 2.0)
+    assert float_equal(storage.query_entropy(['le', 'petit']), 1.75)
+    assert float_equal(storage.query_autonomy(['le', 'petit']),1.89582)
+
+@pytest.mark.parametrize("storage", all_storage_nocreate, indirect=True, ids=storage_name)
+def test_clear(storage):
+    assert float_equal(storage.query_count('le'.split()), 0.0)
+    storage.clear()
+    storage.add_sentence('le petit chat'.split())
+    storage.add_sentence('le gros chien'.split())
+    assert float_equal(storage.query_count('le'.split()), 2.0)
+    assert float_equal(storage.query_count('le petit'.split()), 1.0)
+    storage.clear()
+    assert float_equal(storage.query_count('le'.split()), 0.0)
+    assert float_equal(storage.query_count('le petit'.split()), 0.0)
+    storage.add_sentence('le sac jaune'.split())
+    storage.add_sentence('le sac rouge'.split(), freq=3)
+    assert float_equal(storage.query_count('le'.split()), 4.0)
+    assert float_equal(storage.query_count('sac rouge'.split()), 3.0)
+
+@pytest.mark.parametrize("storage", all_storage_nocreate, indirect=True, ids=storage_name)
+def test_add_negativ_freq(storage):
+    storage.clear()
+    storage.add_sentence('le petit chat'.split())
+    storage.add_sentence('un chat vert et violet'.split())
+    storage.add_sentence('un chien vert et violet'.split())
+    storage.add_sentence('le gros chien'.split())
+    assert float_equal(storage.query_count('le'.split()), 2.0)
+    assert float_equal(storage.query_count('le petit'.split()), 1.0)
+    storage.add_sentence('le petit chat'.split(), freq=-1)
+    assert float_equal(storage.query_count('le'.split()), 1.0)
+    assert float_equal(storage.query_count('le petit'.split()), 0.0)
+    
+    # remove unexisting sentence
+    storage.add_sentence('pas cool'.split(), freq=-5)
+    assert float_equal(storage.query_count('pas cool'.split()), 0.0)
+
+    assert float_equal(storage.query_count('vert et violet'.split()), 2.0)
+    storage.add_sentence('le gros chien vert et violet'.split(), freq=-2)
+    assert float_equal(storage.query_count('vert et violet'.split()), 0.0)
 
 
-@pytest.mark.parametrize("storage_class", [CMemoryStorage, PyLeveldbStorage, CLeveldbStorage])
-def test_storage(storage_class, ref_class=PyMemoryStorage):
-    test = storage_class(4)
-    ref = ref_class(4)
-    test.clear()
+@pytest.mark.parametrize("storage", tested_storage, indirect=['storage'])
+def test_storage(ngram_length, storage, ref_class=PyMemoryStorage):
+    ref = ref_class(default_ngram_length=ngram_length)
     ref.clear()
+    storage.clear()
 
-    sentences = [re.findall(r'\w+', sentence) for sentence in open('tests/fixtures/btree.txt').read().split('\n')]
+    testfile = open('tests/fixtures/btree.txt').read().split('\n')
+    sentences = (re.findall(r'\w+', sentence) for sentence in testfile)
     for sentence in sentences:
-        test.add_sentence(sentence)
-        ref.add_sentence(sentence)
+        ref.add_sentence(sentence, ngram_length=ngram_length)
+        storage.add_sentence(sentence, ngram_length=ngram_length)
 
+    # compare of each ngram of each sentence
     for sentence in sentences:
         for start in range(len(sentence)):
-            for i in range(6):
-                ngram = sentence[start:start+i]
-                compare_node(ngram, ref, test)
+            for lenght in range(ngram_length):
+                ngram = sentence[start:start+lenght]
+                compare_node(ngram, ref, storage)
+
+
