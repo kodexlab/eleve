@@ -258,14 +258,18 @@ class MemoryStorage:
     def __init__(self, default_ngram_length=5):
         """ Storage constructor.
         
-        :param default_ngram_length: the default maximum lenght of n-gram beeing
+        :param default_ngram_length: the default maximum length of n-gram beeing
           stored. May be overriden in :func:`add_sentence`.
         """
         assert isinstance(default_ngram_length, int) and default_ngram_length > 0
-        self.default_ngram_length = default_ngram_length
+        self._default_ngram_length = default_ngram_length
         terminals = [self.sentence_start, self.sentence_end]
         self.bwd = MemoryTrie(terminals=terminals)
         self.fwd = MemoryTrie(terminals=terminals)
+
+    @property
+    def default_ngram_length(self):
+        return self._default_ngram_length
 
     def add_sentence(self, sentence, freq=1, ngram_length=None):
         """ Add a sentence to the model.
