@@ -30,6 +30,30 @@ def test_basic(storage):
     assert float_equal(storage.query_entropy(['le', 'petit']), 1.75)
     assert float_equal(storage.query_autonomy(['le', 'petit']),1.89582)
 
+
+@pytest.mark.parametrize("storage", all_storage_nocreate, indirect=True, ids=storage_name)
+def test_ngram_length(storage):
+    # the default value should be is 5
+    assert storage.default_ngram_length == 5
+    # this default value should be used in add_sentence
+    storage.add_sentence("un petit petit petit chat danse la samba".split())
+    assert float_equal(storage.query_count('un petit petit petit chat'.split()), 1.0)
+    assert float_equal(storage.query_count('un petit petit petit chat danse'.split()), 0.0)
+    # but this default value may be overriden in add_sentence
+    storage.add_sentence("it is very very very cool".split(), ngram_length=2)
+    assert float_equal(storage.query_count('very cool'.split()), 1.0)
+    assert float_equal(storage.query_count('very very cool'.split()), 0.0)
+
+    # if leveldb
+    storage_class = storage.__class__
+    if "Leveldb" in storage_class.__name__: #XXX: ajout méthode (backend() qui retourne une constant fct du type de backend)
+        storage_path  = storage.path
+        storage.close()
+        del storage
+        reopened_storage = storage_class(storage_path)
+        assert reopened_storage.default_ngram_length == 5
+
+
 @pytest.mark.parametrize("storage", all_storage_nocreate, indirect=True, ids=storage_name)
 def test_clear(storage):
     assert float_equal(storage.query_count('le'.split()), 0.0)
@@ -45,6 +69,7 @@ def test_clear(storage):
     storage.add_sentence('le sac rouge'.split(), freq=3)
     assert float_equal(storage.query_count('le'.split()), 4.0)
     assert float_equal(storage.query_count('sac rouge'.split()), 3.0)
+
 
 @pytest.mark.parametrize("storage", all_storage_nocreate, indirect=True, ids=storage_name)
 def test_add_negativ_freq(storage):
@@ -83,8 +108,8 @@ def test_storage(ngram_length, storage, ref_class=PyMemoryStorage):
     # compare of each ngram of each sentence
     for sentence in sentences:
         for start in range(len(sentence)):
-            for lenght in range(ngram_length):
-                ngram = sentence[start:start+lenght]
+            for length in range(ngram_length):
+                ngram = sentence[start:start+length]
                 compare_node(ngram, ref, storage)
 
 
