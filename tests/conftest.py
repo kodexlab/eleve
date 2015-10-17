@@ -82,8 +82,15 @@ def trie(request):
         raise ValueError("Invalid `trie` fixture param")
     return trie
 
+
 def storage_name(param):
-    return param if isinstance(param, str) else "%s%s" % (param[0], "_nodir" if not param[1] else "")
+    if isinstance(param, str):
+        return param
+    elif len(param) == 2:
+        return "%s%s" % (param[0], "_nodir" if not param[1] else "")
+    elif len(param) == 3:
+        return "%s%s_l%d" % (param[0], "_nodir" if not param[1] else "", param[2])
+    return ValueError('Invalid storage fixture param')
 
 @pytest.fixture
 def storage(request):
@@ -114,6 +121,7 @@ def storage(request):
         storage = PyLeveldbStorage(path=fs_path)
         def fin():
             """teardown pyleveldb"""
+            storage.close()
             shutil.rmtree(fs_path)
         request.addfinalizer(fin)
 
@@ -124,6 +132,7 @@ def storage(request):
         storage = CLeveldbStorage(path=fs_path)
         def fin():
             """teardown cleveldb"""
+            storage.close()
             shutil.rmtree(fs_path)
         request.addfinalizer(fin)
 
