@@ -134,6 +134,9 @@ class LeveldbTrie:
         # set the dirty flag
         self.dirty = len(self.normalization) == 0
 
+    def close(self):
+        self.db.close()
+
     def clear(self):
         """ Delete the trie that's in the database. """
         for key in self.db.iterator(include_value=False):
@@ -246,20 +249,42 @@ class LeveldbTrie:
 
 
 class LeveldbStorage(MemoryStorage):
-    def __init__(self, path, default_ngram_length=5):
+    def __init__(self, path, default_ngram_length=None):
         """ Initialize the model.
 
         :param path: Path to the database where to load and store the model.
                      If the path is not existing an empty model will be created.
-        :param default_ngram_length: the default maximum lenght of n-gram beeing
-          stored. May be overriden in :func:`add_sentence`.
+        :param default_ngram_length: the default maximum length of n-gram beeing
+          stored. It will equals 5 for a newly created storage. Note that it may
+          be overriden in :func:`add_sentence`.
         """
-        assert isinstance(default_ngram_length, int) and default_ngram_length > 0
-        self.default_ngram_length = default_ngram_length
+        self.path = path # store the path, in RAM, usefull at least for test
         if not os.path.isdir(path):
             os.makedirs(path)
+        config_path = path + "/cofig"
+        new_storage = not os.path.isdir(config_path)
+        # create/open Storage config/metadata DB
+        self.config = plyvel.DB(config_path,
+            create_if_missing=True,
+            write_buffer_size=32*1024**2,
+        )
+        if new_storage:
+            if default_ngram_length is None:
+                default_ngram_length = 5
+            assert isinstance(default_ngram_length, int) and default_ngram_length > 0
+            self.config.put(b"default_ngram_length", str(default_ngram_length).encode())
+        self._default_ngram_length = int(self.config.get(b"default_ngram_length"))
+        # create/open both trie
         self.bwd = LeveldbTrie(path=(path + '/bwd'))
         self.fwd = LeveldbTrie(path=(path + '/fwd'))
-        #TODO: if loading (path exist?) then read the default_ngram_lenght from DD
+        #TODO: if loading (path exist?) then read the default_ngram_length from DD
 
+    @property
+    def default_ngram_length(self):
+        return self._default_ngram_length
+
+    def close(self):
+        self.config.close()
+        self.bwd.close()
+        self.fwd.close()
 
