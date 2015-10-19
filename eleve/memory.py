@@ -299,7 +299,7 @@ class MemoryStorage:
             return
         if ngram_length is None:
             ngram_length = self.default_ngram_length
-        token_list = [self.sentence_start] + sentence + [self.sentence_start]
+        token_list = [self.sentence_start] + sentence + [self.sentence_end]
         for i in range(len(token_list) - 1):
             self.fwd.add_ngram(token_list[i:i+ngram_length], freq)
         token_list = token_list[::-1]
