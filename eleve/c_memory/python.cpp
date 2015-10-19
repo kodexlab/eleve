@@ -118,6 +118,14 @@ class PyMemoryStorage: public MemoryStorage
     {
         return default_ngram_length;
     };
+    std::string get_sentence_start()
+    {
+        return sentence_start;
+    };
+    std::string get_sentence_end()
+    {
+        return sentence_end;
+    };
 };
 
 
@@ -141,6 +149,8 @@ BOOST_PYTHON_MODULE(cmemory)
 
     class_<PyMemoryStorage, boost::noncopyable>("MemoryStorage", init<optional<size_t>>(py::args("default_ngram_length")))
         .add_property("default_ngram_length", &PyMemoryStorage::get_default_ngram_length)
+        .add_property("sentence_start", &PyMemoryStorage::get_sentence_start)
+        .add_property("sentence_end", &PyMemoryStorage::get_sentence_end)
         .def("update_stats", &PyMemoryStorage::update_stats)
         .def("add_ngram", &PyMemoryStorage::add_ngram_, py::args("ngram", "freq"))
         .def("add_ngram", &PyMemoryStorage::add_ngram__, py::args("ngram"))
