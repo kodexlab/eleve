@@ -1,19 +1,29 @@
 import pytest
 from eleve import Segmenter
 
-from conftest import all_storage_nocreate
+from conftest import parametrize_storage
 
-@pytest.mark.parametrize("storage", all_storage_nocreate, indirect=True)
-def test_basic_segmentation(storage):
-    ngram_length = 3
-    segmenter = Segmenter(storage, 2)
-    storage.add_sentence(['je', 'vous', 'parle', 'de', 'hot', 'dog'], ngram_length=ngram_length)
-    storage.add_sentence(['j', 'ador', 'les', 'hot', 'dog'], ngram_length=ngram_length)
-    storage.add_sentence(['hot', 'dog', 'ou', 'pas'], ngram_length=ngram_length)
-    storage.add_sentence(['hot', 'dog', 'ou', 'sandwich'], ngram_length=ngram_length)
+@parametrize_storage(default_ngram_length=3)
+def test_segmentation_basic(storage):
+    storage.add_sentence('je vous parle de hot dog'.split())
+    storage.add_sentence('j ador les hot dog'.split())
+    storage.add_sentence('hot dog ou pas'.split())
+    storage.add_sentence('hot dog ou sandwich'.split())
 
-    assert segmenter.segment(['je', 'deteste', 'les', 'hot', 'dog']) == [['je'], ['deteste'], ['les'], ['hot', 'dog']]
-    assert segmenter.segment(['un', 'chat', 'noir', 'et', 'blanc']) == [['un'], ['chat'], ['noir'], ['et'], ['blanc']]
+    segmenter = Segmenter(storage)
+    assert segmenter.segment('je deteste les hot dog'.split()) == [['je'], ['deteste'], ['les'], ['hot', 'dog']]
+    assert segmenter.segment('un chat noir et blanc'.split()) == [['un'], ['chat'], ['noir'], ['et'], ['blanc']]
+
+@parametrize_storage(default_ngram_length=2)
+def test_segmentation_2grams(storage):
+    storage.add_sentence('je vous parle de hot dog'.split())
+    storage.add_sentence('j ador les hot dog'.split())
+    storage.add_sentence('hot dog ou pas'.split())
+    storage.add_sentence('hot dog ou sandwich'.split())
+
+    segmenter = Segmenter(storage)
+    assert segmenter.segment('je deteste les hot dog'.split()) == [['je'], ['deteste'], ['les'], ['hot'], ['dog']]
+
 
 """
 from reliure_nlp.tokenisation.zh import engine_basic
