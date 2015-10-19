@@ -96,7 +96,7 @@ def test_add_sentence_negativ_freq(storage):
 
 
 @parametrize_storage(default_ngram_length=[2,4])
-def test_storage(storage, ref_class=PyMemoryStorage):
+def test_storage_random(storage, ref_class=PyMemoryStorage):
     ref = ref_class(default_ngram_length=storage.default_ngram_length)
     ref.clear()
     storage.clear()
