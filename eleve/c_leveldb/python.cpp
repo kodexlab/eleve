@@ -61,6 +61,10 @@ class PyLeveldbTrie: public LeveldbTrie
     {
         return dirty;
     };
+    std::string get_path()
+    {
+        return path;
+    };
     py::list get_normalization()
     {
         py::list normalization_list;
@@ -128,17 +132,19 @@ BOOST_PYTHON_MODULE(cleveldb)
 
     class_<PyLeveldbTrie, boost::noncopyable>("LeveldbTrie",
           init<std::string>(py::args("path")))
-        .def("max_depth", &PyLeveldbTrie::max_depth)
         .def("add_ngram", &PyLeveldbTrie::add_ngram_)
         .def("add_ngram", &PyLeveldbTrie::add_ngram__)
+        .def("max_depth", &PyLeveldbTrie::max_depth)
         .def("query_count", &PyLeveldbTrie::query_count_)
         .def("query_entropy", &PyLeveldbTrie::query_entropy_)
         .def("update_stats", &PyLeveldbTrie::update_stats)
         .def("query_ev", &PyLeveldbTrie::query_ev_)
         .def("query_autonomy", &PyLeveldbTrie::query_autonomy_)
         .def("clear", &PyLeveldbTrie::clear)
+        .def("close", &PyLeveldbTrie::close)
         .add_property("dirty", &PyLeveldbTrie::get_dirty)
         .add_property("normalization", &PyLeveldbTrie::get_normalization)
+        .add_property("path", &PyLeveldbTrie::get_path)
     ;
 
    class_<PyLeveldbStorage, boost::noncopyable>("LeveldbStorage",

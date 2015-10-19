@@ -39,21 +39,21 @@ class LeveldbTrie
 
     ~LeveldbTrie()
     {
-        delete db;
+        close();
     };
-
-    size_t max_depth();
 
     void update_stats();
 
     void add_ngram(const std::vector<std::string>& ngram, int freq=1);
 
+    size_t max_depth();
     COUNT query_count(const std::vector<std::string>& ngram);
     float query_entropy(const std::vector<std::string>& ngram);
     float query_ev(const std::vector<std::string>& ngram);
     float query_autonomy(const std::vector<std::string>& ngram);
 
     void clear();
+    void close();
 };
 
 #endif

@@ -1,8 +1,10 @@
 #include "leveldb_trie.hpp"
 #include <array>
 
-LeveldbTrie::LeveldbTrie(const std::string& path)
+LeveldbTrie::LeveldbTrie(const std::string& dbpath)
 {
+    path = dbpath; //store the path as attribute
+
     leveldb::Options options;
     options.create_if_missing = true;
     options.write_buffer_size = 64*1024*1024;
@@ -16,7 +18,6 @@ LeveldbTrie::LeveldbTrie(const std::string& path)
     }
 
     // load normalization constants and dirty status.
-
     dirty = true;
     for(char i = 0;; i++)
     {
@@ -67,12 +68,6 @@ inline void LeveldbTrie::set_clean()
     if(dirty) update_stats();
 };
 
-
-size_t LeveldbTrie::max_depth()
-{
-    set_clean();
-    return normalization.size();
-}
 
 void LeveldbTrie::update_stats_rec(float parent_entropy, size_t depth, Node& node)
 {
@@ -180,6 +175,12 @@ void LeveldbTrie::add_ngram(const std::vector<std::string>& ngram, int freq)
     assert(status.ok());
 };
 
+size_t LeveldbTrie::max_depth()
+{
+    set_clean();
+    return normalization.size();
+}
+
 COUNT LeveldbTrie::query_count(const std::vector<std::string>& ngram)
 {
     return search_node(ngram).count;
@@ -227,4 +228,13 @@ void LeveldbTrie::clear()
     }
     delete it;
     dirty = true;
+};
+
+void LeveldbTrie::close()
+{
+    if(db != NULL)
+    {
+        delete db;
+        db = NULL;
+    }
 };
