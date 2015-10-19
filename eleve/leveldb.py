@@ -18,9 +18,10 @@ from eleve.memory import MemoryTrie, MemoryStorage
 
 NaN = float('nan')
 
-PACKER = struct.Struct('<Lf')
+NORMALIZATION_KEY_PREFIX = b'\xff'
 NORMALIZATION_PACKER = struct.Struct('<ff')
 
+PACKER = struct.Struct('<Lf')
 SEPARATOR = b'\x00' # before every word that is inserted we put that byte, so that they are separated.
 SEPARATOR_PLUS_ONE = bytes((SEPARATOR[0]+1,))
 
@@ -113,6 +114,7 @@ class LeveldbTrie(MemoryTrie):
     def __init__(self, path, terminals=['^', '$']):
         """ Create or opent a Trie using leveldb as backend.
         """
+        self.path = path
         self.terminals = set(to_bytes(i) for i in terminals)
         self.db = plyvel.DB(path,
             create_if_missing=True,
@@ -125,7 +127,7 @@ class LeveldbTrie(MemoryTrie):
         self.normalization = []
         depth_level = 0
         while True:
-            ndata = self.db.get(b'\xff' + bytes((depth_level,)))
+            ndata = self.db.get(NORMALIZATION_KEY_PREFIX + bytes((depth_level,)))
             if ndata is None:
                 break
             self.normalization.append(NORMALIZATION_PACKER.unpack(ndata))
@@ -150,8 +152,9 @@ class LeveldbTrie(MemoryTrie):
 
     def update_stats(self):
         super(LeveldbTrie, self).update_stats()
+        # store normalization vector in DB
         for pseudo_depth, (mean, stdev) in enumerate(self.normalization):
-            self.db.put(b'\xff' + bytes((pseudo_depth,)), NORMALIZATION_PACKER.pack(mean, stdev))
+            self.db.put(NORMALIZATION_KEY_PREFIX + bytes((pseudo_depth,)), NORMALIZATION_PACKER.pack(mean, stdev))
         self.db.compact_range()
 
     def _check_dirty(self):
