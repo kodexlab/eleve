@@ -57,6 +57,19 @@ class PyLeveldbTrie: public LeveldbTrie
     {
         return query_autonomy(convert(ngram));
     };
+    bool get_dirty()
+    {
+        return dirty;
+    };
+    py::list get_normalization()
+    {
+        py::list normalization_list;
+        for(auto& norm: normalization)
+        {
+            normalization_list.append( py::make_tuple(norm.mean, norm.stdev));
+        }
+        return normalization_list;
+    };
 };
 
 class PyLeveldbStorage: public LeveldbStorage
@@ -113,7 +126,8 @@ BOOST_PYTHON_MODULE(cleveldb)
 {
     using namespace boost::python;
 
-    class_<PyLeveldbTrie, boost::noncopyable>("LeveldbTrie", init<std::string>())
+    class_<PyLeveldbTrie, boost::noncopyable>("LeveldbTrie",
+          init<std::string>(py::args("path")))
         .def("add_ngram", &PyLeveldbTrie::add_ngram_)
         .def("add_ngram", &PyLeveldbTrie::add_ngram__)
         .def("query_count", &PyLeveldbTrie::query_count_)
@@ -122,9 +136,12 @@ BOOST_PYTHON_MODULE(cleveldb)
         .def("query_ev", &PyLeveldbTrie::query_ev_)
         .def("query_autonomy", &PyLeveldbTrie::query_autonomy_)
         .def("clear", &PyLeveldbTrie::clear)
+        .add_property("dirty", &PyLeveldbTrie::get_dirty)
+        .add_property("normalization", &PyLeveldbTrie::get_normalization)
     ;
 
-   class_<PyLeveldbStorage, boost::noncopyable>("LeveldbStorage", init<int, std::string,  optional<py::list> >())
+   class_<PyLeveldbStorage, boost::noncopyable>("LeveldbStorage",
+          init<int, std::string, optional<py::list>>())
         .def("add_ngram", &PyLeveldbStorage::add_ngram_)
         .def("add_ngram", &PyLeveldbStorage::add_ngram__)
         .def("add_sentence", &PyLeveldbStorage::add_sentence_)

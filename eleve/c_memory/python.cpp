@@ -60,6 +60,10 @@ class PyMemoryTrie: public MemoryTrie
     {
         return query_autonomy(std::vector<ID>{pyIdIt(ngram), pyIdIt()});
     };
+    bool get_dirty()
+    {
+        return dirty;
+    };
     py::list get_normalization()
     {
         py::list normalization_list;
@@ -135,6 +139,7 @@ BOOST_PYTHON_MODULE(cmemory)
         .def("query_ev", &PyMemoryTrie::query_ev_)
         .def("query_autonomy", &PyMemoryTrie::query_autonomy_)
         .def("clear", &PyMemoryTrie::clear)
+        .add_property("dirty", &PyMemoryTrie::get_dirty)
         .add_property("normalization", &PyMemoryTrie::get_normalization)
     ;
 

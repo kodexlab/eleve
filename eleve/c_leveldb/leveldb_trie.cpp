@@ -43,21 +43,20 @@ void LeveldbTrie::update_stats_rec(float parent_entropy, size_t depth, Node& nod
 {
     node.update_entropy(terminals);
 
-    if(!isnan(node.entropy) && (node.entropy != 0. || parent_entropy != 0.))
+    if(normalization.size() < depth)
+    {
+        normalization.resize(depth);
+    }
+
+    if(depth > 0 && !isnan(node.entropy) && (node.entropy != 0. || parent_entropy != 0.))
     {
         float ev = node.entropy - parent_entropy;
 
-        if(normalization.size() <= depth)
-        {
-            normalization.resize(depth + 1);
-        }
-
-        Normalization n = normalization[depth];
+        auto& n = normalization[depth - 1];
         float old_mean = n.mean;
         n.count += 1;
         n.mean += (ev - old_mean) / float(n.count);
         n.stdev += (ev - old_mean)*(ev - n.mean);
-        normalization[depth] = n;
     }
 
     auto it = db->NewIterator(read_options);
@@ -177,7 +176,7 @@ float LeveldbTrie::query_autonomy(const std::vector<std::string>& ngram)
     if(isnan(ev) || normalization.size() <= ngram.size())
         return NAN;
 
-    auto& n = normalization[ngram.size()];
+    auto& n = normalization[ngram.size() - 1];
     if(! n.stdev)
         return NAN;
 
