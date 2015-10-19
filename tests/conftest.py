@@ -27,7 +27,6 @@ def get_tries(py=True, c=True, ref=True, volatile=True, persistant=True):
     :attr volatile: include RAM backend
     :attr persistant: include Disk backend
     """
-    c=False #XXX: should be removed, C tries not tested for now:
     tries = []
     # choose basic class
     if py and ref and volatile:
@@ -82,7 +81,7 @@ def get_storages(py=True, c=True, ref=True, volatile=True, persistant=True, defa
     :attr default_ngram_length: param default_ngram_length of Storage, may be a list of different values
     :attr create_dir: whether to create the directory (for disk backend), if None both cases are given
     """
-    c=False #XXX: should be removed, C storages not tested for now:
+    persistant=False #XXX: should be removed, C storages not tested for now:
     storages = []
     dd_storages = []
     # choose basic class
