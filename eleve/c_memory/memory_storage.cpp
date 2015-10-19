@@ -54,24 +54,24 @@ strVec MemoryStorage::ids_to_tokens(const std::vector<ID>& ids)
     return tokens;
 };
 
-void MemoryStorage::add_ngram(strVec& s, int freq)
+void MemoryStorage::add_ngram(strVec& ngram, int freq)
 {
-    auto ids = tokens_to_ids(s);
+    auto ids = tokens_to_ids(ngram);
     fwd.add_ngram(ids, freq);
     bwd.add_ngram(reverse(ids), freq);
 };
 
-void MemoryStorage::add_sentence(std::vector<std::string> s, int freq)
+void MemoryStorage::add_sentence(std::vector<std::string> sentence, int freq)
 {
-    if(! s.size())
+    if(! sentence.size())
         return;
 
     //TODO add attribute
     size_t ngram_length = default_ngram_length;
 
-    s.insert(s.begin(), "^");
-    s.push_back("$");
-    auto ids = tokens_to_ids(s);
+    sentence.insert(sentence.begin(), sentence_start);
+    sentence.push_back(sentence_end);
+    auto ids = tokens_to_ids(sentence);
 
     for(auto it = ids.begin(); it < ids.end() - 1; it++)
     {
