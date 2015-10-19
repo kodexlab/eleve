@@ -62,6 +62,8 @@ class MemoryLeaf(object):
     def entropy(self):
         return float('nan')
 
+    def to_node(self):
+        return MemoryNode(count=self.count)
 
 class MemoryTrie:
     """ In-memory tree (made to be simple, no specific optimizations)
@@ -165,18 +167,21 @@ class MemoryTrie:
         if freq <= 0:
             raise ValueError("freq should be larger or equal to 1")
         self.dirty = True
-        node = self.root
-        node.count += freq
+        parent = self.root
+        parent.count += freq
         for depth, token in enumerate(ngram):
             try:
-                node = node.childs[token]
-                node.count += freq
-            except KeyError:
-                child = MemoryLeaf(freq) if depth == len(ngram) - 1 else MemoryNode(freq)
-                assert isinstance(node, MemoryNode)
-                node.childs[token] = child
-                node = child
-        assert isinstance(node, MemoryLeaf), str(ngram)
+                child = parent.childs[token]
+                child.count += freq
+                # transform leaf to node, if we are not at the end
+                if depth < len(ngram) - 1 and isinstance(child, MemoryLeaf):
+                    child = child.to_node()
+                    parent.childs[token] = child
+            except KeyError: #node do not exist yet
+                child = MemoryNode(freq) if depth < len(ngram) - 1 else MemoryLeaf(freq)
+                parent.childs[token] = child
+            parent = child
+        assert isinstance(parent, MemoryLeaf), str(ngram)
 
     def _lookup(self, ngram):
         """ Search for a node.
