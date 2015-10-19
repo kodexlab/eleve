@@ -38,9 +38,39 @@ LeveldbTrie::LeveldbTrie(const std::string& path)
     }
 };
 
-size_t LeveldbTrie::max_depth()
+Node LeveldbTrie::search_node(const std::vector<std::string>& ngram)
+{
+    std::string key;
+    key.push_back(ngram.size());
+    for(auto& s : ngram)
+    {
+        key.push_back(0);
+        key += s;
+    }
+    return Node(db, key);
+};
+
+inline void LeveldbTrie::set_dirty()
+{
+    if(! dirty)
+    {
+        std::array<char, 2> key;
+        key[0] = 0xff;
+        key[1] = 0;
+        db->Delete(write_options, leveldb::Slice(key.data(), 2));
+        dirty = true;
+    }
+};
+
+inline void LeveldbTrie::set_clean()
 {
     if(dirty) update_stats();
+};
+
+
+size_t LeveldbTrie::max_depth()
+{
+    set_clean();
     return normalization.size();
 }
 

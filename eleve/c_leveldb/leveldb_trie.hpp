@@ -17,45 +17,16 @@ class LeveldbTrie
 {
     protected:
 
+    std::string path;
     std::vector<Normalization> normalization;
     std::set<std::string> terminals;
     bool dirty;
     leveldb::DB* db;
 
-    Node search_node(const std::vector<std::string>& ngram)
-    {
-        std::string key;
-        key.push_back(ngram.size());
-        for(auto& s : ngram)
-        {
-            key.push_back(0);
-            key += s;
-        }
-        return Node(db, key);
-    };
-
+    Node search_node(const std::vector<std::string>& ngram);
     void update_stats_rec(float parent_entropy, size_t depth, Node& node);
-
-    inline void set_dirty()
-    {
-        if(! dirty)
-        {
-            std::array<char, 2> key;
-            key[0] = 0xff;
-            key[1] = 0;
-            db->Delete(write_options, leveldb::Slice(key.data(), 2));
-
-            dirty = true;
-        }
-    };
-
-    inline void set_clean()
-    {
-        if(dirty)
-        {
-            update_stats();
-        }
-    };
+    inline void set_dirty();
+    inline void set_clean();
 
     public:
 
