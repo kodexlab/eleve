@@ -29,6 +29,7 @@ std::vector<std::string> convert(py::list& ngram)
     return r;
 };
 
+
 class PyMemoryTrie: public MemoryTrie
 {
     public:
@@ -59,7 +60,17 @@ class PyMemoryTrie: public MemoryTrie
     {
         return query_autonomy(std::vector<ID>{pyIdIt(ngram), pyIdIt()});
     };
+    py::list get_normalization()
+    {
+        py::list normalization_list;
+        for(auto& norm: hstats.normalization)
+        {
+            normalization_list.append( py::make_tuple(norm.mean, norm.stdev));
+        }
+        return normalization_list;
+    };
 };
+
 
 class PyMemoryStorage: public MemoryStorage
 {
@@ -103,18 +114,19 @@ class PyMemoryStorage: public MemoryStorage
     {
         add_ngram(convert(s), 1);
     };
-
     size_t get_ngram_length()
     {
         return ngram_length;
     };
 };
 
+
 BOOST_PYTHON_MODULE(cmemory)
 {
     using namespace boost::python;
 
     class_<PyMemoryTrie, boost::noncopyable>("MemoryTrie")
+        .def("max_depth", &PyMemoryTrie::max_depth)
         .def("add_ngram", &PyMemoryTrie::add_ngram_)
         .def("add_ngram", &PyMemoryTrie::add_ngram__)
         .def("query_count", &PyMemoryTrie::query_count_)
@@ -123,6 +135,7 @@ BOOST_PYTHON_MODULE(cmemory)
         .def("query_ev", &PyMemoryTrie::query_ev_)
         .def("query_autonomy", &PyMemoryTrie::query_autonomy_)
         .def("clear", &PyMemoryTrie::clear)
+        .add_property("normalization", &PyMemoryTrie::get_normalization)
     ;
 
     class_<PyMemoryStorage, boost::noncopyable>("MemoryStorage",

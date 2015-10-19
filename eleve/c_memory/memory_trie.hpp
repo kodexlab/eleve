@@ -26,8 +26,9 @@ class MemoryTrie
         hstats = HStats(terminals);
     };
 
-    void update_stats();
+    size_t max_depth();
 
+    void update_stats();
     void add_ngram(const std::vector<ID>& shingle, int freq=1);
 
     COUNT query_count(const std::vector<ID>& shingle);

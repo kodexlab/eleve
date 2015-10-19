@@ -2,22 +2,27 @@
 
 #include <cmath>
 
+size_t MemoryTrie::max_depth()
+{
+    if(dirty) update_stats();
+    return hstats.normalization.size();
+}
+
 void MemoryTrie::update_stats_rec(float parent_entropy, int depth, Node* node)
 {
     float entropy = node->entropy(hstats);
-    
-    if((!isnan(entropy)) && (entropy != 0. || parent_entropy != 0.))
+
+    if(hstats.normalization.size() < depth)
+    {
+        hstats.normalization.resize(depth);
+    }
+
+    if(depth > 0 && !isnan(entropy) && (entropy != 0. || parent_entropy != 0.))
     {
         float ev = entropy - parent_entropy;
 
         // entropy variation to take into account
-        
-        if(hstats.normalization.size() <= depth)
-        {
-            hstats.normalization.resize(depth + 1);
-        }
-
-        auto& normalization = hstats.normalization[depth];
+        auto& normalization = hstats.normalization[depth-1];
         auto old_mean = normalization.mean;
         normalization.count++;
 
@@ -123,7 +128,7 @@ float MemoryTrie::query_autonomy(const std::vector<ID>& shingle)
     if(isnan(ev))
         return NAN;
 
-    auto& n = hstats.normalization[shingle.size()];
+    auto& n = hstats.normalization[shingle.size()-1];
     return (ev - n.mean) / n.stdev;
 };
 
