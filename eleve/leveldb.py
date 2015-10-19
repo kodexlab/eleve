@@ -14,7 +14,7 @@ import os
 
 import plyvel
 
-from eleve.memory import MemoryStorage
+from eleve.memory import MemoryTrie, MemoryStorage
 
 NaN = float('nan')
 
@@ -62,7 +62,7 @@ class Node:
 
         self.count, self.entropy = PACKER.unpack(data) if data else (0, NaN)
 
-    def childs(self):
+    def iter_childs(self):
         """
         :returns: the childs of the node as other Node objects.
         """
@@ -89,7 +89,7 @@ class Node:
         """
         entropy = 0
         sum_counts = 0
-        for child in self.childs():
+        for child in self.iter_childs():
             if child.count == 0:
                 continue
             sum_counts += child.count
@@ -109,7 +109,7 @@ class Node:
             self.save()
 
 
-class LeveldbTrie:
+class LeveldbTrie(MemoryTrie):
     def __init__(self, path, terminals=['^', '$']):
         """ Create or opent a Trie using leveldb as backend.
         """
@@ -131,8 +131,13 @@ class LeveldbTrie:
             self.normalization.append(NORMALIZATION_PACKER.unpack(ndata))
             depth_level += 1
 
-        # set the dirty flag
+        # if no normalization vector founds
         self.dirty = len(self.normalization) == 0
+
+    @property
+    def root(self):
+        """ Returns root node """
+        return Node(self.db, b'\x00')
 
     def close(self):
         self.db.close()
@@ -143,40 +148,11 @@ class LeveldbTrie:
             self.db.delete(key)
         self.dirty = True
 
-    def _update_stats_rec(self, parent_entropy, depth, node):
-        node.update_entropy(self.terminals)
-
-        if not math.isnan(node.entropy) and (node.entropy or parent_entropy):
-            ev = node.entropy - parent_entropy
-
-            while len(self.normalization) <= depth:
-                self.normalization.append((0., 0., 0))
-            mean, stdev, count = self.normalization[depth]
-            old_mean = mean
-            count += 1
-            mean += (ev - old_mean) / count
-            stdev += (ev - old_mean)*(ev - mean)
-            self.normalization[depth] = mean, stdev, count
-
-        for child in node.childs():
-            self._update_stats_rec(node.entropy, depth + 1, child)
-
     def update_stats(self):
-        if not self.dirty:
-            return
-
-        self.normalization = []
-
-        self._update_stats_rec(NaN, 0, Node(self.db, b'\x00'))
-
-        for k, (mean, stdev, count) in enumerate(self.normalization):
-            stdev = math.sqrt(stdev / (count or 1))
-            self.normalization[k] = (mean, stdev)
-            self.db.put(b'\xff' + bytes((k,)),  NORMALIZATION_PACKER.pack(mean, stdev))
-
+        super(LeveldbTrie, self).update_stats()
+        for pseudo_depth, (mean, stdev) in enumerate(self.normalization):
+            self.db.put(b'\xff' + bytes((pseudo_depth,)), NORMALIZATION_PACKER.pack(mean, stdev))
         self.db.compact_range()
-
-        self.dirty = False
 
     def _check_dirty(self):
         if self.dirty:
@@ -188,6 +164,8 @@ class LeveldbTrie:
     def add_ngram(self, ngram, freq=1):
         if len(ngram) <= 1:
             raise ValueError("The size of the ngram should be more than 1")
+        if freq <= 0:
+            raise ValueError("freq should be larger or equal to 1")
 
         if not self.dirty:
             self.dirty = True
@@ -197,10 +175,10 @@ class LeveldbTrie:
         w = self.db.write_batch()
 
         # shortcut : if we encounter a node with a counter to zero, we will
-        #            set data to False and avoid doing queries for the following nodes.
+        #            set the node data to False and avoid doing queries for the following nodes.
         create = False
 
-        node = Node(self.db, b'\x00')
+        node = self.root
         node.count += freq
         node.save(w)
 
@@ -236,13 +214,11 @@ class LeveldbTrie:
 
     def query_autonomy(self, ngram):
         self._check_dirty()
-
         ev = self.query_ev(ngram)
         if math.isnan(ev):
             return NaN
-
         try:
-            mean, stdev = self.normalization[len(ngram)]
+            mean, stdev = self.normalization[len(ngram)-1]
             return (ev - mean) / stdev
         except (ZeroDivisionError, IndexError):
             return NaN

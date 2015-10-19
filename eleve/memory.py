@@ -46,6 +46,11 @@ class MemoryNode(object):
         if self.entropy != entropy and not(math.isnan(self.entropy) and math.isnan(entropy)):
             self.entropy = entropy
 
+    def iter_childs(self):
+        """ Returns an iterator over childs nodes
+        """
+        return self.childs.values()
+
 
 class MemoryLeaf(object):
     __slots__ = ['count']
@@ -71,11 +76,12 @@ class MemoryTrie:
         """
         self.root = MemoryNode()
         # normalization params :
-        # one for each level
-        # on each level : mean, stdev
-        self.normalization = None
+        #   * one for each level
+        #   * on each level : mean, stdev
+        #   * WARNING: self.normalization[0] gives data for depth 1 (depth 0 is root and always NaN, NaN)
+        self.normalization = []
         self.terminals = set(terminals)
-        self.dirty = False
+        self.dirty = True
 
     def max_depth(self):
         """ Returns the maximum depth of the Trie
@@ -103,28 +109,29 @@ class MemoryTrie:
                     for i in _rec(ngram + [token], child): yield i
             elif node is not self.root:
                 yield ngram
-
         for i in _rec([], self.root): yield i
 
     def _update_stats_rec(self, parent_entropy, depth, node):
         """ Recurively update both entropy and normalization vector
         """
+        # extend normalization vector if needed
+        while len(self.normalization) < depth:
+            self.normalization.append((0., 0., 0))
+        # if MemoryLeaf nothing else should be done
         if isinstance(node, MemoryLeaf):
             return
         node.update_entropy(self.terminals)
-        if not math.isnan(node.entropy) and (node.entropy or parent_entropy):
+        # update entropy variation mean and std if possible (not NaN)
+        if depth > 0 and not math.isnan(node.entropy) and (node.entropy or parent_entropy):
             ev = node.entropy - parent_entropy
-            # extend normalization vector if needed
-            while len(self.normalization) <= depth:
-                self.normalization.append((0., 0., 0))
-            mean, stdev, count = self.normalization[depth]
+            mean, stdev, count = self.normalization[depth-1]
             old_mean = mean
             count += 1
             mean += (ev - old_mean) / count
             stdev += (ev - old_mean) * (ev - mean)
-            self.normalization[depth] = mean, stdev, count
+            self.normalization[depth-1] = mean, stdev, count
         # recurifs calls
-        for child in node.childs.values():
+        for child in node.iter_childs():
             self._update_stats_rec(node.entropy, depth + 1, child)
 
     def update_stats(self):
@@ -137,9 +144,9 @@ class MemoryTrie:
             return
         self.normalization = []
         self._update_stats_rec(NaN, 0, self.root)
-        for depth, (mean, _stdev, count) in enumerate(self.normalization):
+        for pseudo_depth, (mean, _stdev, count) in enumerate(self.normalization):
             stdev = math.sqrt(_stdev / (count or 1))
-            self.normalization[depth] = (mean, stdev)
+            self.normalization[pseudo_depth] = (mean, stdev)
         self.dirty = False
 
     def _check_dirty(self):
@@ -155,15 +162,17 @@ class MemoryTrie:
         """
         if len(ngram) <= 1:
             raise ValueError("The size of the ngram should be more than 1")
+        if freq <= 0:
+            raise ValueError("freq should be larger or equal to 1")
         self.dirty = True
         node = self.root
         node.count += freq
-        for i, token in enumerate(ngram):
+        for depth, token in enumerate(ngram):
             try:
                 node = node.childs[token]
                 node.count += freq
             except KeyError:
-                child = MemoryLeaf(freq) if i == len(ngram) - 1 else MemoryNode(freq)
+                child = MemoryLeaf(freq) if depth == len(ngram) - 1 else MemoryNode(freq)
                 assert isinstance(node, MemoryNode)
                 node.childs[token] = child
                 node = child
@@ -234,7 +243,7 @@ class MemoryTrie:
         """
         self._check_dirty()
         try:
-            mean, stdev = self.normalization[len(ngram)]
+            mean, stdev = self.normalization[len(ngram)-1]
         except IndexError:
             return float('nan')
         ev = self.query_ev(ngram)
@@ -279,6 +288,8 @@ class MemoryStorage:
         :param ngram_length: The length of n-grams that are stored. If None the 
           default value setup in __init__ is used.
         """
+        if freq <= 0:
+            raise ValueError("freq should be larger or equal to 1")
         if not sentence:
             return
         if ngram_length is None:
