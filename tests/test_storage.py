@@ -72,7 +72,7 @@ def test_clear(storage):
 
 
 @pytest.mark.parametrize("storage", all_storage_nocreate, indirect=True, ids=storage_name)
-def test_add_negativ_freq(storage):
+def test_add_sentence_negativ_freq(storage):
     storage.clear()
     storage.add_sentence('le petit chat'.split())
     storage.add_sentence('un chat vert et violet'.split())
