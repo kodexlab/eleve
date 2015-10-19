@@ -19,13 +19,12 @@ def compare_nodes(ngrams, ref_trie, test_trie):
         compare_node(n + [420001337], ref_trie, test_trie) # try a non-existent node
 
 
+LE, PETIT, GROS, CHAT, CHIEN, RAT, ET = range(1, 8)
+
 @pytest.mark.parametrize("trie", all_trie, indirect=True)
 def test_basic_trie(trie):
     """ Minimal test on simple example
     """
-    trie.clear()
-    LE, PETIT, GROS, CHAT, CHIEN, RAT = range(1, 7)
-
     trie.add_ngram([LE,PETIT,CHAT])
     trie.add_ngram([LE,PETIT,CHIEN])
     trie.add_ngram([LE,PETIT,RAT])
@@ -35,11 +34,52 @@ def test_basic_trie(trie):
     assert float_equal(trie.query_autonomy([LE, PETIT]), 1.0)
     assert trie.query_count([]) == 4
 
+
+@pytest.mark.parametrize("trie", all_trie, indirect=True)
+def test_clear(trie):
+    """ Test the clear method
+    """
+    trie.add_ngram([LE,PETIT,CHAT])
+    assert trie.query_count([LE, PETIT]) == 1
+    trie.clear()
+    assert trie.query_count([LE, PETIT]) == 0
+    trie.add_ngram([LE,GROS,CHAT])
+    assert trie.query_count([LE, PETIT]) == 0
+    assert trie.query_count([LE, GROS]) == 1
+
+
+@pytest.mark.parametrize("trie", all_trie, indirect=True)
+def test_add_ngram_negativ_freq(trie):
+    """ Test to add a ngram with negative freq
+    """
+    trie.add_ngram([LE,PETIT,CHAT])
+    trie.add_ngram([LE,PETIT,CHIEN])
+    trie.add_ngram([LE,PETIT,RAT])
+    trie.add_ngram([LE,GROS,RAT])
     # test removing a n-gramm
-    trie.add_ngram([LE,PETIT,CHAT], -1)
+    with pytest.raises(ValueError):
+        trie.add_ngram([LE,PETIT,CHAT], -1)
+    return
+    ## The following is noted here for a futur release
     assert trie.query_count([LE, PETIT]) == 2
     assert float_equal(trie.query_entropy([LE, PETIT]), 1.0)
     assert float_equal(trie.query_autonomy([LE, PETIT]), 1.0)
+    # test removing more than resonable
+    trie.add_ngram([LE,PETIT,CHAT], -10)
+    assert trie.query_count([LE, PETIT]) == 0
+
+
+@pytest.mark.parametrize("trie", all_trie, indirect=True)
+def test_max_depth(trie):
+    """ Test the max depth value
+    """
+    assert trie.max_depth() == 0
+    trie.add_ngram([LE, PETIT, CHAT])
+    trie.update_stats()
+    print(trie.normalization)
+    assert trie.max_depth() == 3
+    trie.add_ngram([LE, GROS, CHIEN, ET, LE, PETIT, CHAT])
+    assert trie.max_depth() == 7
 
 
 @pytest.mark.parametrize("trie", all_trie, indirect=True)
@@ -52,6 +92,17 @@ def test_robustness(trie):
         trie.add_ngram([])
     with pytest.raises(ValueError):
         trie.add_ngram([0x42])
+
+
+@pytest.mark.parametrize("trie", all_trie, indirect=True)
+def test_leaf_to_node(trie):
+    """ Test internal converions of a leaf to a node with chidl
+    """
+    trie.add_ngram([LE, PETIT])
+    assert trie.query_count([LE, PETIT]) == 1
+    trie.add_ngram([LE, PETIT, CHAT])
+    assert trie.query_count([LE, PETIT]) == 2
+    assert trie.query_count([LE, PETIT, CHAT]) == 1
 
 
 @pytest.mark.parametrize("trie", tested_trie, indirect=True)
