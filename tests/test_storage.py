@@ -52,6 +52,7 @@ def test_ngram_length(storage):
         reopened_storage = storage_class(storage_path)
         assert reopened_storage.default_ngram_length == 5
 
+
 @parametrize_storage()
 def test_clear(storage):
     assert float_equal(storage.query_count('le'.split()), 0.0)
@@ -68,6 +69,13 @@ def test_clear(storage):
     assert float_equal(storage.query_count('le'.split()), 4.0)
     assert float_equal(storage.query_count('sac rouge'.split()), 3.0)
 
+
+@parametrize_storage()
+def test_terminals(storage):
+    storage.add_sentence('le petit chat'.split())
+    #NOTE: this is 0.5 because terminals as first char are added only in fwd or bwd trie !
+    assert storage.query_count([storage.sentence_start]) == 0.5
+    assert storage.query_count([storage.sentence_end]) == 0.5
 
 @parametrize_storage()
 def test_add_sentence_negativ_freq(storage):
