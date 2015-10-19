@@ -3,7 +3,7 @@ import pytest
 from eleve.memory import MemoryTrie
 
 from utils import float_equal, compare_node, generate_random_ngrams
-from conftest import all_trie, tested_trie
+from conftest import all_trie, tested_trie, persistant_trie
 
 def compare_nodes(ngrams, ref_trie, test_trie):
     # compare root
@@ -103,6 +103,34 @@ def test_leaf_to_node(trie):
     trie.add_ngram([LE, PETIT, CHAT])
     assert trie.query_count([LE, PETIT]) == 2
     assert trie.query_count([LE, PETIT, CHAT]) == 1
+
+
+@pytest.mark.parametrize("trie", persistant_trie, indirect=True)
+def test_reopen(trie):
+    """ Test training and the re-openning of persistant trie
+    """
+    trie.add_ngram([LE,PETIT,CHAT])
+    trie.add_ngram([LE,PETIT,CHIEN])
+    trie.add_ngram([LE,PETIT,RAT])
+    trie.add_ngram([LE,GROS,RAT])
+    assert trie.dirty
+    # store trie param
+    trie_path = trie.path
+    trie_class = trie.__class__
+    # close and reopen
+    trie.close()
+    trie = trie_class(trie_path)
+    assert trie.dirty
+    assert trie.query_count([LE, PETIT]) == 3
+    assert float_equal(trie.query_entropy([LE, PETIT]), 1.584962500721156)
+    assert float_equal(trie.query_autonomy([LE, PETIT]), 1.0)
+    assert trie.query_count([]) == 4
+    assert not trie.dirty
+    # close and reopen (again)
+    trie.close()
+    trie = trie_class(trie_path)
+    assert not trie.dirty
+    assert float_equal(trie.query_autonomy([LE, PETIT]), 1.0)
 
 
 @pytest.mark.parametrize("trie", tested_trie, indirect=True)

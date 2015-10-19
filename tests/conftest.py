@@ -26,6 +26,11 @@ tested_trie = [ # against pyram trie
 #  "cleveldb"
 ]
 
+persistant_trie = [ # Trie stored on disk
+  "pyleveldb",
+#  "cleveldb"
+]
+
 all_storage = [
     "pyram",
 #    "cram",
