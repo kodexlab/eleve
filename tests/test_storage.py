@@ -80,7 +80,11 @@ def test_add_sentence_negativ_freq(storage):
     storage.add_sentence('le gros chien'.split())
     assert float_equal(storage.query_count('le'.split()), 2.0)
     assert float_equal(storage.query_count('le petit'.split()), 1.0)
-    storage.add_sentence('le petit chat'.split(), freq=-1)
+    # No negative weight for now
+    with pytest.raises(ValueError):
+        storage.add_sentence('le petit chat'.split(), freq=-1)
+    return
+    ## The following is noted here for a futur release, see #18
     assert float_equal(storage.query_count('le'.split()), 1.0)
     assert float_equal(storage.query_count('le petit'.split()), 0.0)
     

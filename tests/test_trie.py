@@ -60,7 +60,7 @@ def test_add_ngram_negativ_freq(trie):
     with pytest.raises(ValueError):
         trie.add_ngram([LE,PETIT,CHAT], -1)
     return
-    ## The following is noted here for a futur release
+    ## The following is noted here for a futur release, see #18
     assert trie.query_count([LE, PETIT]) == 2
     assert float_equal(trie.query_entropy([LE, PETIT]), 1.0)
     assert float_equal(trie.query_autonomy([LE, PETIT]), 1.0)
