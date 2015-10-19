@@ -162,10 +162,11 @@ class MemoryTrie:
         :param ngram: A list of tokens.
         :param freq: specify the number of times you add (or substract) that ngram.
         """
-        if len(ngram) <= 1:
-            raise ValueError("The size of the ngram should be more than 1")
         if freq <= 0:
             raise ValueError("freq should be larger or equal to 1")
+        if len(ngram) == 0:
+            logging.warning("Adding empty ngram just do nothing.")
+            return
         self.dirty = True
         parent = self.root
         parent.count += freq
@@ -181,7 +182,6 @@ class MemoryTrie:
                 child = MemoryNode(freq) if depth < len(ngram) - 1 else MemoryLeaf(freq)
                 parent.childs[token] = child
             parent = child
-        assert isinstance(parent, MemoryLeaf), str(ngram)
 
     def _lookup(self, ngram):
         """ Search for a node.

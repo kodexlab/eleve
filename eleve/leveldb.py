@@ -165,10 +165,11 @@ class LeveldbTrie(MemoryTrie):
         return Node(self.db, ngram_to_key(ngram))
 
     def add_ngram(self, ngram, freq=1):
-        if len(ngram) <= 1:
-            raise ValueError("The size of the ngram should be more than 1")
         if freq <= 0:
             raise ValueError("freq should be larger or equal to 1")
+        if len(ngram) == 0:
+            logging.warning("Adding empty ngram just do nothing.")
+            return
 
         if not self.dirty:
             self.dirty = True
