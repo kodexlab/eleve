@@ -1,6 +1,19 @@
 #include "memory_storage.hpp"
 #include <functional>
 
+MemoryStorage::MemoryStorage(size_t default_ngram_length): default_ngram_length(default_ngram_length)
+{
+    // both terminals are sentence_end and sentence_start
+    auto terminals = std::vector<std::string>();
+    terminals.push_back(sentence_start);
+    terminals.push_back(sentence_end);
+    auto terminals_ids = tokens_to_ids(terminals);
+    std::set<ID> terminals_ids_set = std::set<ID>(terminals_ids.cbegin(), terminals_ids.cend());
+    // create the Tries
+    fwd = MemoryTrie(terminals_ids_set);
+    bwd = MemoryTrie(terminals_ids_set);
+};
+
 std::vector<ID> MemoryStorage::tokens_to_ids(strVec& tokens)
 {
     auto ids = std::vector<ID>();
@@ -24,7 +37,6 @@ std::vector<ID> MemoryStorage::tokens_to_ids(strVec& tokens)
             }
             hash++; // collision, increment and try again
         }
-
         // add it
         ids.push_back(hash);
     }
@@ -53,6 +65,9 @@ void MemoryStorage::add_sentence(std::vector<std::string> s, int freq)
 {
     if(! s.size())
         return;
+
+    //TODO add attribute
+    size_t ngram_length = default_ngram_length;
 
     s.insert(s.begin(), "^");
     s.push_back("$");

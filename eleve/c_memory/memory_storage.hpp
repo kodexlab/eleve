@@ -8,7 +8,9 @@ typedef const std::vector<std::string> strVec;
 class MemoryStorage
 {
     protected:
-    size_t ngram_length;
+    size_t default_ngram_length;
+    std::string sentence_start = "^";
+    std::string sentence_end = "$";
     MemoryTrie fwd;
     MemoryTrie bwd;
     std::unordered_map<std::size_t, std::string> hash_to_token;
@@ -18,20 +20,12 @@ class MemoryStorage
 
     public:
 
+    MemoryStorage(size_t default_ngram_length = 5);
+
     inline static std::vector<ID> reverse(const std::vector<ID>& ids)
     {
         return std::vector<ID>(ids.rbegin(), ids.rend());
     };
-    
-    MemoryStorage(size_t ngram_length, strVec& terminals): ngram_length(ngram_length)
-    {
-        auto terminals_ids = tokens_to_ids(terminals);
-        std::set<ID> t = std::set<ID>(terminals_ids.cbegin(), terminals_ids.cend());
-        fwd = MemoryTrie(t);
-        bwd = MemoryTrie(t);
-    };
-
-    MemoryStorage(size_t o) : MemoryStorage(o, {"^", "$"}) {};
 
     void add_sentence(std::vector<std::string> s, int freq=1);
     void add_ngram(strVec& s, int freq=1);

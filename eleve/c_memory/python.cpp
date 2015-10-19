@@ -82,10 +82,6 @@ class PyMemoryStorage: public MemoryStorage
 
     using MemoryStorage::MemoryStorage;
 
-    PyMemoryStorage(size_t ngram_length, py::list terminals) : PyMemoryStorage(ngram_length, convert(terminals))
-    {
-    };
-
     float query_autonomy_(py::list ngram)
     {
         return query_autonomy(convert(ngram));
@@ -118,9 +114,9 @@ class PyMemoryStorage: public MemoryStorage
     {
         add_ngram(convert(s), 1);
     };
-    size_t get_ngram_length()
+    size_t get_default_ngram_length()
     {
-        return ngram_length;
+        return default_ngram_length;
     };
 };
 
@@ -130,6 +126,8 @@ BOOST_PYTHON_MODULE(cmemory)
     using namespace boost::python;
 
     class_<PyMemoryTrie, boost::noncopyable>("MemoryTrie")
+        .add_property("dirty", &PyMemoryTrie::get_dirty)
+        .add_property("normalization", &PyMemoryTrie::get_normalization)
         .def("max_depth", &PyMemoryTrie::max_depth)
         .def("update_stats", &PyMemoryTrie::update_stats)
         .def("add_ngram", &PyMemoryTrie::add_ngram_, py::args("ngram", "freq"))
@@ -139,22 +137,19 @@ BOOST_PYTHON_MODULE(cmemory)
         .def("query_ev", &PyMemoryTrie::query_ev_, py::args("ngram"))
         .def("query_autonomy", &PyMemoryTrie::query_autonomy_, py::args("ngram"))
         .def("clear", &PyMemoryTrie::clear)
-        .add_property("dirty", &PyMemoryTrie::get_dirty)
-        .add_property("normalization", &PyMemoryTrie::get_normalization)
     ;
 
-    class_<PyMemoryStorage, boost::noncopyable>("MemoryStorage",
-        init<size_t, optional<py::list>>(py::args("ngram_length", "terminals")))
+    class_<PyMemoryStorage, boost::noncopyable>("MemoryStorage", init<optional<size_t>>(py::args("default_ngram_length")))
+        .add_property("default_ngram_length", &PyMemoryStorage::get_default_ngram_length)
         .def("update_stats", &PyMemoryStorage::update_stats)
         .def("add_ngram", &PyMemoryStorage::add_ngram_, py::args("ngram", "freq"))
         .def("add_ngram", &PyMemoryStorage::add_ngram__, py::args("ngram"))
-        .def("add_sentence", &PyMemoryStorage::add_sentence_, py::args("sentence"))
-        .def("add_sentence", &PyMemoryStorage::add_sentence__, py::args("sentence", "freq"))
+        .def("add_sentence", &PyMemoryStorage::add_sentence_, py::args("sentence", "freq"))
+        .def("add_sentence", &PyMemoryStorage::add_sentence__, py::args("sentence"))
         .def("query_count", &PyMemoryStorage::query_count_, py::args("ngram"))
         .def("query_entropy", &PyMemoryStorage::query_entropy_, py::args("ngram"))
         .def("query_ev", &PyMemoryStorage::query_ev_, py::args("ngram"))
         .def("query_autonomy", &PyMemoryStorage::query_autonomy_, py::args("ngram"))
         .def("clear", &PyMemoryStorage::clear)
-        .add_property("ngram_length", &PyMemoryStorage::get_ngram_length)
     ;
 }
