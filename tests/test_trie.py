@@ -34,6 +34,22 @@ def test_basic_trie(trie):
     assert float_equal(trie.query_autonomy([LE, PETIT]), 1.0)
     assert trie.query_count([]) == 4
 
+@parametrize_trie()
+def test_dirty_and_normalisation(trie):
+    """ test dirty flag and normalization vector
+    """
+    # at construction should be dirty
+    assert trie.dirty
+    trie.add_ngram([LE,PETIT,CHAT])
+    trie.add_ngram([LE,PETIT,CHIEN])
+    assert trie.dirty
+    assert trie.normalization == []
+    trie.query_autonomy([LE, PETIT])
+    assert trie.normalization == [(0.0, 0.0), (1.0, 0.0), (0.0, 0.0)]
+    assert not trie.dirty
+    trie.add_ngram([LE,PETIT,CHIEN])
+    assert trie.dirty
+
 
 @parametrize_trie()
 def test_clear(trie):
@@ -92,6 +108,8 @@ def test_robustness(trie):
         trie.add_ngram([])
     with pytest.raises(ValueError):
         trie.add_ngram([0x42])
+    with pytest.raises(ValueError):
+        trie.query_autonomy([])
 
 
 @parametrize_trie()
