@@ -4,10 +4,9 @@ import re
 from eleve import PyMemoryStorage
 
 from utils import float_equal, compare_node
-from conftest import all_storage, all_storage_nocreate, tested_storage, storage_name
+from conftest import parametrize_storage
 
-
-@pytest.mark.parametrize("storage", all_storage, indirect=True, ids=storage_name)
+@parametrize_storage(create_dir=None, default_ngram_length=5)
 def test_basic(storage):
     """
     Forward that begins by « le petit »:
@@ -31,7 +30,7 @@ def test_basic(storage):
     assert float_equal(storage.query_autonomy(['le', 'petit']),1.89582)
 
 
-@pytest.mark.parametrize("storage", all_storage_nocreate, indirect=True, ids=storage_name)
+@parametrize_storage()
 def test_ngram_length(storage):
     # the default value should be is 5
     assert storage.default_ngram_length == 5
@@ -53,8 +52,7 @@ def test_ngram_length(storage):
         reopened_storage = storage_class(storage_path)
         assert reopened_storage.default_ngram_length == 5
 
-
-@pytest.mark.parametrize("storage", all_storage_nocreate, indirect=True, ids=storage_name)
+@parametrize_storage()
 def test_clear(storage):
     assert float_equal(storage.query_count('le'.split()), 0.0)
     storage.clear()
@@ -71,7 +69,7 @@ def test_clear(storage):
     assert float_equal(storage.query_count('sac rouge'.split()), 3.0)
 
 
-@pytest.mark.parametrize("storage", all_storage_nocreate, indirect=True, ids=storage_name)
+@parametrize_storage()
 def test_add_sentence_negativ_freq(storage):
     storage.clear()
     storage.add_sentence('le petit chat'.split())
@@ -97,17 +95,17 @@ def test_add_sentence_negativ_freq(storage):
     assert float_equal(storage.query_count('vert et violet'.split()), 0.0)
 
 
-@pytest.mark.parametrize("storage", tested_storage, indirect=['storage'])
-def test_storage(ngram_length, storage, ref_class=PyMemoryStorage):
-    ref = ref_class(default_ngram_length=ngram_length)
+@parametrize_storage(default_ngram_length=[2,4])
+def test_storage(storage, ref_class=PyMemoryStorage):
+    ref = ref_class(default_ngram_length=storage.default_ngram_length)
     ref.clear()
     storage.clear()
 
     testfile = open('tests/fixtures/btree.txt').read().split('\n')
     sentences = (re.findall(r'\w+', sentence) for sentence in testfile)
     for sentence in sentences:
-        ref.add_sentence(sentence, ngram_length=ngram_length)
-        storage.add_sentence(sentence, ngram_length=ngram_length)
+        ref.add_sentence(sentence)
+        storage.add_sentence(sentence)
 
     # compare of each ngram of each sentence
     for sentence in sentences:

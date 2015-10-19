@@ -3,7 +3,7 @@ import pytest
 from eleve.memory import MemoryTrie
 
 from utils import float_equal, compare_node, generate_random_ngrams
-from conftest import all_trie, tested_trie, persistant_trie
+from conftest import parametrize_trie
 
 def compare_nodes(ngrams, ref_trie, test_trie):
     # compare root
@@ -21,7 +21,7 @@ def compare_nodes(ngrams, ref_trie, test_trie):
 
 LE, PETIT, GROS, CHAT, CHIEN, RAT, ET = range(1, 8)
 
-@pytest.mark.parametrize("trie", all_trie, indirect=True)
+@parametrize_trie()
 def test_basic_trie(trie):
     """ Minimal test on simple example
     """
@@ -35,7 +35,7 @@ def test_basic_trie(trie):
     assert trie.query_count([]) == 4
 
 
-@pytest.mark.parametrize("trie", all_trie, indirect=True)
+@parametrize_trie()
 def test_clear(trie):
     """ Test the clear method
     """
@@ -48,7 +48,7 @@ def test_clear(trie):
     assert trie.query_count([LE, GROS]) == 1
 
 
-@pytest.mark.parametrize("trie", all_trie, indirect=True)
+@parametrize_trie()
 def test_add_ngram_negativ_freq(trie):
     """ Test to add a ngram with negative freq
     """
@@ -69,7 +69,7 @@ def test_add_ngram_negativ_freq(trie):
     assert trie.query_count([LE, PETIT]) == 0
 
 
-@pytest.mark.parametrize("trie", all_trie, indirect=True)
+@parametrize_trie()
 def test_max_depth(trie):
     """ Test the max depth value
     """
@@ -82,7 +82,7 @@ def test_max_depth(trie):
     assert trie.max_depth() == 7
 
 
-@pytest.mark.parametrize("trie", all_trie, indirect=True)
+@parametrize_trie()
 def test_robustness(trie):
     """ Test robustness of Tries
     """
@@ -94,7 +94,7 @@ def test_robustness(trie):
         trie.add_ngram([0x42])
 
 
-@pytest.mark.parametrize("trie", all_trie, indirect=True)
+@parametrize_trie()
 def test_leaf_to_node(trie):
     """ Test internal converions of a leaf to a node with chidl
     """
@@ -105,7 +105,7 @@ def test_leaf_to_node(trie):
     assert trie.query_count([LE, PETIT, CHAT]) == 1
 
 
-@pytest.mark.parametrize("trie", persistant_trie, indirect=True)
+@parametrize_trie(volatile=False, persistant=True)
 def test_reopen(trie):
     """ Test training and the re-openning of persistant trie
     """
@@ -133,7 +133,7 @@ def test_reopen(trie):
     assert float_equal(trie.query_autonomy([LE, PETIT]), 1.0)
 
 
-@pytest.mark.parametrize("trie", tested_trie, indirect=True)
+@parametrize_trie(ref=False)
 def test_versus_ref_on_random(trie, reference_class=MemoryTrie):
     """ Compare implementation against reference class (on random ngrams lists)
     """
