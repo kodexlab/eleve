@@ -128,6 +128,7 @@ BOOST_PYTHON_MODULE(cleveldb)
 
     class_<PyLeveldbTrie, boost::noncopyable>("LeveldbTrie",
           init<std::string>(py::args("path")))
+        .def("max_depth", &PyLeveldbTrie::max_depth)
         .def("add_ngram", &PyLeveldbTrie::add_ngram_)
         .def("add_ngram", &PyLeveldbTrie::add_ngram__)
         .def("query_count", &PyLeveldbTrie::query_count_)

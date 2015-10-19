@@ -38,6 +38,11 @@ LeveldbTrie::LeveldbTrie(const std::string& path)
     }
 };
 
+size_t LeveldbTrie::max_depth()
+{
+    if(dirty) update_stats();
+    return normalization.size();
+}
 
 void LeveldbTrie::update_stats_rec(float parent_entropy, size_t depth, Node& node)
 {

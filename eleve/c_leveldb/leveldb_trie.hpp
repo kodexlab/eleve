@@ -71,6 +71,8 @@ class LeveldbTrie
         delete db;
     };
 
+    size_t max_depth();
+
     void update_stats();
 
     void add_ngram(const std::vector<std::string>& ngram, int freq=1);
