@@ -62,7 +62,12 @@ void MemoryTrie::update_stats()
 
 void MemoryTrie::add_ngram(const std::vector<ID>& shingle, int freq)
 {
-    if(freq == 0 || shingle.cbegin() == shingle.cend())
+    // negative freq not supported yet see https://git.kodexlab.com/kodexlab/eleve/issues/18
+    if(freq <= 0){
+        throw std::invalid_argument( "freq must be larger or equals to 1" );
+    }
+
+    if(shingle.cbegin() == shingle.cend())
         return;
 
     dirty = true;

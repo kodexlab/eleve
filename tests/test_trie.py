@@ -64,6 +64,8 @@ def test_add_ngram_negativ_freq(trie):
     # test removing a n-gramm
     with pytest.raises(ValueError):
         trie.add_ngram([LE,PETIT,CHAT], -1)
+    with pytest.raises(ValueError):
+        trie.add_ngram([LE,PETIT,CHAT], 0)
     return
     ## The following is noted here for a futur release, see #18
     assert trie.query_count([LE, PETIT]) == 2

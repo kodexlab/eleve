@@ -139,7 +139,12 @@ void LeveldbTrie::update_stats()
 
 void LeveldbTrie::add_ngram(const std::vector<std::string>& ngram, int freq)
 {
-    if(freq == 0 || ngram.cbegin() == ngram.cend())
+    // negative freq not supported yet see https://git.kodexlab.com/kodexlab/eleve/issues/18
+    if(freq <= 0){
+        throw std::invalid_argument( "freq must be larger or equals to 1" );
+    }
+
+    if(ngram.cbegin() == ngram.cend())
         return;
 
     set_dirty();
