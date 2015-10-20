@@ -40,10 +40,6 @@ class PyMemoryTrie: public MemoryTrie
     {
         add_ngram(std::vector<ID>{pyIdIt(ngram), pyIdIt()}, freq);
     };
-    void add_ngram__(py::list ngram)
-    {
-        add_ngram(std::vector<ID>{pyIdIt(ngram), pyIdIt()}, 1);
-    };
     COUNT query_count_(py::list ngram)
     {
         return query_count(std::vector<ID>{pyIdIt(ngram), pyIdIt()});
@@ -106,10 +102,6 @@ class PyMemoryStorage: public MemoryStorage
     {
         add_ngram(convert(s), freq);
     };
-    void add_ngram__(py::list s)
-    {
-        add_ngram(convert(s), 1);
-    };
     size_t get_default_ngram_length()
     {
         return default_ngram_length;
@@ -134,8 +126,7 @@ BOOST_PYTHON_MODULE(cmemory)
         .add_property("normalization", &PyMemoryTrie::get_normalization)
         .def("max_depth", &PyMemoryTrie::max_depth)
         .def("update_stats", &PyMemoryTrie::update_stats)
-        .def("add_ngram", &PyMemoryTrie::add_ngram_, py::args("ngram", "freq"))
-        .def("add_ngram", &PyMemoryTrie::add_ngram__, py::args("ngram"))
+        .def("add_ngram", &PyMemoryTrie::add_ngram_, (py::args("ngram"), py::args("freq")=1))
         .def("query_count", &PyMemoryTrie::query_count_, py::args("ngram"))
         .def("query_entropy", &PyMemoryTrie::query_entropy_, py::args("ngram"))
         .def("query_ev", &PyMemoryTrie::query_ev_, py::args("ngram"))
@@ -148,8 +139,7 @@ BOOST_PYTHON_MODULE(cmemory)
         .add_property("sentence_start", &PyMemoryStorage::get_sentence_start)
         .add_property("sentence_end", &PyMemoryStorage::get_sentence_end)
         .def("update_stats", &PyMemoryStorage::update_stats)
-        .def("add_ngram", &PyMemoryStorage::add_ngram_, py::args("ngram", "freq"))
-        .def("add_ngram", &PyMemoryStorage::add_ngram__, py::args("ngram"))
+        .def("add_ngram", &PyMemoryStorage::add_ngram_, (py::args("ngram"), py::args("freq")=1))
         .def("add_sentence", &PyMemoryStorage::add_sentence_, (py::arg("sentence"), py::arg("freq")=1, py::arg("ngram_length")=0))
         .def("query_count", &PyMemoryStorage::query_count_, py::args("ngram"))
         .def("query_entropy", &PyMemoryStorage::query_entropy_, py::args("ngram"))

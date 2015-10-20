@@ -37,10 +37,6 @@ class PyLeveldbTrie: public LeveldbTrie
     {
         add_ngram(convert(ngram), freq);
     };
-    void add_ngram__(py::list ngram)
-    {
-        add_ngram(convert(ngram), 1);
-    };
     COUNT query_count_(py::list ngram)
     {
         return query_count(convert(ngram));
@@ -99,10 +95,6 @@ class PyLeveldbStorage: public LeveldbStorage
     {
         add_sentence(convert(sentence), freq);
     };
-    void add_sentence__(py::list sentence)
-    {
-        add_sentence(convert(sentence), 1);
-    };
     float query_count_(py::list ngram)
     {
         return query_count(convert(ngram));
@@ -136,8 +128,7 @@ BOOST_PYTHON_MODULE(cleveldb)
         .add_property("normalization", &PyLeveldbTrie::get_normalization)
         .add_property("path", &PyLeveldbTrie::get_path)
         .def("update_stats", &PyLeveldbTrie::update_stats, py::args("ngram"))
-        .def("add_ngram", &PyLeveldbTrie::add_ngram_, py::args("ngram", "freq"))
-        .def("add_ngram", &PyLeveldbTrie::add_ngram__, py::args("ngram"))
+        .def("add_ngram", &PyLeveldbTrie::add_ngram_, (py::args("ngram"), py::args("freq")=1))
         .def("max_depth", &PyLeveldbTrie::max_depth)
         .def("query_count", &PyLeveldbTrie::query_count_, py::args("ngram"))
         .def("query_entropy", &PyLeveldbTrie::query_entropy_, py::args("ngram"))
@@ -151,10 +142,8 @@ BOOST_PYTHON_MODULE(cleveldb)
           init<int, std::string, optional<py::list>>())
         .add_property("ngram_length", &PyLeveldbStorage::get_ngram_length)
         .def("update_stats", &PyLeveldbStorage::update_stats)
-        .def("add_ngram", &PyLeveldbStorage::add_ngram_, py::args("ngram", "freq"))
-        .def("add_ngram", &PyLeveldbStorage::add_ngram__, py::args("ngram"))
-        .def("add_sentence", &PyLeveldbStorage::add_sentence_, py::args("sentence", "freq"))
-        .def("add_sentence", &PyLeveldbStorage::add_sentence__, py::args("sentence"))
+        .def("add_ngram", &PyLeveldbStorage::add_ngram_, (py::args("ngram"), py::args("freq")=1))
+        .def("add_sentence", &PyLeveldbStorage::add_sentence_, (py::args("sentence"), py::args("freq")=1))
         .def("query_count", &PyLeveldbStorage::query_count_, py::args("ngram"))
         .def("query_entropy", &PyLeveldbStorage::query_entropy_, py::args("ngram"))
         .def("query_ev", &PyLeveldbStorage::query_ev_, py::args("ngram"))
