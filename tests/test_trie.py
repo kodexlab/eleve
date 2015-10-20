@@ -51,6 +51,9 @@ def test_add_ngram_simple(trie):
     trie.add_ngram(ngram=[LE,GROS,RAT], freq=2)
     assert trie.query_count([LE, PETIT]) == 6
     assert trie.query_count([LE, GROS]) == 2
+    # add a tupple instead of a list
+    trie.add_ngram((LE,PETIT,CHAT))
+    assert trie.query_count([LE, PETIT]) == 7
 
 
 @parametrize_trie()

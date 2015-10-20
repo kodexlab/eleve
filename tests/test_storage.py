@@ -18,8 +18,6 @@ def test_basic(storage):
      - petit le pour * 2
     --> count is the mean of 4 and 4, and entropy is the mean of 2 (the None are counted separately) and 1.5.
     """
-    storage.clear()
-
     storage.add_sentence(['le','petit','chat'])
     storage.add_sentence(['le','petit','chien'])
     storage.add_sentence(['pour','le','petit'], freq=2)
@@ -29,6 +27,16 @@ def test_basic(storage):
     assert float_equal(storage.query_entropy(['le', 'petit']), 1.75)
     assert float_equal(storage.query_autonomy(['le', 'petit']),1.89582)
 
+@parametrize_storage()
+def test_with_tuple(storage):
+    storage.add_sentence(('le','petit','chat'))
+    storage.add_sentence(('le','petit','chien'))
+    storage.add_sentence(('pour','le','petit'), freq=2)
+
+    assert float_equal(storage.query_count(('le', 'petit')), 4.0)
+    assert float_equal(storage.query_count(('pour')), 2.0)
+    assert float_equal(storage.query_entropy(('le', 'petit')), 1.75)
+    assert float_equal(storage.query_autonomy(('le', 'petit')),1.89582)
 
 @parametrize_storage()
 def test_ngram_length(storage):
@@ -114,7 +122,6 @@ def test_add_sentence_basic(storage):
     storage.add_sentence('le petit chat'.split(), 10, 2)
     assert float_equal(storage.query_count('le petit chat'.split()), 0.0)
     assert float_equal(storage.query_count('le petit'.split()), 16.0)
-
 
 @parametrize_storage()
 def test_add_sentence_negativ_freq(storage):
