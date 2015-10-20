@@ -81,7 +81,6 @@ def get_storages(py=True, c=True, ref=True, volatile=True, persistant=True, defa
     :attr default_ngram_length: param default_ngram_length of Storage, may be a list of different values
     :attr create_dir: whether to create the directory (for disk backend), if None both cases are given
     """
-    persistant=False #XXX: should be removed, C storages not tested for now:
     storages = []
     dd_storages = []
     # choose basic class

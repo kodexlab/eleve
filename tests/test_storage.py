@@ -77,6 +77,24 @@ def test_terminals(storage):
     assert storage.query_count([storage.sentence_start]) == 0.5
     assert storage.query_count([storage.sentence_end]) == 0.5
 
+
+@parametrize_storage()
+def test_add_sentence_basic(storage):
+    storage.clear()
+    storage.add_sentence('le petit chat'.split())
+    storage.add_sentence('le petit chat'.split(), 2)
+    storage.add_sentence('le petit chat'.split(), freq=2)
+    assert float_equal(storage.query_count('le petit'.split()), 5.0)
+    assert float_equal(storage.query_count('le petit chat'.split()), 5.0)
+    storage.clear()
+    storage.add_sentence('le petit chat'.split(), ngram_length=2)
+    storage.add_sentence('le petit chat'.split(), 2, ngram_length=2)
+    storage.add_sentence('le petit chat'.split(), freq=3, ngram_length=2)
+    storage.add_sentence('le petit chat'.split(), 10, 2)
+    assert float_equal(storage.query_count('le petit chat'.split()), 0.0)
+    assert float_equal(storage.query_count('le petit'.split()), 16.0)
+
+
 @parametrize_storage()
 def test_add_sentence_negativ_freq(storage):
     storage.clear()
