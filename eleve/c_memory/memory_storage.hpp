@@ -20,14 +20,14 @@ class MemoryStorage
 
     public:
 
-    MemoryStorage(size_t default_ngram_length = 5);
+    MemoryStorage(size_t default_ngram_length=5);
 
     inline static std::vector<ID> reverse(const std::vector<ID>& ids)
     {
         return std::vector<ID>(ids.rbegin(), ids.rend());
     };
 
-    void add_sentence(std::vector<std::string> s, int freq=1);
+    void add_sentence(std::vector<std::string> s, int freq=1, size_t ngram_length=0);
     void add_ngram(strVec& s, int freq=1);
 
     void clear();

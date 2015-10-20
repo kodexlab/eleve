@@ -61,13 +61,14 @@ void MemoryStorage::add_ngram(strVec& ngram, int freq)
     bwd.add_ngram(reverse(ids), freq);
 };
 
-void MemoryStorage::add_sentence(std::vector<std::string> sentence, int freq)
+void MemoryStorage::add_sentence(std::vector<std::string> sentence, int freq, size_t ngram_length)
 {
     if(! sentence.size())
         return;
 
-    //TODO add attribute
-    size_t ngram_length = default_ngram_length;
+    if(ngram_length == 0){
+        ngram_length = default_ngram_length;
+    }
 
     sentence.insert(sentence.begin(), sentence_start);
     sentence.push_back(sentence_end);

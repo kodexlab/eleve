@@ -98,13 +98,9 @@ class PyMemoryStorage: public MemoryStorage
     {
         return query_entropy(convert(ngram));
     };
-    void add_sentence_(py::list s, int freq)
+    void add_sentence_(py::list s, int freq, size_t ngram_length)
     {
-        add_sentence(convert(s), freq);
-    };
-    void add_sentence__(py::list s)
-    {
-        add_sentence(convert(s), 1);
+        add_sentence(convert(s), freq, ngram_length);
     };
     void add_ngram_(py::list s, int freq)
     {
@@ -154,8 +150,7 @@ BOOST_PYTHON_MODULE(cmemory)
         .def("update_stats", &PyMemoryStorage::update_stats)
         .def("add_ngram", &PyMemoryStorage::add_ngram_, py::args("ngram", "freq"))
         .def("add_ngram", &PyMemoryStorage::add_ngram__, py::args("ngram"))
-        .def("add_sentence", &PyMemoryStorage::add_sentence_, py::args("sentence", "freq"))
-        .def("add_sentence", &PyMemoryStorage::add_sentence__, py::args("sentence"))
+        .def("add_sentence", &PyMemoryStorage::add_sentence_, (py::arg("sentence"), py::arg("freq")=1, py::arg("ngram_length")=0))
         .def("query_count", &PyMemoryStorage::query_count_, py::args("ngram"))
         .def("query_entropy", &PyMemoryStorage::query_entropy_, py::args("ngram"))
         .def("query_ev", &PyMemoryStorage::query_ev_, py::args("ngram"))
