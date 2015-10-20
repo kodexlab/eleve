@@ -241,7 +241,7 @@ class LeveldbStorage(MemoryStorage):
         self.path = path # store the path, in RAM, usefull at least for test
         if not os.path.isdir(path):
             os.makedirs(path)
-        config_path = path + "/cofig"
+        config_path = path + "/config"
         new_storage = not os.path.isdir(config_path)
         # create/open Storage config/metadata DB
         self.config = plyvel.DB(config_path,
