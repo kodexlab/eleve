@@ -31,6 +31,7 @@ class MemoryTrie
         float query_autonomy(const std::vector<ID>& shingle);
 
         void clear();
+        void close(){};
 };
 
 #endif

@@ -132,6 +132,7 @@ BOOST_PYTHON_MODULE(cmemory)
         .def("query_ev", &PyMemoryTrie::query_ev_, py::args("ngram"))
         .def("query_autonomy", &PyMemoryTrie::query_autonomy_, py::args("ngram"))
         .def("clear", &PyMemoryTrie::clear)
+        .def("close", &PyMemoryTrie::close)
     ;
 
     class_<PyMemoryStorage, boost::noncopyable>("MemoryStorage", init<optional<size_t>>(py::args("default_ngram_length")))
@@ -146,5 +147,6 @@ BOOST_PYTHON_MODULE(cmemory)
         .def("query_ev", &PyMemoryStorage::query_ev_, py::args("ngram"))
         .def("query_autonomy", &PyMemoryStorage::query_autonomy_, py::args("ngram"))
         .def("clear", &PyMemoryStorage::clear)
+        .def("close", &PyMemoryStorage::close)
     ;
 }

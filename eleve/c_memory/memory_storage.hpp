@@ -30,6 +30,7 @@ class MemoryStorage
         void add_ngram(strVec& s, int freq=1);
 
         void clear();
+        void close(){};
         void update_stats();
 
         float query_autonomy(strVec& ngram);
