@@ -52,6 +52,27 @@ def test_ngram_length(storage):
         reopened_storage = storage_class(storage_path)
         assert reopened_storage.default_ngram_length == 5
 
+@parametrize_storage(volatile=False, persistant=True, default_ngram_length=[2, 4])
+def test_reopen(storage):
+    """ Test training and the re-openning of persistant storage
+    """
+    storage.add_sentence("un chat rouge".split())
+    default_ngram_length = storage.default_ngram_length
+    # store trie param
+    storage_class = storage.__class__
+    storage_path = storage.path
+    print("Will reopen with class:%s and path:%s" % (storage_class, storage_path))
+    # close and reopen
+    storage.close()
+    del storage
+    storage = storage_class(storage_path)
+    assert storage.default_ngram_length == default_ngram_length
+    assert storage.query_count("un chat".split()) == 1
+    # close and reopen
+    storage.close()
+    del storage
+    storage = storage_class(storage_path, default_ngram_length=10)
+    assert storage.default_ngram_length == default_ngram_length
 
 @parametrize_storage()
 def test_clear(storage):
