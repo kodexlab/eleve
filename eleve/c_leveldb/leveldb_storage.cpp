@@ -13,8 +13,8 @@ std::string LeveldbStorage::directory_add(const std::string& _path, const std::s
     return _path + "/" + subdir;
 };
 
-LeveldbStorage::LeveldbStorage(const std::string path, size_t default_ngram_length):
-    path(path), default_ngram_length(default_ngram_length),
+LeveldbStorage::LeveldbStorage(const std::string path, size_t _default_ngram_length):
+    path(path), default_ngram_length(_default_ngram_length),
     fwd(directory_add(path, "fwd")),
     bwd(directory_add(path, "bwd"))
 {
@@ -24,7 +24,30 @@ LeveldbStorage::LeveldbStorage(const std::string path, size_t default_ngram_leng
     terminals.insert(sentence_end);
     fwd.set_terminals(terminals);
     bwd.set_terminals(terminals);
-    // TODO: store default_ngram_length in a config DB
+
+    // Configure the config db
+    leveldb::Options options;
+    options.create_if_missing = true;
+    options.write_buffer_size = 64*1024*1024;
+    options.block_size = 16*1024;
+
+    auto status = leveldb::DB::Open(options, directory_add(path, "/config"), &config);
+    if(! status.ok())
+    {
+        std::cerr << "Unable to open the database at " << path << ": " << status.ToString() << std::endl;
+        exit(EXIT_FAILURE);
+    }
+    // try to get the default_ngram_length value from config db
+    std::string value;
+    status = config->Get(leveldb::ReadOptions(), "default_ngram_length", &value);
+    if (status.ok()) {
+        default_ngram_length = *(size_t*) value.data();
+    } else {
+        // store default_ngram_length in a config DB
+        std::array<char, sizeof(size_t)> setvalue;
+        *(size_t*)setvalue.data() = default_ngram_length;
+        status = config->Put(leveldb::WriteOptions(), "default_ngram_length", leveldb::Slice(setvalue.data(), sizeof(size_t)));
+    }
 };
 
 
@@ -108,6 +131,11 @@ void LeveldbStorage::clear()
 
 void LeveldbStorage::close()
 {
+    if(config != NULL)
+    {
+        delete config;
+        config = NULL;
+    }
     fwd.close();
     bwd.close();
 };

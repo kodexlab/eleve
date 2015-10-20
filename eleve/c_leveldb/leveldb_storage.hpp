@@ -5,8 +5,6 @@
 
 typedef const std::vector<std::string> strVec;
 
-#define DEFAULT_TERMINALS {"^", "$"}
-
 class LeveldbStorage
 {
     protected:
@@ -17,6 +15,8 @@ class LeveldbStorage
         
         LeveldbTrie fwd;
         LeveldbTrie bwd;
+
+        leveldb::DB* config;
 
         static std::string directory_add(const std::string& path, const std::string& subdir);
         static inline std::set<std::string> strvec_to_set(strVec& terminals)
@@ -31,7 +31,6 @@ class LeveldbStorage
         {
             return std::vector<std::string>(ids.rbegin(), ids.rend());
         };
-        
 
         void add_sentence(std::vector<std::string> sentence, int freq=1, size_t ngram_length=0);
         void add_ngram(strVec& s, int freq=1);
