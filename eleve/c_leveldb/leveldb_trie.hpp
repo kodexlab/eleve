@@ -29,14 +29,21 @@ class LeveldbTrie
 
     public:
         LeveldbTrie(const std::string& path);
-        LeveldbTrie(const std::string& path, const std::set<std::string>& terms) : LeveldbTrie(path)
+        LeveldbTrie(const std::string& path, const std::set<std::string>& _terminals): LeveldbTrie(path)
         {
-            terminals = terms;
+            terminals = _terminals;
         };
 
         ~LeveldbTrie()
         {
             close();
+        };
+
+        void set_terminals(std::set<std::string> _terminals) {
+            terminals = _terminals;
+        };
+        std::set<std::string> get_terminals(){
+            return terminals;
         };
 
         void update_stats();

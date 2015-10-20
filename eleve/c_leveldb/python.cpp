@@ -78,11 +78,6 @@ class PyLeveldbStorage: public LeveldbStorage
 
     using LeveldbStorage::LeveldbStorage;
 
-    PyLeveldbStorage(size_t order, std::string path, py::list terminals) :
-        LeveldbStorage(order, path, convert(terminals))
-    {
-    };
-
     void add_ngram_(py::list ngram, int freq)
     {
         add_ngram(convert(ngram), freq);
@@ -91,9 +86,9 @@ class PyLeveldbStorage: public LeveldbStorage
     {
         add_ngram(convert(ngram), 1);
     };
-    void add_sentence_(py::list sentence, int freq)
+    void add_sentence_(py::list sentence, int freq, size_t ngram_length)
     {
-        add_sentence(convert(sentence), freq);
+        add_sentence(convert(sentence), freq, ngram_length);
     };
     float query_count_(py::list ngram)
     {
@@ -112,9 +107,21 @@ class PyLeveldbStorage: public LeveldbStorage
         return query_autonomy(convert(ngram));
     };
 
-    size_t get_ngram_length()
+    size_t get_default_ngram_length()
     {
-        return ngram_length;
+        return default_ngram_length;
+    };
+    std::string get_sentence_start()
+    {
+        return sentence_start;
+    };
+    std::string get_sentence_end()
+    {
+        return sentence_end;
+    };
+    std::string get_path()
+    {
+        return path;
     };
 };
 
@@ -139,15 +146,19 @@ BOOST_PYTHON_MODULE(cleveldb)
     ;
 
    class_<PyLeveldbStorage, boost::noncopyable>("LeveldbStorage",
-          init<int, std::string, optional<py::list>>())
-        .add_property("ngram_length", &PyLeveldbStorage::get_ngram_length)
+          init<std::string, optional<size_t>>(py::args("path", "default_ngram_length")))
+        .add_property("default_ngram_length", &PyLeveldbStorage::get_default_ngram_length)
+        .add_property("sentence_start", &PyLeveldbStorage::get_sentence_start)
+        .add_property("sentence_end", &PyLeveldbStorage::get_sentence_end)
+        .add_property("path", &PyLeveldbStorage::get_path)
         .def("update_stats", &PyLeveldbStorage::update_stats)
         .def("add_ngram", &PyLeveldbStorage::add_ngram_, (py::args("ngram"), py::args("freq")=1))
-        .def("add_sentence", &PyLeveldbStorage::add_sentence_, (py::args("sentence"), py::args("freq")=1))
+        .def("add_sentence", &PyLeveldbStorage::add_sentence_, (py::args("sentence"), py::args("freq")=1, py::args("ngram_length")=0))
         .def("query_count", &PyLeveldbStorage::query_count_, py::args("ngram"))
         .def("query_entropy", &PyLeveldbStorage::query_entropy_, py::args("ngram"))
         .def("query_ev", &PyLeveldbStorage::query_ev_, py::args("ngram"))
         .def("query_autonomy", &PyLeveldbStorage::query_autonomy_, py::args("ngram"))
         .def("clear", &PyLeveldbStorage::clear)
+        .def("close", &PyLeveldbStorage::close)
     ;
 }
