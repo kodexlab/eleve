@@ -16,44 +16,41 @@ struct Normalization
 class LeveldbTrie
 {
     protected:
+        std::string path;
+        std::vector<Normalization> normalization;
+        std::set<std::string> terminals;
+        bool dirty;
+        leveldb::DB* db;
 
-    std::string path;
-    std::vector<Normalization> normalization;
-    std::set<std::string> terminals;
-    bool dirty;
-    leveldb::DB* db;
-
-    Node search_node(const std::vector<std::string>& ngram);
-    void update_stats_rec(float parent_entropy, size_t depth, Node& node);
-    inline void set_dirty();
-    inline void set_clean();
+        Node search_node(const std::vector<std::string>& ngram);
+        void update_stats_rec(float parent_entropy, size_t depth, Node& node);
+        inline void set_dirty();
+        inline void set_clean();
 
     public:
+        LeveldbTrie(const std::string& path);
+        LeveldbTrie(const std::string& path, const std::set<std::string>& terms) : LeveldbTrie(path)
+        {
+            terminals = terms;
+        };
 
-    LeveldbTrie(const std::string& path);
+        ~LeveldbTrie()
+        {
+            close();
+        };
 
-    LeveldbTrie(const std::string& path, const std::set<std::string>& terms) : LeveldbTrie(path)
-    {
-        terminals = terms;
-    };
+        void update_stats();
 
-    ~LeveldbTrie()
-    {
-        close();
-    };
+        void add_ngram(const std::vector<std::string>& ngram, int freq=1);
 
-    void update_stats();
+        size_t max_depth();
+        COUNT query_count(const std::vector<std::string>& ngram);
+        float query_entropy(const std::vector<std::string>& ngram);
+        float query_ev(const std::vector<std::string>& ngram);
+        float query_autonomy(const std::vector<std::string>& ngram);
 
-    void add_ngram(const std::vector<std::string>& ngram, int freq=1);
-
-    size_t max_depth();
-    COUNT query_count(const std::vector<std::string>& ngram);
-    float query_entropy(const std::vector<std::string>& ngram);
-    float query_ev(const std::vector<std::string>& ngram);
-    float query_autonomy(const std::vector<std::string>& ngram);
-
-    void clear();
-    void close();
+        void clear();
+        void close();
 };
 
 #endif

@@ -20,15 +20,15 @@ struct __attribute__((packed)) TokenListPair
 class ListIterator
 {
     public:
-    virtual void next() = 0;
-    virtual Node* get() = 0;
+        virtual void next() = 0;
+        virtual Node* get() = 0;
 };
 
 class EmptyListIterator : public ListIterator
 {
     public:
-    void next() {};
-    Node* get() { return nullptr; };
+        void next() {};
+        Node* get() { return nullptr; };
 };
 
 struct List

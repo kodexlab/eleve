@@ -15,61 +15,55 @@ class ChildList: public List
     */
 
     private:
-    std::vector<Node> data;
+        std::vector<Node> data;
 
-    class ChildListIterator: public ListIterator
-    {
-        private:
-        std::vector<Node>::iterator current_child;
-        std::vector<Node>::iterator childs_end;
-
-        public:
-
-        ChildListIterator(ChildList* b)
+        class ChildListIterator: public ListIterator
         {
-            childs_end = b->data.end();
-            current_child = b->data.begin();
-        }
+            private:
+                std::vector<Node>::iterator current_child;
+                std::vector<Node>::iterator childs_end;
 
-        void next()
-        {
-            if(current_child != childs_end)
-            {
-                ++current_child;
-            }
+            public:
+                ChildListIterator(ChildList* b)
+                {
+                    childs_end = b->data.end();
+                    current_child = b->data.begin();
+                }
+
+                void next()
+                {
+                    if(current_child != childs_end)
+                    {
+                        ++current_child;
+                    }
+                };
+
+                Node* get()
+                {
+                    return (current_child == childs_end)
+                        ? nullptr
+                        : &(*current_child);
+                };
         };
 
-        Node* get()
-        {
-            return (current_child == childs_end)
-                ? nullptr
-                : &(*current_child);
-        };
-    };
-
-    ChildList(Node& tb) {data.push_back(std::move(tb));};
+        ChildList(Node& tb) {data.push_back(std::move(tb));};
 
     public:
+        ChildList() {};
+        ChildList(shingle_const_iterator shingle_it, shingle_const_iterator shingle_end, const COUNT count);
 
-    ChildList() {};
+        Node* search_child(shingle_const_iterator shingle_it, shingle_const_iterator shingle_end);
 
-    ChildList(shingle_const_iterator shingle_it, shingle_const_iterator shingle_end, const COUNT count);
+        std::unique_ptr<List> add_shingle(shingle_const_iterator shingle_it, shingle_const_iterator shingle_end, const int count);
 
-    Node* search_child(shingle_const_iterator shingle_it, shingle_const_iterator shingle_end);
+        size_t size() const { return data.size(); };
 
-    std::unique_ptr<List> add_shingle(shingle_const_iterator shingle_it, shingle_const_iterator shingle_end, const int count);
+        TokenListPair split();
 
-    size_t size() const
-    {
-        return data.size();
-    };
-
-    TokenListPair split();
-
-    std::unique_ptr<ListIterator> begin_childs()
-    {
-        return std::unique_ptr<ChildListIterator>(new ChildListIterator(this));
-    };
+        std::unique_ptr<ListIterator> begin_childs()
+        {
+            return std::unique_ptr<ChildListIterator>(new ChildListIterator(this));
+        };
 };
 
 #endif
