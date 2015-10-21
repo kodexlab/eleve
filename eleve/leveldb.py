@@ -111,7 +111,7 @@ class Node:
 
 
 class LeveldbTrie(MemoryTrie):
-    def __init__(self, path, terminals=['^', '$']):
+    def __init__(self, path, terminals=[]):
         """ Create or opent a Trie using leveldb as backend.
         """
         self.path = path
@@ -255,8 +255,9 @@ class LeveldbStorage(MemoryStorage):
             self.config.put(b"default_ngram_length", str(default_ngram_length).encode())
         self._default_ngram_length = int(self.config.get(b"default_ngram_length"))
         # create/open both trie
-        self.bwd = LeveldbTrie(path=(path + '/bwd'))
-        self.fwd = LeveldbTrie(path=(path + '/fwd'))
+        terminals = [self.sentence_start, self.sentence_end]
+        self.bwd = LeveldbTrie(path=(path + '/bwd'), terminals=terminals)
+        self.fwd = LeveldbTrie(path=(path + '/fwd'), terminals=terminals)
         #TODO: if loading (path exist?) then read the default_ngram_length from DD
 
     @property

@@ -10,9 +10,12 @@ class LeveldbStorage
     protected:
         std::string path;
         size_t default_ngram_length;
-        std::string sentence_start = "^";
-        std::string sentence_end = "$";
-        
+        // Use PRIVATE_USE_AREA codes
+        std::string sentence_start = "\xee\x80\xab"; // in unicode => \ue02b
+        //  see http://www.fileformat.info/info/unicode/char/e02b/index.htm
+        std::string sentence_end = "\xee\x80\xad";  // in unicode => \ue02d
+        //  see http://www.fileformat.info/info/unicode/char/e02d/index.htm
+
         LeveldbTrie fwd;
         LeveldbTrie bwd;
 

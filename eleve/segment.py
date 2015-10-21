@@ -39,10 +39,9 @@ class Segmenter:
         if len(sentence) > 1000:
             logger.warning("The sentence you want to segment is HUGE. This will take a lot of memory.")
 
-        sentence = ['^'] + sentence + ['$'] #TODO: use storage param's
+        sentence = [self.storage.sentence_start] + sentence + [self.storage.sentence_end]
 
         # dynamic programming to segment the sentence
-        
         best_segmentation = [[]]*(len(sentence) + 1)
         best_score = [0] + [float('-inf')]*len(sentence)
 

@@ -69,7 +69,7 @@ class MemoryTrie:
     """ In-memory tree (made to be simple, no specific optimizations)
     """
 
-    def __init__(self, terminals=['^', '$']):
+    def __init__(self, terminals=[]):
         """ Constructor
 
         :param terminals: Tokens that are in "terminals" array are counted as
@@ -266,8 +266,12 @@ class MemoryTrie:
 class MemoryStorage:
     """ Full-Python in-memory storage.
     """
-    sentence_start = '^'
-    sentence_end = '$'
+    # Use PRIVATE_USE_AREA codes
+    sentence_start = "\ue02b" # in utf8 : b"\xee\x80\xab"
+    #  see http://www.fileformat.info/info/unicode/char/e02b/index.htm
+    sentence_end = "\ue02d" # in utf8 : b"\xee\x80\xad"
+    #  see http://www.fileformat.info/info/unicode/char/e02d/index.htm
+
 
     def __init__(self, default_ngram_length=5):
         """ Storage constructor.
