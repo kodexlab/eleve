@@ -15,15 +15,19 @@ void Node::add_shingle(shingle_const_iterator shingle_it, shingle_const_iterator
     if(! m_childs)
     {
         // case where we are at a leaf
-        assert(shingle_it == shingle_end);
+        if(shingle_it != shingle_end){
+            throw std::invalid_argument("Can't add childs to a leaf");
+        }
         return;
     }
 
     assert(shingle_it != shingle_end);
 
-    auto r = m_childs->add_shingle(shingle_it, shingle_end, count);
-    if(r)
-        m_childs = std::move(r);
+    auto new_childs = m_childs->add_shingle(shingle_it, shingle_end, count);
+    if(new_childs)
+    {
+        m_childs = std::move(new_childs);
+    }
 
     if(m_childs->size() > BLOCK_MAX_SIZE)
     {
