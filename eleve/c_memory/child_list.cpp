@@ -54,10 +54,12 @@ std::unique_ptr<List> ChildList::add_shingle(shingle_const_iterator shingle_it, 
         std::unique_ptr<List> new_list;
         if(shingle_it == shingle_end)
         {
+            // the token is a leaf, no child list
             new_list = nullptr;
         }
         else
         {
+            // trivial list with just one chidl
             new_list = std::unique_ptr<List>(new SingleChildList(shingle_it, shingle_end, count));
         }
         it = data.insert(it, Node(token, std::move(new_list), count));
