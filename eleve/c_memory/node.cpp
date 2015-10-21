@@ -1,6 +1,7 @@
 #include "node.hpp"
 #include "list.hpp"
 #include "index_list.hpp"
+#include "single_child_list.hpp"
 #include <cmath>
 
 Node::Node(ID token, std::unique_ptr<List> b, COUNT count): m_childs(std::move(b)), m_token(token), m_count(count), m_entropy(INFINITY)
@@ -12,18 +13,23 @@ void Node::add_shingle(shingle_const_iterator shingle_it, shingle_const_iterator
     m_entropy = INFINITY;
     m_count += count;
 
-    if(! m_childs)
+    // no more tokens have to be hadded, job is done !
+    if(shingle_it == shingle_end)
     {
-        // case where we are at a leaf
-        if(shingle_it != shingle_end){
-            throw std::invalid_argument("Can't add childs to a leaf");
-        }
-        return;
+        return ;
     }
 
-    assert(shingle_it != shingle_end);
+    std::unique_ptr<List> new_childs = nullptr;
 
-    auto new_childs = m_childs->add_shingle(shingle_it, shingle_end, count);
+    if(! m_childs)
+    {
+        // Node is a leaf, but more to be add... need a child list !
+        new_childs = std::unique_ptr<List>(new SingleChildList(shingle_it, shingle_end, count));
+    }
+    else
+    {
+        new_childs = m_childs->add_shingle(shingle_it, shingle_end, count);
+    }
     if(new_childs)
     {
         m_childs = std::move(new_childs);
