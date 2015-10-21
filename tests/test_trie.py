@@ -136,7 +136,6 @@ def test_robustness(trie):
 def test_leaf_to_node(trie):
     """ Test internal converions of a leaf to a node with chidl
     """
-    return #XXX
     trie.add_ngram([LE, PETIT])
     assert trie.query_count([LE, PETIT]) == 1
     trie.add_ngram([LE, PETIT, CHAT])
