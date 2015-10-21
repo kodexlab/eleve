@@ -29,6 +29,9 @@ class LeveldbStorage
 
     public:
         LeveldbStorage(const std::string path, size_t default_ngram_length=5);
+        ~LeveldbStorage(){
+            close();
+        };
 
         inline static std::vector<std::string> reverse(const std::vector<std::string>& ids)
         {
