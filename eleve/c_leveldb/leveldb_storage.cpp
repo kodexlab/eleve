@@ -107,9 +107,9 @@ float LeveldbStorage::query_ev(strVec& ngram)
     return (f + b) / 2.f;
 };
 
-float LeveldbStorage::query_count(strVec& ngram)
+COUNT LeveldbStorage::query_count(strVec& ngram)
 {
-    return (fwd.query_count(ngram) + bwd.query_count(reverse(ngram))) / 2.f;
+    return fwd.query_count(ngram);
 };
 
 float LeveldbStorage::query_entropy(strVec& ngram)

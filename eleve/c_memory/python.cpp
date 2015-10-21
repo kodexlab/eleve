@@ -86,7 +86,7 @@ class PyMemoryStorage: public MemoryStorage
     {
         return query_ev(convert(ngram));
     };
-    float query_count_(py::list ngram)
+    COUNT query_count_(py::list ngram)
     {
         return query_count(convert(ngram));
     };

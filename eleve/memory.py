@@ -352,9 +352,7 @@ class MemoryStorage:
         :param ngram: A list of tokens.
         :returns: A float.
         """
-        count_fwd = self.fwd.query_count(ngram)
-        count_bwd = self.bwd.query_count(ngram[::-1])
-        return (count_fwd + count_bwd) / 2
+        return self.fwd.query_count(ngram)
 
     def query_entropy(self, ngram):
         """ Query the branching entropy for a n-gram.

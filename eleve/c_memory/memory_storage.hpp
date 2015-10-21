@@ -38,7 +38,7 @@ class MemoryStorage
 
         float query_autonomy(strVec& ngram);
         float query_ev(strVec& ngram);
-        float query_count(strVec& ngram);
+        COUNT query_count(strVec& ngram);
         float query_entropy(strVec& ngram);
 };
 

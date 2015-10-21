@@ -120,10 +120,10 @@ float MemoryStorage::query_ev(strVec& ngram)
     return (f + b) / 2.f;
 };
 
-float MemoryStorage::query_count(strVec& ngram)
+COUNT MemoryStorage::query_count(strVec& ngram)
 {
     auto ids = tokens_to_ids(ngram);
-    return (fwd.query_count(ids) + bwd.query_count(reverse(ids))) / 2.f;
+    return fwd.query_count(ids);
 };
 
 float MemoryStorage::query_entropy(strVec& ngram)
