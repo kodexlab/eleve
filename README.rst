@@ -34,13 +34,13 @@ And then you cat query it::
 Eleve also store n-gram's frequency::
 
     >>> storage.query_count(["New", "York"])
-    2.0
+    2
     >>> storage.query_count(["New", "potatoes"])
-    0.0
+    0
     >>> storage.query_count(["I", "like", "potatoes"])
-    1.0
+    1
     >>> storage.query_count(["potatoes"])
-    2.0
+    2
 
 The you can use it for segmentation::
 

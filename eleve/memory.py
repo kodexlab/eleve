@@ -92,6 +92,7 @@ class MemoryTrie:
         >>> trie.max_depth()
         0
         >>> trie.add_ngram(["A", "B", "C"])
+        >>> trie.max_depth()
         3
         """
         self._check_dirty()

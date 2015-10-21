@@ -55,11 +55,11 @@ Querying
 Storages provide a method to query a n-gram count::
 
     >>> storage.query_count(["cat"])
-    3.0
+    3
     >>> storage.query_count(["black", "cat"])
-    2.0
+    2
     >>> storage.query_count(["very", "small", "black", "cat"])
-    0.0
+    0
 
 You can notice that count are available of every size of n-grams, however n-grams
 larger than the storage ``order`` will have a count of zero.
@@ -155,9 +155,9 @@ Then everything is the same than with memory storage::
     >>> hdd_storage.add_sentence(["big", "black", "cat"])
     >>> hdd_storage.add_sentence(["crazy", "dog"])
     >>> hdd_storage.query_count(["black", "cat"])
-    2.0
+    2
     >>> hdd_storage.query_count(["very", "small", "black", "cat"])
-    0.0
+    0
     >>> hdd_storage.query_autonomy(["black", "cat"])
     1.9537...
     >>> hdd_storage.query_autonomy(["small", "black"])
