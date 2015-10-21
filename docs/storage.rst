@@ -24,7 +24,7 @@ Memory Storage
 .. note::  To use a memory storage you should import :class:`eleve.MemoryStorage`::
 
     >>> from eleve import MemoryStorage
-    >>> storage = MemoryStorage(5)
+    >>> storage = MemoryStorage()
 
   It is an alias to the best available memory storage (should be :class:`eleve.c_memory.cmemory.MemoryStorage`).
 
@@ -32,11 +32,11 @@ Memory Storage
 Construction
 ------------
 
-Memory storage constructor takes only one parameter: ther ``odrer`` i.e. the
-lenght of the n-grams that are stored::
+Memory storage constructor takes only one parameter: ther ``default_ngram_length``
+i.e. the default maximum lenght of the n-grams that are stored::
 
     >>> from eleve import MemoryStorage
-    >>> storage = MemoryStorage(3)
+    >>> storage = MemoryStorage(default_ngram_length=3)
 
 Training
 --------
@@ -109,15 +109,16 @@ Disk Storage (*Leveldb*)
 .. note::  To use a disk storage you should import :class:`eleve.LeveldbStorage`::
 
     >>> from eleve import LeveldbStorage
-    >>> hdd_storage = LeveldbStorage(3, "./tmp_storage")
+    >>> hdd_storage = LeveldbStorage(path="./tmp_storage")
   
   It is an alias to the best available disk storage (should be :class:`eleve.c_leveldb.cleveldb.LeveldbStorage`).
 
 .. doctest::
     :hide:
 
-    >>> hdd_storage.clear()
-    >>> del hdd_storage
+    >>> hdd_storage.close()
+    >>> import shutil
+    >>> shutil.rmtree("./tmp_storage")
 
 ``ELeVE`` provide on-disk storages. They are much slower than the memory ones
 but not limited by memory size. And as everything is stored on-disk, they are
@@ -145,7 +146,7 @@ Disk storage constructor takes an ``odrer`` parameter as memory storage, it also
 need a path, where model data will be stored on disk::
 
     >>> from eleve import LeveldbStorage
-    >>> hdd_storage = LeveldbStorage(3, "./tmp_storage")
+    >>> hdd_storage = LeveldbStorage("./tmp_storage", default_ngram_length=3)
 
 Then everything is the same than with memory storage:: 
 
@@ -167,8 +168,9 @@ Then everything is the same than with memory storage::
 
 It is possible to open a storage from an existing path on the disk::
 
-    >>> del hdd_storage # a storage can not be open twice, so we need to free it
-    >>> hdd_storage2 = LeveldbStorage(3, "./tmp_storage")
+    >>> hdd_storage.close() # can not be open twice, so we need to close it
+    >>>
+    >>> hdd_storage2 = LeveldbStorage("./tmp_storage")
     >>> hdd_storage2.query_autonomy(["black", "cat"])
     1.9537...
     >>> hdd_storage2.query_autonomy(["small", "black"])
@@ -202,4 +204,13 @@ C++ version is a bit faster and more efficient than python version.
     >>> CLeveldbStorage
     <class 'eleve.c_leveldb.cleveldb.LeveldbStorage'>
 
+
+.. doctest::
+    :hide:
+
+    >>> # clean pseudo tmp file
+    >>> del hdd_storage
+    >>> del hdd_storage2
+    >>> import shutil
+    >>> shutil.rmtree("./tmp_storage")
 

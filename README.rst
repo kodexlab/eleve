@@ -16,10 +16,7 @@ Here is simple "getting started". First you have to train a model::
 
     >>> from eleve import MemoryStorage
     >>>
-    >>> storage = MemoryStorage(5)
-    >>> # the parameter is the length of n-grams we will store.
-    >>> # In that case, we can calculate autonomy of 4-grams
-    >>> # (because we need to know what follows the 4-grams)
+    >>> storage = MemoryStorage()
     >>>
     >>> # Then the training itself:
     >>> storage.add_sentence(["I", "like", "New", "York", "city"])
@@ -48,7 +45,7 @@ Eleve also store n-gram's frequency::
 The you can use it for segmentation::
 
     >>> from eleve import Segmenter
-    >>> s = Segmenter(storage, 4)
+    >>> s = Segmenter(storage)
     >>> # segment up to 4-grams, if we used the same storage as before.
     >>>
     >>> s.segment(["What", "do", "you", "know", "about", "New", "York"])
