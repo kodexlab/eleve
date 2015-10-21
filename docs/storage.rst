@@ -32,8 +32,8 @@ Memory Storage
 Construction
 ------------
 
-Memory storage constructor takes only one parameter: ther ``default_ngram_length``
-i.e. the default maximum lenght of the n-grams that are stored::
+Memory storage constructor takes only one parameter: ``default_ngram_length``
+it is maximum lenght of the n-grams that are stored::
 
     >>> from eleve import MemoryStorage
     >>> storage = MemoryStorage(default_ngram_length=3)
@@ -58,11 +58,12 @@ Storages provide a method to query a n-gram count::
     3
     >>> storage.query_count(["black", "cat"])
     2
+
+You can notice that count are available of every size of n-grams. However n-grams
+larger than the storage ``order`` will have a count of zero::
+
     >>> storage.query_count(["very", "small", "black", "cat"])
     0
-
-You can notice that count are available of every size of n-grams, however n-grams
-larger than the storage ``order`` will have a count of zero.
 
 One can also query autonomy of an n-gram::
 
@@ -79,7 +80,7 @@ Note that with an ``order`` of ``N``, autonomy of n-gram of size ``N-1`` at maxi
 Save and load
 -------------
 
-For now it is not possible to save or restore a MemoryStorage. It should be re-train each time. This will change in a near future !
+.. warning:: For now it is not possible to save or restore a memory storage. It should be re-train each time. This will change in a near future !
 
 
 
@@ -103,8 +104,16 @@ fail back one the full-Python one if compilation of C++ one has failed.
     >>> CMemoryStorage
     <class 'eleve.c_memory.cmemory.MemoryStorage'>
 
+
+
 Disk Storage (*Leveldb*)
 ========================
+
+``ELeVE`` provide on-disk storages. They are much slower than the memory ones
+but not limited by memory size. And as everything is stored on-disk, they are
+persistant, they can be restored without loading. On-disk storage internaly use
+`LevelDB <https://github.com/google/leveldb>`_ to store the model.
+
 
 .. note::  To use a disk storage you should import :class:`eleve.LeveldbStorage`::
 
@@ -120,10 +129,6 @@ Disk Storage (*Leveldb*)
     >>> import shutil
     >>> shutil.rmtree("./tmp_storage")
 
-``ELeVE`` provide on-disk storages. They are much slower than the memory ones
-but not limited by memory size. And as everything is stored on-disk, they are
-persistant, they can be restored without loading. On-disk storage internaly use
-`LevelDB <https://github.com/google/leveldb>`_ to store the model.
 
 Use that storage in two cases:
 
@@ -142,8 +147,8 @@ The API is the same as for the Memory storage. Only the constructor changes.
 Construction, save, load and clear
 ----------------------------------
 
-Disk storage constructor takes an ``odrer`` parameter as memory storage, it also
-need a path, where model data will be stored on disk::
+Disk storage constructor takes an ``default_ngram_length`` parameter as memory
+storage, it also need a ``path``, where model data will be stored on disk::
 
     >>> from eleve import LeveldbStorage
     >>> hdd_storage = LeveldbStorage("./tmp_storage", default_ngram_length=3)
