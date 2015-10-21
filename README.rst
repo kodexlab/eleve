@@ -125,7 +125,7 @@ Copyright, license and authors
 
 Copyright (C) 2014-2015 Kodex⋅Lab.
 
-``eleve`` is available under the `LGPL Version 3<http://www.gnu.org/licenses/lgpl.txt>`_ license.
+``eleve`` is available under the `LGPL Version 3 <http://www.gnu.org/licenses/lgpl.txt>`_ license.
 
 ``eleve`` was originaly designed and prototyped by `Pierre Magistry <http://magistry.fr/>`_ during it's PhD. It then has been completly revriten by  `Palkeo <http://www.palkeo.com/>`_ and `Emmanuel Navarro <http://enavarro.me/>`_ (with the help of Pierre).
 
