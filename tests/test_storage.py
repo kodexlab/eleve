@@ -175,3 +175,56 @@ def test_storage_random(storage, ref_class=PyMemoryStorage):
                 compare_node(ngram, ref, storage)
 
 
+@parametrize_storage(c=False, persistant=False)
+def test_traversal(storage):
+    storage.add_sentence('un chien blanc'.split())
+    storage.add_sentence('un chien gris'.split())
+    storage.add_sentence('un chien noir'.split())
+    storage.add_sentence('un chien jaune'.split())
+    storage.add_sentence('un chat noir'.split(), 6)
+
+    nexts = storage.after(['un'])
+    assert sorted(nexts) == [(["chat"], 6, 0.), (["chien"], 4, 2.)]
+
+    nexts = storage.after(['un'], order="alpha")
+    assert list(nexts) == [(["chat"], 6, 0.), (["chien"], 4, 2.)]
+
+    nexts = storage.after(['un'], order="alpha_reverse")
+    assert list(nexts) == [(["chien"], 4, 2.), (["chat"], 6, 0.)]
+
+    nexts = storage.after(['un'], order="count")
+    assert list(nexts) == [(["chien"], 4, 2.), (["chat"], 6, 0.)]
+    nexts = storage.after(['un'], order="local_count")
+    assert list(nexts) == [(["chien"], 4, 2.), (["chat"], 6, 0.)]
+
+    nexts = storage.after(['un'], order="count_reverse")
+    assert list(nexts) == [(["chat"], 6, 0.), (["chien"], 4, 2.)]
+    nexts = storage.after(['un'], order="local_count_reverse")
+    assert list(nexts) == [(["chat"], 6, 0.), (["chien"], 4, 2.)]
+
+    nexts = storage.after(['un'], order="entropy")
+    assert list(nexts) == [(["chat"], 6, 0.), (["chien"], 4, 2.)]
+    nexts = storage.after(['un'], order="local_entropy")
+    assert list(nexts) == [(["chat"], 6, 0.), (["chien"], 4, 2.)]
+
+    nexts = storage.after(['un'], order="entropy_reverse")
+    assert list(nexts) == [(["chien"], 4, 2.), (["chat"], 6, 0.)]
+    nexts = storage.after(['un'], order="local_entropy_reverse")
+    assert list(nexts) == [(["chien"], 4, 2.), (["chat"], 6, 0.)]
+
+    nexts = [tokens for tokens, _, _ in storage.after(['un'], max_depth=2, order="alpha")]
+    assert nexts == [["chat"], ["chat", "noir"],
+        ["chien"], ["chien", "blanc"], ["chien", "gris"], ["chien", "jaune"], ["chien", "noir"]]
+
+    nexts = [tokens for tokens, _, _ in storage.after(['un'], max_depth=2, order="alpha_reverse")]
+    assert nexts == [
+        ["chien", "noir"],
+        ["chien", "jaune"],
+        ["chien", "gris"],
+        ["chien", "blanc"],
+        ["chien"],
+        ["chat", "noir"],
+        ["chat"],
+    ]
+
+

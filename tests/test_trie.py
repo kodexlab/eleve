@@ -20,7 +20,7 @@ def compare_nodes(ngrams, ref_trie, test_trie):
         compare_node(n + [420001337], ref_trie, test_trie) # try a non-existent node
 
 
-LE, PETIT, GROS, CHAT, CHIEN, RAT, ET = range(1, 8)
+UN, LE, PETIT, GROS, CHAT, CHIEN, RAT, ET, NOIR, BLANC, GRIS = range(1, 12)
 
 @parametrize_trie()
 def test_basic_trie(trie):
@@ -194,3 +194,42 @@ def test_versus_ref_on_random(trie, reference_class=MemoryTrie):
             compare_nodes(ngrams, ref_trie, trie)
     compare_nodes(ngrams, ref_trie, trie)
 
+
+@parametrize_trie()
+def test_traversal(trie):
+    """ Test traversal
+    """
+    trie.add_ngram([LE, CHAT, BLANC])
+    trie.add_ngram([LE, CHAT, BLANC])
+    trie.add_ngram([LE, CHAT, NOIR])
+    trie.add_ngram([LE, CHAT, GRIS])
+    trie.add_ngram([LE, CHIEN, BLANC])
+    trie.add_ngram([LE, CHIEN, NOIR])
+    trie.add_ngram([UN, CHIEN, NOIR])
+    
+    # test with default param
+    trie.update_stats()
+    assert trie.query_count([LE]) == 6
+    nexts = trie.childs_of([LE])
+    assert sorted(nexts) == sorted([([CHAT], 4, 1.5), ([CHIEN], 2, 1.0)])
+
+    # with max_depth
+    nexts = [(ngram, freq) for ngram, freq, _ in trie.childs_of([LE], max_depth=2)]
+    assert sorted(nexts) == sorted([
+        ([CHAT], 4), ([CHAT, BLANC], 2), ([CHAT, NOIR], 1), ([CHAT, GRIS], 1),
+        ([CHIEN], 2), ([CHIEN, BLANC], 1), ([CHIEN, NOIR], 1)
+    ])
+    ## check sur l'ordre de parcours
+    assert nexts.index(([CHAT], 4)) < nexts.index(([CHAT, BLANC], 2))
+    assert nexts.index(([CHIEN], 2)) < nexts.index(([CHIEN, NOIR], 1))
+    # with max_depth
+    nexts = [(ngram, freq) for ngram, freq, _ in trie.childs_of([LE], min_depth=2, max_depth=2)]
+    assert sorted(nexts) == sorted([
+        ([CHAT, BLANC], 2), ([CHAT, NOIR], 1), ([CHAT, GRIS], 1),
+        ([CHIEN, BLANC], 1), ([CHIEN, NOIR], 1)
+    ])
+
+    # empty iterate on unknow ngram
+    nexts = [(ngram, freq) for ngram, freq, entropy in trie.childs_of([ET, LE])]
+    assert nexts == []
+    

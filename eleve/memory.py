@@ -46,6 +46,31 @@ class MemoryNode(object):
         if self.entropy != entropy and not(math.isnan(self.entropy) and math.isnan(entropy)):
             self.entropy = entropy
 
+    def traversal(self, depth=1, min_depth=1, max_depth=1, order=None):
+        reverse = False
+        if order is None:
+            sorted_childs = self.childs.items()
+        else:
+            from operator import itemgetter
+            if order.startswith("alpha"):
+                sortkey = itemgetter(0)
+            elif order.startswith("local_count"):
+                sortkey = lambda _token_node: _token_node[1].count
+            elif order.startswith("local_entropy"):
+                sortkey = lambda _token_node: _token_node[1].entropy
+            reverse = order.endswith("_reverse")
+            sorted_childs = sorted(self.childs.items(), key=sortkey, reverse=reverse)
+        for token, child in sorted_childs:
+            if child.count == 0:
+                continue
+            if depth >= min_depth and not reverse:
+                yield ([token], child.count, child.entropy)
+            if depth < max_depth:
+                for child_tok, count, entropy in child.traversal(depth=depth+1, min_depth=min_depth, max_depth=max_depth, order=order):
+                    yield ([token] + child_tok, count, entropy)
+            if depth >= min_depth and reverse:
+                yield ([token], child.count, child.entropy)
+
     def iter_childs(self):
         """ Returns an iterator over childs nodes
         """
@@ -198,6 +223,14 @@ class MemoryTrie:
             ngram = ngram[1:]
         return (last_node, node)
 
+    def childs_of(self, ngram, max_depth=1, min_depth=1, order=None):
+        self._check_dirty()
+        try:
+            _, node = self._lookup(ngram)
+            yield from node.traversal(max_depth=max_depth, min_depth=min_depth, order=order)
+        except (KeyError, AttributeError):
+            yield from ()
+
     def query_count(self, ngram):
         """ Query for the number of occurences we have seen the n-gram in the training data.
 
@@ -322,6 +355,33 @@ class MemoryStorage:
         """
         self.bwd.update_stats()
         self.fwd.update_stats()
+
+    def _childs_of(self, trie, ngram, max_depth=1, min_depth=1, order=None):
+        # odrer
+        #    alpha => se gère recursivement, 
+        #    local_count
+        #    local_entropy
+        #    count
+        #    entropy
+        if order is None or order in ["alpha", "alpha_reverse", "local_count", "local_entropy", "alpha_reverse", "local_count_reverse", "local_entropy_reverse"]:
+            return trie.childs_of(ngram, max_depth=max_depth, min_depth=min_depth, order=order)
+        elif order in ["count", "entropy", "count_reverse", "entropy_reverse"]:
+            from operator import itemgetter
+            alls = trie.childs_of(ngram, max_depth=max_depth, min_depth=min_depth)
+            if order.startswith("count"):
+                sortkey = itemgetter(1)
+            if order.startswith("entropy"):
+                sortkey = itemgetter(2)
+            reverse = order.endswith("_reverse")
+            return sorted(alls, key=sortkey, reverse=reverse)
+        else:
+            raise ValueError("invalid ordering method")
+
+    def after(self, ngram, max_depth=1, min_depth=1, order=None):
+        return self._childs_of(self.fwd, ngram, max_depth=max_depth, min_depth=min_depth, order=order)
+
+    def before(self, ngram, max_depth=1, min_depth=1, order=None):
+        return self._childs_of(self.bwd, ngram, max_depth=max_depth, min_depth=min_depth, order=order)
 
     def query_autonomy(self, ngram):
         """ Query the autonomy for a ngram.
