@@ -51,7 +51,7 @@ readme = open(os.path.join(cwd, 'README.rst')).read()
 
 setup(
     name='eleve',
-    version='0.1',
+    version='15.09.r0',
     description="Extraction de LExique par Variation d'Entropie - Lexicon extraction based on the variation of entropy",
     long_description=readme,
     author='KodexLab, Pierre Magistry, Korantin Auguste, Emmanuel Navarro',
