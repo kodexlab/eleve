@@ -4,6 +4,8 @@ venv3/
 data/
 .*
 *.egg-info/
+MANIFEST
+dist
 # ignore editor temp files
 *~
 # ignore pyc files

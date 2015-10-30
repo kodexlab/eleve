@@ -4,6 +4,8 @@
 """
 import warnings
 
+__version__ = "15.10"
+
 __all__ = ["MemoryStorage", "LeveldbStorage", "Segmenter",
            "CMemoryStorage", "PyMemoryStorage", "CLeveldbStorage", "PyLeveldbStorage"]
 

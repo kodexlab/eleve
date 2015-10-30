@@ -11,7 +11,7 @@ def get_libs(name):
     libs = (lib.split('/')[-1][3:].split('.')[0] for lib in libs)
     libs = [lib for lib in libs if name in lib]
     libs.sort()
-    print(name, libs)
+    #print(name, libs)
     return libs
 
 def get_boost_python_lib():
@@ -55,7 +55,7 @@ readme = open(os.path.join(cwd, 'README.rst')).read()
 
 setup(
     name='eleve',
-    version='15.10.r0',
+    version='15.10.r1',
     description="Extraction de LExique par Variation d'Entropie - Lexicon extraction based on the variation of entropy",
     long_description=readme,
     author='KodexLab, Pierre Magistry, Korantin Auguste, Emmanuel Navarro',
