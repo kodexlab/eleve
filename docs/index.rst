@@ -3,7 +3,8 @@ ELeVE documentation
 ###################
 
 
-Welcome to ELeVE’s documentation. On this page, just after the table of content (of more detailed documenation), you will find getting start documentation (installation, basic usage, ...).
+Welcome to ELeVE’s documentation.
+After the table of content that follows, you will find a documentation to help you getting started (instillation, basic usage, ...).
 
 Contents
 ========

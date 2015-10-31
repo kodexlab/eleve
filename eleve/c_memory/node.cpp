@@ -13,7 +13,7 @@ void Node::add_shingle(shingle_const_iterator shingle_it, shingle_const_iterator
     m_entropy = INFINITY;
     m_count += count;
 
-    // no more tokens have to be hadded, job is done !
+    // no more tokens have to be added, job done !
     if(shingle_it == shingle_end)
     {
         return ;
@@ -23,13 +23,14 @@ void Node::add_shingle(shingle_const_iterator shingle_it, shingle_const_iterator
 
     if(! m_childs)
     {
-        // Node is a leaf, but more to be add... need a child list !
+        // Node is a leaf, but more to be added... need a child list !
         new_childs = std::unique_ptr<List>(new SingleChildList(shingle_it, shingle_end, count));
     }
     else
     {
         new_childs = m_childs->add_shingle(shingle_it, shingle_end, count);
     }
+
     if(new_childs)
     {
         m_childs = std::move(new_childs);
