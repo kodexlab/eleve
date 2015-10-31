@@ -7,12 +7,12 @@ Storage
 Storage are mains ``ELeVE`` components. They manage langage model (`trie <https://en.wikipedia.org/wiki/Trie>`_ of n-grams)
 storage and query.
 
-``ELeVE`` provide different storages that may be used. To a proper documentation
+``ELeVE`` provide different storages that may be used. For a proper documentation
 of ``ELeVE``'s storage objects API please look at :class:`eleve.memory.MemoryStorage`
 which is a full-Python implementation that provides the reference API that all
 other storage follow.
 
-Basicly two types of storage may be used in function of the needs:
+Two types of storage may be used in function of the needs:
 
   * **Memory storage** that are fast but limited by RAM size,
   * **Disk storage** that are slower but only limited by disk space.
@@ -26,14 +26,14 @@ Memory Storage
     >>> from eleve import MemoryStorage
     >>> storage = MemoryStorage()
 
-  It is an alias to the best available memory storage (should be :class:`eleve.c_memory.cmemory.MemoryStorage`).
+  It is an alias to the best available memory storage (should be :class:`eleve.c_memory.cmemory.MemoryStorage` if the C++ extensions sucessfully compiled).
 
 
 Construction
 ------------
 
 Memory storage constructor takes only one parameter: ``default_ngram_length``
-it is maximum lenght of the n-grams that are stored::
+It is maximum length of the n-grams that are stored::
 
     >>> from eleve import MemoryStorage
     >>> storage = MemoryStorage(default_ngram_length=3)
@@ -77,11 +77,10 @@ Note that with an ``order`` of ``N``, autonomy of n-gram of size ``N-1`` at maxi
     >>> storage.query_autonomy(["small", "black", "cat"])
     nan
 
-Save and load
+Saving and loading
 -------------
 
-.. warning:: For now it is not possible to save or restore a memory storage. It should be re-train each time. This will change in a near future !
-
+.. warning:: For now it is not possible to save or restore a memory storage. It should be re-trained each time. This will change in a near future!
 
 
 Python and C++ implementations
@@ -93,7 +92,7 @@ provide the reference API, the latter is writen in C++ and is much more efficien
 
 Only the C++ one should be used. The best practice is to use
 :class:`eleve.MemoryStorage` which is an alias to the C++ one that provides a
-fail back one the full-Python one if compilation of C++ one has failed.
+fail back to the full-Python one if compilation of C++ one has failed.
 
 
 .. note:: If you want to import and use explicitely Python or C++ memory storage,
@@ -110,9 +109,9 @@ fail back one the full-Python one if compilation of C++ one has failed.
 Disk Storage (*Leveldb*)
 ========================
 
-``ELeVE`` provide on-disk storages. They are much slower than the memory ones
-but not limited by memory size. And as everything is stored on-disk, they are
-persistant, they can be restored without loading. On-disk storage internaly use
+``ELeVE`` provides on-disk storages. They are much slower than the memory ones
+but not limited by memory size. As everything is stored on-disk, they are
+persistent, and can be restored without loading. The on-disk storage internally use
 `LevelDB <https://github.com/google/leveldb>`_ to store the model.
 
 
@@ -148,13 +147,13 @@ The API is the same as for the Memory storage. Only the constructor changes.
 Construction, save, load and clear
 ----------------------------------
 
-Disk storage constructor takes an ``default_ngram_length`` parameter as memory
-storage, it also need a ``path``, where model data will be stored on disk::
+Disk storage constructor takes a ``default_ngram_length`` parameter, like the memory
+storage. It also needs a ``path``, where the model data will be stored on disk::
 
     >>> from eleve import LeveldbStorage
     >>> hdd_storage = LeveldbStorage("./tmp_storage", default_ngram_length=3)
 
-Then everything is the same than with memory storage:: 
+Then, everything is the same than with memory storage:: 
 
     >>> hdd_storage.add_sentence(["very", "small", "black", "cat"])
     >>> hdd_storage.add_sentence(["super", "small", "red", "cat"])
@@ -182,10 +181,9 @@ It is possible to open a storage from an existing path on the disk::
     >>> hdd_storage2.query_autonomy(["small", "black"])
     -0.1965...
 
-Note that there is no (need for) special save method.
+Note that there is no method for saving, as everything is saved and modified on the fly.
 
-
-Finaly if you want to remove a storage ::
+Finaly if you want to remove everything that was entered in a storage (to say, clear it) ::
 
    >>> hdd_storage2.clear()
    >>> hdd_storage2.query_autonomy(["black", "cat"])
@@ -196,11 +194,11 @@ Python and C++ implementations
 ------------------------------
 
 Two implementations of disk storage are provided: :class:`eleve.leveldb.LeveldbStorage` and 
-:class:`eleve.c_leveldb.cleveldb.LeveldbStorage`. The former is writen in Python
-(for eleve parts) and use generic leveldb wrapper `plyvel <https://plyvel.readthedocs.org/>`_,
-the latter is fully writen in C++ and directly use  leveldb C++ API.
+:class:`eleve.c_leveldb.cleveldb.LeveldbStorage`. The former is written in Python
+(for eleve parts) and use a generic leveldb wrapper `plyvel <https://plyvel.readthedocs.org/>`_,
+the latter is fully written in C++ and directly uses leveldb C++ API.
 
-C++ version is a bit faster and more efficient than python version.
+C++ version is a bit faster and more efficient than the Python version.
 
 .. note:: If you want to import and use explicitely Python or C++ implementation
   of disk storage, you can import it with the following alias::

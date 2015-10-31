@@ -13,7 +13,7 @@ Full documentation is available on `http://pythonhosted.org/eleve/ <http://pytho
 In a nutshell
 ==============
 
-Here is simple "getting started". First you have to train a model::
+Here is a simple "getting started". First you have to train a model::
 
     >>> from eleve import MemoryStorage
     >>>
@@ -32,7 +32,7 @@ And then you cat query it::
     >>> storage.query_autonomy(["like", "potatoes"])
     -0.3227022886276245
 
-Eleve also store n-gram's frequency::
+Eleve also store n-gram's occurence count::
 
     >>> storage.query_count(["New", "York"])
     2
@@ -43,7 +43,7 @@ Eleve also store n-gram's frequency::
     >>> storage.query_count(["potatoes"])
     2
 
-The you can use it for segmentation::
+Then, you can use it for segmentation::
 
     >>> from eleve import Segmenter
     >>> s = Segmenter(storage)
@@ -57,7 +57,7 @@ The you can use it for segmentation::
 Installation
 ============
 
-You will need some dependancies. On ubuntu::
+You will need some dependencies. On Ubuntu::
 
     $ sudo apt-get install libboost-python-dev libboost-filesystem-dev libleveldb-dev
 
@@ -91,7 +91,7 @@ Install the development environment::
     $ pip install -r requirements.txt
     $ pip install -r requirements.dev.txt
 
-Pull requests are welcomed !
+Pull requests are welcome!
 
 To run tests::
 
@@ -115,7 +115,7 @@ For that you can install ``eleve`` as a link in local virtualenv::
 References
 ===========
 
-If you use ``eleve`` for an academic word tanks to cite this paper:
+If you use ``eleve`` for an academic publication, please cite this paper:
 
 .. [MagistrySagot2012] Magistry, P., & Sagot, B. (2012, July). Unsupervized word segmentation: the case for mandarin chinese. In Proceedings of the 50th Annual Meeting of the ACL: Short Papers-Volume 2 (pp. 383-387). http://www.aclweb.org/anthology/P12-2075
 
@@ -128,5 +128,5 @@ Copyright (C) 2014-2015 Kodex⋅Lab.
 
 ``eleve`` is available under the `LGPL Version 3 <http://www.gnu.org/licenses/lgpl.txt>`_ license.
 
-``eleve`` was originaly designed and prototyped by `Pierre Magistry <http://magistry.fr/>`_ during it's PhD. It then has been completly revriten by  `Palkeo <http://www.palkeo.com/>`_ and `Emmanuel Navarro <http://enavarro.me/>`_ (with the help of Pierre).
+``eleve`` was originaly designed and prototyped by `Pierre Magistry <http://magistry.fr/>`_ during its PhD. It then has been completly rewriten by  `Korantin Auguste <http://www.palkeo.com/>`_ and `Emmanuel Navarro <http://enavarro.me/>`_ (with the help of Pierre).
 

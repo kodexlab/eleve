@@ -38,7 +38,7 @@ std::unique_ptr<List> SingleChildList::add_shingle(shingle_const_iterator shingl
 
     auto token = *shingle_it;
 
-    // Same uniq token, just do recursidf call
+    // Same unique token, just do recursive call
     if(data.token() == token)
     {
         // the token exists, add it recursively
@@ -47,7 +47,7 @@ std::unique_ptr<List> SingleChildList::add_shingle(shingle_const_iterator shingl
     }
     else
     {
-        // Node need to be adder : we will replace itself with a ChildList:
+        // Node need to be added : we will replace itself with a ChildList
         std::unique_ptr<List> new_list = std::unique_ptr<List>(new ChildList(data));
         new_list->add_shingle(shingle_it, shingle_end, count);
         return std::move(new_list);
