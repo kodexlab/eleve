@@ -73,8 +73,8 @@ class MemoryTrie:
         """ Constructor
 
         :param terminals: Tokens that are in "terminals" array are counted as
-        distinct in the entropy computation. By default, the symbols are for
-        start and end of sentences.
+          distinct in the entropy computation. By default, the symbols are for
+          start and end of sentences.
         """
         self.root = MemoryNode()
         # normalization params :

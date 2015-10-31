@@ -48,7 +48,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'eleve'
-copyright = u'2015, Pierre Magistry, KodexLab'
+copyright = u'2015, KodexLab'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the

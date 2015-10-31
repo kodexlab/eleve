@@ -98,6 +98,7 @@ fail back one the full-Python one if compilation of C++ one has failed.
 
 .. note:: If you want to import and use explicitely Python or C++ memory storage,
   you can import it with the following alias::
+
     >>> from eleve import PyMemoryStorage, CMemoryStorage
     >>> PyMemoryStorage
     <class 'eleve.memory.MemoryStorage'>
@@ -203,6 +204,7 @@ C++ version is a bit faster and more efficient than python version.
 
 .. note:: If you want to import and use explicitely Python or C++ implementation
   of disk storage, you can import it with the following alias::
+
     >>> from eleve import PyLeveldbStorage, CLeveldbStorage
     >>> PyLeveldbStorage
     <class 'eleve.leveldb.LeveldbStorage'>
