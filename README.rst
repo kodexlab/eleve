@@ -8,6 +8,7 @@ See [MagistrySagot2012]_ for a definiton of these terms (autonomy is also called
 
 It was mainly developed for segmentation of mandarin Chinese, but was successfully used to research on other tasks like keyphrase extraction.
 
+Full documentation is available on `http://pythonhosted.org/eleve/ <http://pythonhosted.org/eleve/>`_.
 
 In a nutshell
 ==============
