@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 import os, sys
 import glob
-from distutils.core import setup, Extension
+from setuptools import setup, Extension
 
 assert sys.version_info[0] >= 3, "For python >= 3 only"
 

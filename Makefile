@@ -12,6 +12,7 @@ help:
 	@echo "  testlib        runs doctests on documentation only"
 	@echo "  testall        runs all tests (unit+doc+rst) and generate html report for coverage"
 	@echo "  testcov        runs all tests and give copact coverage report"
+	@echo "  publish-doc    publish the doc to pythonhosted.org"
 
 clean-doc:
 	rm -rf docs/_build/ docs/_templates/
@@ -48,3 +49,7 @@ all: help
 
 build_cython::
 	cd eleve; python setup.py build_ext --inplace
+
+publish-doc:
+	make -C ./docs html
+	python setup.py upload_docs --upload-dir docs/_build/html/
