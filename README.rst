@@ -1,12 +1,11 @@
 What is ELeVE ?
 ===============
 
-ELeVE is a library for calculating a specialized language model from a corpus of text.
+ELeVE is a library intended for computing an "autonomy estimate" score for substrings (all n-grams) in a corpus of text.
 
-It allows you to use statistics from the training corpus to calculate branching entropy, and autonomy measures for n-grams of text.
-See [MagistrySagot2012]_ for a definiton of these terms (autonomy is also called « nVBE » for « normalized entropy variation »)
+The autonomy score is based on normalised variation of branching entropies (nVBE) of strings, See [MagistrySagot2012]_ for a definiton of these terms 
 
-It was mainly developed for segmentation of mandarin Chinese, but was successfully used to research on other tasks like keyphrase extraction.
+It was developed mainly for unsupervised segmentation of mandarin Chinese, but is language independant and was successfully used in research on other tasks like keyphrase extraction.
 
 Full documentation is available on `http://pythonhosted.org/eleve/ <http://pythonhosted.org/eleve/>`_.
 
@@ -43,7 +42,7 @@ Eleve also store n-gram's occurence count::
     >>> storage.query_count(["potatoes"])
     2
 
-Then, you can use it for segmentation::
+Then, you can use it for segmentation, using an algorigthm that look for the solution which maximize nVBE of resulting words::
 
     >>> from eleve import Segmenter
     >>> s = Segmenter(storage)
