@@ -58,7 +58,7 @@ Installation
 
 You will need some dependencies. On Ubuntu::
 
-    $ sudo apt-get install libboost-python-dev libboost-filesystem-dev libleveldb-dev
+    $ sudo apt-get install python3-dev libboost-python-dev libboost-filesystem-dev libleveldb-dev
 
 Then to install eleve::
 
