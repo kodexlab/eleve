@@ -77,7 +77,7 @@ float Node::entropy(HStats& hstats)
     if((! m_childs) || (! m_count))
         return NAN;
 
-    if(! isinf(m_entropy))
+    if(! std::isinf(m_entropy))
         return m_entropy;
 
 #ifndef NDEBUG

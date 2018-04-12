@@ -100,10 +100,10 @@ float MemoryStorage::query_autonomy(strVec& ngram)
 {
     auto ids = tokens_to_ids(ngram);
     float f = fwd.query_autonomy(ids);
-    if(isnan(f))
+    if(std::isnan(f))
         return NAN;
     float b = bwd.query_autonomy(reverse(ids));
-    if(isnan(b))
+    if(std::isnan(b))
         return NAN;
     return (f + b) / 2.f;
 };
@@ -112,10 +112,10 @@ float MemoryStorage::query_ev(strVec& ngram)
 {
     auto ids = tokens_to_ids(ngram);
     float f = fwd.query_ev(ids);
-    if(isnan(f))
+    if(std::isnan(f))
         return NAN;
     float b = bwd.query_ev(reverse(ids));
-    if(isnan(b))
+    if(std::isnan(b))
         return NAN;
     return (f + b) / 2.f;
 };
@@ -130,10 +130,10 @@ float MemoryStorage::query_entropy(strVec& ngram)
 {
     auto ids = tokens_to_ids(ngram);
     float f = fwd.query_entropy(ids);
-    if(isnan(f))
+    if(std::isnan(f))
         return NAN;
     float b = bwd.query_entropy(reverse(ids));
-    if(isnan(b))
+    if(std::isnan(b))
         return NAN;
     return (f + b) / 2.f;
 };
