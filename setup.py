@@ -62,6 +62,7 @@ setup(
     author_email='contact@kodexlab.com',
     url='https://github.com/kodexlab/eleve',
     packages=['eleve'],
+    scripts=['scripts/eleve-train'],
     classifiers=[
         "Programming Language :: Python",
         "Development Status :: 4 - Beta",

@@ -88,10 +88,10 @@ void LeveldbStorage::update_stats()
 float LeveldbStorage::query_autonomy(strVec& ngram)
 {
     float f = fwd.query_autonomy(ngram);
-    if(isnan(f))
+    if(std::isnan(f))
         return NAN;
     float b = bwd.query_autonomy(reverse(ngram));
-    if(isnan(b))
+    if(std::isnan(b))
         return NAN;
     return (f + b) / 2.f;
 };
@@ -99,10 +99,10 @@ float LeveldbStorage::query_autonomy(strVec& ngram)
 float LeveldbStorage::query_ev(strVec& ngram)
 {
     float f = fwd.query_ev(ngram);
-    if(isnan(f))
+    if(std::isnan(f))
         return NAN;
     float b = bwd.query_ev(reverse(ngram));
-    if(isnan(b))
+    if(std::isnan(b))
         return NAN;
     return (f + b) / 2.f;
 };
@@ -115,10 +115,10 @@ COUNT LeveldbStorage::query_count(strVec& ngram)
 float LeveldbStorage::query_entropy(strVec& ngram)
 {
     float f = fwd.query_entropy(ngram);
-    if(isnan(f))
+    if(std::isnan(f))
         return NAN;
     float b = bwd.query_entropy(reverse(ngram));
-    if(isnan(b))
+    if(std::isnan(b))
         return NAN;
     return (f + b) / 2.f;
 };

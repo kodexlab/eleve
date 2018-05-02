@@ -103,7 +103,7 @@ void Node::update_entropy(std::set<std::string>& terminals)
         assert(sum_counts == count);
     }
 
-    if(e != entropy && !(isnan(entropy) && isnan(e)))
+    if(e != entropy && !(std::isnan(entropy) && std::isnan(e)))
     {
         entropy = e;
         save();

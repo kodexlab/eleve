@@ -70,3 +70,44 @@ class Segmenter:
 
         return best_segmentation
 
+
+    def segment_nbest(self, sentence, nbest=3):
+        """ Segment a sentence.
+
+        :param sentence: A list of tokens.
+        :returns: A list of sentence fragments. A sentence fragment is a list of tokens.
+        """
+
+        from collections import namedtuple
+
+        SegResult = namedtuple("SegResult", "score words")
+
+        if len(sentence) > 1000:
+            logger.warning("The sentence you want to segment is HUGE. This will take a lot of memory.")
+
+        sentence = [self.storage.sentence_start] + sentence + [self.storage.sentence_end]
+
+        # dynamic programming to segment the sentence
+        # list of lists of SegResult
+        best_segmentations = [[SegResult(0.0, [])]]*(len(sentence) + 1)
+        best_score = [0] + [float('-inf')]*len(sentence)
+
+        # best_score[1] -> autonomy of the first word
+        # best_score[2] -> sum of autonomy of the first two words, or autonomy of the first two
+        # ...
+        order = self.max_ngram_length
+        query_autonomy = self.storage.query_autonomy
+        for i in range(1, len(sentence) + 1):
+            segmentations_at_i = []
+            for j in range(1, order + 1):
+                if i - j < 0:
+                    break
+                a = query_autonomy(sentence[i-j:i])
+                if isnan(a):
+                    a = -100.
+                else:
+                    a = a*j
+                segmentations_at_i.extend([SegResult(previous_best.score + a, previous_best.words + [sentence[i-j: i]]) for previous_best in best_segmentations[i-j] ])
+            best_segmentations[i] = sorted(segmentations_at_i, key=lambda x:x.score)[-nbest:]
+
+        return [seg.words[1:-1] for seg in best_segmentations[-1][-nbest:]]
