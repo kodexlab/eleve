@@ -1,0 +1,66 @@
+#!python3
+
+import os
+import glob
+import re
+import codecs
+import math
+from collections import namedtuple
+from bs4 import BeautifulSoup as BS
+
+
+from eleve import MemoryStorage as Storage
+from eleve import Segmenter
+
+def loadRaw():
+	corpus = []
+	with codecs.open(CORPUS,"r", "utf8") as F:
+		for l in F:
+			corpus.append(l.split())
+	return corpus
+
+def trainSegmenter(data, order):
+	storage = Storage(order + 1)
+	corpus = []
+	for line in data:
+		toks = line.split()
+		storage.add_sentence(toks)
+		corpus.append(toks)
+	return corpus, storage
+
+def segmenteCorpus(corpus, storage, order, separator):
+    seg = Segmenter(storage)
+    lex = {}
+    for line in corpus:
+        for i in range(len(line)):
+            for j in range(i+1, min(i+order, len(line))+1):
+                w = tuple(line[i:j])
+                if w not in lex:
+                    a = storage.query_autonomy(line[i:j])
+                    lex[w] = a
+    for w, a in sorted([x for x in lex.items() if not math.isnan(x[1])], key=lambda x:x[1], reverse=True):
+        print("%s\t%.5f" % ( separator.join(w), a))
+    
+
+
+def build_lexicon(data, order, separator):
+    (corpus, storage) = trainSegmenter(data, order)
+    segmenteCorpus(corpus, storage, order, separator)
+
+
+
+def main():
+    import sys
+    import argparse
+    import fileinput
+    parser = argparse.ArgumentParser(description='Generate a lexicon with autonomy values')
+    parser.add_argument('-o', '--order')
+    parser.add_argument('-s', '--sep')
+    args = parser.parse_args(sys.argv[1:])
+    data = fileinput.input('-')
+    build_lexicon(data, int(args.order), args.sep)
+	
+
+
+if __name__ == "__main__":
+    main()
