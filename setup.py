@@ -7,7 +7,7 @@ from setuptools import setup, Extension
 assert sys.version_info[0] >= 3, "For python >= 3 only"
 
 def get_libs(name):
-    libs = glob.glob('/usr/lib/*') + glob.glob('/usr/lib/**/*')
+    libs = glob.glob('/usr/lib/*') + glob.glob('/usr/lib/**/*') + glob.glob('/usr/lib64/*')
     libs = (lib.split('/')[-1][3:].split('.')[0] for lib in libs)
     libs = [lib for lib in libs if name in lib]
     libs.sort()

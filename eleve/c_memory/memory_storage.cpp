@@ -1,5 +1,6 @@
 #include "memory_storage.hpp"
 #include <functional>
+#include <cmath>
 
 MemoryStorage::MemoryStorage(size_t default_ngram_length): default_ngram_length(default_ngram_length)
 {
