@@ -14,14 +14,14 @@ std::vector<std::string> convert(py::list& ngram)
         if(PyUnicode_Check(o))
         {
             Py_ssize_t s;
-            char* u = PyUnicode_AsUTF8AndSize(o, &s);
+            const char* u = PyUnicode_AsUTF8AndSize(o, &s);
             r.push_back(std::string(u, s));
         }
         else
         {
             o = PyObject_Str(o);
             Py_ssize_t s;
-            char* u = PyUnicode_AsUTF8AndSize(o, &s);
+            const char* u = PyUnicode_AsUTF8AndSize(o, &s);
             r.push_back(std::string(u, s));
             Py_DECREF(o);
         }
