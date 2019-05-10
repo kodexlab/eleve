@@ -2,30 +2,42 @@ import kenlm
 from typing import List, Tuple, Set, Sequence
 from multiprocessing import Pool
 from collections import defaultdict
+import pickle
 from functools import reduce, lru_cache
 
 import numpy as np
 
 class KenLMStorage:
-    def __init__(self, arpa_fw: str, mmap_fw : str, mmap_bw: str, ngram_length: int=5):
+    def __init__(self, ngram_length: int=5):
+        self.default_ngram_length = ngram_length
+        self.norm_fw = [(0.0, 1.0)] * ngram_length
+        self.norm_bw = [(0.0,1.0)] * ngram_length
+
+    def load_from_kenln(self, arpa_fw: str, mmap_fw : str, mmap_bw: str):
         self.arpa = arpa_fw
         self.fw = kenlm.LanguageModel(mmap_fw)
         self.bw = kenlm.LanguageModel(mmap_bw)
-        self.default_ngram_length = ngram_length
         self.data_fw = []
         self.data_bw = []
         self.voc = []
-        for i in range(ngram_length+1):
+        for i in range(self.ngram_length + 1):
             self.data_fw.append(defaultdict(dict))
             self.data_bw.append(defaultdict(dict))
             self.voc.append([])
-        self.norm_fw = [(0.0, 1.0)] * ngram_length
-        self.norm_bw = [(0.0,1.0)] * ngram_length
         print("loading vocab")
         self._load_vocab()
         print("computing nvbe")
         self._computeNVBE()
 
+    def load(self, pickle_file: str):
+        with open(pickle_file, "rb") as f:
+            data = pickle.load(f)
+            self.data_fw = data[0]
+            self.data_bw = data[1]
+
+    def save(self, pickle_file:str):
+        with open(pickle_file,"wb") as f:
+            pickle.dump((self.data_fw, self.data_bw),f)
 
     def _load_vocab(self):
         self.voc[0].append(())
