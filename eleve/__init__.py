@@ -26,3 +26,6 @@ try:
 except ImportError as e:
     warnings.warn("Unable to import the C++ leveldb backend. Eleve will be slower. Error: %s" % e)
 LeveldbStorage = CLeveldbStorage or PyLeveldbStorage
+
+
+from eleve.kenlm_storage import KenLMStorage

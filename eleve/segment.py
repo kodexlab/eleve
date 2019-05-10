@@ -39,7 +39,8 @@ class Segmenter:
         if len(sentence) > 1000:
             logger.warning("The sentence you want to segment is HUGE. This will take a lot of memory.")
 
-        sentence = [self.storage.sentence_start] + sentence + [self.storage.sentence_end]
+        #sentence = [self.storage.sentence_start] + sentence + [self.storage.sentence_end]
+        # sentence = sentence
 
         # dynamic programming to segment the sentence
         best_segmentation = [[]]*(len(sentence) + 1)
@@ -64,8 +65,8 @@ class Segmenter:
 
         # keep the best segmentation and remove the None
         best_segmentation = best_segmentation[len(sentence)]
-        best_segmentation[0].pop(0)
-        best_segmentation[-1].pop()
+        # best_segmentation[0].pop(0)
+        # best_segmentation[-1].pop()
         best_segmentation = list(filter(None, best_segmentation))
 
         return best_segmentation
@@ -85,7 +86,7 @@ class Segmenter:
         if len(sentence) > 1000:
             logger.warning("The sentence you want to segment is HUGE. This will take a lot of memory.")
 
-        sentence = [self.storage.sentence_start] + sentence + [self.storage.sentence_end]
+        # sentence = [self.storage.sentence_start] + sentence + [self.storage.sentence_end]
 
         # dynamic programming to segment the sentence
         # list of lists of SegResult
@@ -110,4 +111,18 @@ class Segmenter:
                 segmentations_at_i.extend([SegResult(previous_best.score + a, previous_best.words + [sentence[i-j: i]]) for previous_best in best_segmentations[i-j] ])
             best_segmentations[i] = sorted(segmentations_at_i, key=lambda x:x.score)[-nbest:]
 
-        return [seg.words[1:-1] for seg in best_segmentations[-1][-nbest:]]
+        return [seg.words for seg in best_segmentations[-1][-nbest:]]
+
+    @staticmethod
+    def tokenInWord(w):
+        for i,c in enumerate(w):
+            yield "{}({}_{})".format(c, "".join(w[0:max(i,0)]),"".join(w[i+1:]))
+
+
+    @staticmethod
+    def formatSentenceTokenInWord(sent):
+        return " ".join([c for w in sent for c in Segmenter.tokenInWord(w)])
+
+
+    def segmentSentenceTIW(self, sent: str):
+        return Segmenter.formatSentenceTokenInWord(self.segment(tuple(sent.split(" "))))
