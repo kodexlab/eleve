@@ -13,14 +13,14 @@ class KenLMStorage:
         self.norm_fw = [(0.0, 1.0)] * ngram_length
         self.norm_bw = [(0.0,1.0)] * ngram_length
 
-    def load_from_kenln(self, arpa_fw: str, mmap_fw : str, mmap_bw: str):
+    def load_from_kenlm(self, arpa_fw: str, mmap_fw : str, mmap_bw: str):
         self.arpa = arpa_fw
         self.fw = kenlm.LanguageModel(mmap_fw)
         self.bw = kenlm.LanguageModel(mmap_bw)
         self.data_fw = []
         self.data_bw = []
         self.voc = []
-        for i in range(self.ngram_length + 1):
+        for i in range(self.default_ngram_length + 1):
             self.data_fw.append(defaultdict(dict))
             self.data_bw.append(defaultdict(dict))
             self.voc.append([])
@@ -34,10 +34,11 @@ class KenLMStorage:
             data = pickle.load(f)
             self.data_fw = data[0]
             self.data_bw = data[1]
+            self.default_ngram_length = data[2]
 
     def save(self, pickle_file:str):
         with open(pickle_file,"wb") as f:
-            pickle.dump((self.data_fw, self.data_bw),f)
+            pickle.dump((self.data_fw, self.data_bw, self.default_ngram_length),f)
 
     def _load_vocab(self):
         self.voc[0].append(())
