@@ -116,7 +116,7 @@ class Segmenter:
     @staticmethod
     def tokenInWord(w):
         for i,c in enumerate(w):
-            yield "{}({}_{})".format(c, "".join(w[0:max(i,0)]),"".join(w[i+1:]))
+            yield "{}-{}_{}".format(c, "".join(w[0:max(i,0)]),"".join(w[i+1:]))
 
 
     @staticmethod
@@ -124,5 +124,38 @@ class Segmenter:
         return " ".join([c for w in sent for c in Segmenter.tokenInWord(w)])
 
 
-    def segmentSentenceTIW(self, sent: str):
+    def segmentSentenceTIW(self, sent: str) -> str:
         return Segmenter.formatSentenceTokenInWord(self.segment(tuple(sent.split(" "))))
+
+
+    def segmentSentenceTIWBIES(self, sent:str) -> str:
+        tokens = tuple(sent.split(" "))
+        words = self.segment(tokens)
+        bies = []
+        for w in words:
+            chartoks = list(self.tokenInWord(w))
+            if len(w) == 1:
+                bies.append(chartoks[0] + "-S")
+            else:
+                bies.append(chartoks[0] + "-B")
+                for i in chartoks[1:-1]:
+                    bies.append(i + "-I")
+                bies.append(chartoks[-1] + "-E")
+        return " ".join(bies)
+
+
+    def segmentSentenceBIES(self, sent: str) -> str:
+        tokens = tuple(sent.split(" "))
+        words = self.segment(tokens)
+        bies = []
+        for w in words:
+            if len(w) == 1:
+                bies.append(w[0] + "-S")
+            else:
+                bies.append(w[0] + "-B")
+                for i in w[1:-1]:
+                    bies.append(i + "-I")
+                bies.append(w[-1] + "-E")
+        return " ".join(bies)
+
+
