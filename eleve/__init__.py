@@ -29,3 +29,4 @@ LeveldbStorage = CLeveldbStorage or PyLeveldbStorage
 
 
 from eleve.kenlm_storage import KenLMStorage
+from . import preprocessing as preprocessing
