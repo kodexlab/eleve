@@ -327,7 +327,9 @@ class MemoryStorage:
             return
         if ngram_length is None:
             ngram_length = self.default_ngram_length
-        token_list = [self.sentence_start] + sentence + [self.sentence_end]
+        # We add sentence_start and sentence_end at both ends. We cast it to the type of sentence, so it
+        # works whether sentence is a str, tuple, or list.
+        token_list = type(sentence)(self.sentence_start) + sentence + type(sentence)(self.sentence_end)
         for ngram in extract_ngrams(token_list, ngram_length):
             self.fwd.add_ngram(ngram, freq)
         for ngram in extract_ngrams(token_list[::-1], ngram_length):
