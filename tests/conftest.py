@@ -16,7 +16,10 @@ from eleve import PyLeveldbStorage, CLeveldbStorage
 
 ## Trie fixture
 def parametrize_trie(**kwargs):
-    return pytest.mark.parametrize("trie", get_tries(**kwargs), indirect=True, ids=storage_name)
+    return pytest.mark.parametrize(
+        "trie", get_tries(**kwargs), indirect=True, ids=storage_name
+    )
+
 
 def get_tries(py=True, c=True, ref=True, volatile=True, persistant=True):
     """ Generates a list of trie fixture configuration
@@ -30,14 +33,15 @@ def get_tries(py=True, c=True, ref=True, volatile=True, persistant=True):
     tries = []
     # choose basic class
     if py and ref and volatile:
-        tries.append({'name': "pyram"})
+        tries.append({"name": "pyram"})
     if py and persistant:
-        tries.append({'name': "pyleveldb"})
+        tries.append({"name": "pyleveldb"})
     if c and volatile:
-        tries.append({'name': "cram"})
+        tries.append({"name": "cram"})
     if c and persistant:
-        tries.append({'name': "cleveldb"})
+        tries.append({"name": "cleveldb"})
     return tries
+
 
 @pytest.fixture
 def trie(request):
@@ -49,16 +53,20 @@ def trie(request):
     elif backend == "pyleveldb":
         fs_path = tempfile.mkdtemp(prefix="tmp_eleve_pyldb_")
         trie = PyLeveldbTrie(path=fs_path)
+
         def fin():
             """teardown pyleveldb"""
             shutil.rmtree(fs_path)
+
         request.addfinalizer(fin)
     elif backend == "cleveldb":
         fs_path = tempfile.mkdtemp(prefix="tmp_eleve_cldb_")
         trie = CLeveldbTrie(path=fs_path)
+
         def fin():
             """teardown cleveldb"""
             shutil.rmtree(fs_path)
+
         request.addfinalizer(fin)
     else:
         raise ValueError("Invalid `trie` fixture param")
@@ -67,10 +75,22 @@ def trie(request):
 
 ## Storage fixture
 
-def parametrize_storage(**kwargs):
-    return pytest.mark.parametrize("storage", get_storages(**kwargs), indirect=True, ids=storage_name)
 
-def get_storages(py=True, c=True, ref=True, volatile=True, persistant=True, default_ngram_length=None, create_dir=True):
+def parametrize_storage(**kwargs):
+    return pytest.mark.parametrize(
+        "storage", get_storages(**kwargs), indirect=True, ids=storage_name
+    )
+
+
+def get_storages(
+    py=True,
+    c=True,
+    ref=True,
+    volatile=True,
+    persistant=True,
+    default_ngram_length=None,
+    create_dir=True,
+):
     """ Generates a list of storage fixture configuration
 
     :attr py: include Python backend
@@ -85,13 +105,13 @@ def get_storages(py=True, c=True, ref=True, volatile=True, persistant=True, defa
     dd_storages = []
     # choose basic class
     if py and ref and volatile:
-        storages.append({'name': "pyram"})
+        storages.append({"name": "pyram"})
     if py and persistant:
-        dd_storages.append({'name': "pyleveldb"})
+        dd_storages.append({"name": "pyleveldb"})
     if c and volatile:
-        storages.append({'name': "cram"})
+        storages.append({"name": "cram"})
     if c and persistant:
-        dd_storages.append({'name': "cleveldb"})
+        dd_storages.append({"name": "cleveldb"})
     # compute different config
     if create_dir is None:
         for storage in dd_storages:
@@ -123,6 +143,7 @@ def get_storages(py=True, c=True, ref=True, volatile=True, persistant=True, defa
                 storages.append(storage)
     return storages
 
+
 def storage_name(param):
     name = param["name"]
     if "create" in param and not param["create"]:
@@ -130,6 +151,7 @@ def storage_name(param):
     if "default_ngram_length" in param:
         name += "_l%d" % param["default_ngram_length"]
     return name
+
 
 @pytest.fixture
 def storage(request):
@@ -149,25 +171,27 @@ def storage(request):
     elif backend == "pyleveldb":
         fs_path = tempfile.mkdtemp(prefix="tmp_eleve_strg_pyldb_")
         if not create_dir:
-            fs_path = os.path.join(fs_path, 'new_dir')
+            fs_path = os.path.join(fs_path, "new_dir")
         storage = PyLeveldbStorage(path=fs_path, **init_params)
+
         def fin():
             """teardown pyleveldb"""
             storage.close()
             shutil.rmtree(fs_path)
+
         request.addfinalizer(fin)
     elif backend == "cleveldb":
         fs_path = tempfile.mkdtemp(prefix="tmp_eleve_strg_cldb_")
         if not create_dir:
-            fs_path = os.path.join(fs_path, 'new_dir')
+            fs_path = os.path.join(fs_path, "new_dir")
         storage = CLeveldbStorage(path=fs_path, **init_params)
+
         def fin():
             """teardown cleveldb"""
             storage.close()
             shutil.rmtree(fs_path)
+
         request.addfinalizer(fin)
     else:
         raise ValueError("Invalid `storage` fixture param, got: %s" % backend)
     return storage
-
-
