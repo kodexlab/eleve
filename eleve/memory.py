@@ -13,6 +13,11 @@ __all__ = ["MemoryTrie", "MemoryStorage"]
 NaN = float("nan")
 
 
+def extract_ngrams(token_list, ngram_length):
+    for i in range(len(token_list) - 1):
+        yield token_list[i : i + ngram_length]
+
+
 class MemoryNode(object):
     """ Node used by :class:`MemoryTrie`
     """
@@ -323,11 +328,10 @@ class MemoryStorage:
         if ngram_length is None:
             ngram_length = self.default_ngram_length
         token_list = [self.sentence_start] + sentence + [self.sentence_end]
-        for i in range(len(token_list) - 1):
-            self.fwd.add_ngram(token_list[i : i + ngram_length], freq)
-        token_list = token_list[::-1]
-        for i in range(len(token_list) - 1):
-            self.bwd.add_ngram(token_list[i : i + ngram_length], freq)
+        for ngram in extract_ngrams(token_list, ngram_length):
+            self.fwd.add_ngram(ngram, freq)
+        for ngram in extract_ngrams(token_list[::-1], ngram_length):
+            self.bwd.add_ngram(ngram, freq)
 
     def clear(self):
         """ Clear the training data in the model, effectively resetting it.
