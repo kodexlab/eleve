@@ -94,7 +94,7 @@ class MemoryTrie:
 
     def max_depth(self):
         """ Returns the maximum depth of the Trie
-        
+
         >>> trie = MemoryTrie()
         >>> trie.max_depth()
         0
@@ -294,7 +294,7 @@ class MemoryStorage:
 
     def __init__(self, default_ngram_length=5):
         """ Storage constructor.
-        
+
         :param default_ngram_length: the default maximum length of n-gram beeing
           stored. May be overriden in :func:`add_sentence`.
         """
@@ -313,7 +313,7 @@ class MemoryStorage:
 
         :param sentence: The sentence to add. Should be a list of tokens.
         :param freq: The number of times to add this sentence. One by default. May be negative to "remove" a sentence.
-        :param ngram_length: The length of n-grams that are stored. If None the 
+        :param ngram_length: The length of n-grams that are stored. If None the
           default value setup in __init__ is used.
         """
         if freq <= 0:
@@ -349,8 +349,7 @@ class MemoryStorage:
         """
         result_fwd = self.fwd.query_autonomy(ngram)
         result_bwd = self.bwd.query_autonomy(ngram[::-1])
-        if math.isnan(result_fwd) or math.isnan(result_bwd):
-            return float("nan")
+        # Notice that the above can be NaN. In which case it's propagated anyway.
         return (result_fwd + result_bwd) / 2
 
     def query_ev(self, ngram):
@@ -361,8 +360,7 @@ class MemoryStorage:
         """
         result_fwd = self.fwd.query_ev(ngram)
         result_bwd = self.bwd.query_ev(ngram[::-1])
-        if math.isnan(result_fwd) or math.isnan(result_bwd):
-            return float("nan")
+        # Notice that the above can be NaN. In which case it's propagated anyway.
         return (result_fwd + result_bwd) / 2
 
     def query_count(self, ngram):
@@ -381,6 +379,5 @@ class MemoryStorage:
         """
         entropy_fwd = self.fwd.query_entropy(ngram)
         entropy_bwd = self.bwd.query_entropy(ngram[::-1])
-        if math.isnan(entropy_fwd) or math.isnan(entropy_bwd):
-            return float("nan")
+        # Notice that the above can be NaN. In which case it's propagated anyway.
         return (entropy_fwd + entropy_bwd) / 2
