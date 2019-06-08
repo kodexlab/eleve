@@ -108,7 +108,7 @@ For that you can install ``eleve`` as a link in local virtualenv::
 
     $ pip install -e .
 
-(Note: this is indicated in pytest `good practice <https://pytest.org/latest/goodpractises.html>`_ )
+(Note: this is indicated in pytest `good practice <https://docs.pytest.org/en/latest/goodpractices.html>`_ )
 
 
 References
