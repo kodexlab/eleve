@@ -42,7 +42,7 @@ Eleve also store n-gram's occurence count::
     >>> storage.query_count(["potatoes"])
     2
 
-Then, you can use it for segmentation, using an algorigthm that look for the solution which maximize nVBE of resulting words::
+Then, you can use it for segmentation, using an algorithm that look for the solution which maximize nVBE of resulting words::
 
     >>> from eleve import Segmenter
     >>> s = Segmenter(storage)
