@@ -81,7 +81,7 @@ class MemoryTrie:
     """ In-memory tree (made to be simple, no specific optimizations)
     """
 
-    def __init__(self, terminals=[]):
+    def __init__(self, terminals=frozenset()):
         """ Constructor
 
         :param terminals: Tokens that are in "terminals" array are counted as
@@ -94,7 +94,7 @@ class MemoryTrie:
         #   * on each level : mean, stdev
         #   * WARNING: self.normalization[0] gives data for depth 1 (depth 0 is root and always NaN, NaN)
         self.normalization = []
-        self.terminals = set(terminals)
+        self.terminals = frozenset(terminals)
         self.dirty = True
 
     def max_depth(self):
@@ -305,7 +305,7 @@ class MemoryStorage:
         """
         assert isinstance(default_ngram_length, int) and default_ngram_length > 0
         self._default_ngram_length = default_ngram_length
-        terminals = [self.sentence_start, self.sentence_end]
+        terminals = frozenset([self.sentence_start, self.sentence_end])
         self.bwd = MemoryTrie(terminals=terminals)
         self.fwd = MemoryTrie(terminals=terminals)
 
