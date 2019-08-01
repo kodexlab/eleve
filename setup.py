@@ -75,6 +75,6 @@ setup(
         "Topic :: Scientific/Engineering",
     ],
     #ext_modules=[c_memory, c_leveldb],
-    install_requires=['plyvel'],
+    #install_requires=['plyvel'],
 )
 
