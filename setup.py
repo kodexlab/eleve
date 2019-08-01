@@ -31,24 +31,24 @@ def get_boost_python_lib():
         raise EnvironmentError("You should have boost_python installed. We found these libs : %s" % libs)
     return libs[0]
 
-boost_python_lib = get_boost_python_lib()
+# boost_python_lib = get_boost_python_lib()
 
-c_memory = Extension(
-        name='eleve.c_memory.cmemory',
-        sources=glob.glob('eleve/c_memory/*.cpp'),
-        extra_compile_args=['--std=c++11'],
-        libraries=[boost_python_lib],
-        undef_macros=['NDEBUG'], # I prefer to keep the assertions in the final code, just in case. Remove it if you want maximum perfs.
-)
+#c_memory = Extension(
+#        name='eleve.c_memory.cmemory',
+#        sources=glob.glob('eleve/c_memory/*.cpp'),
+#        extra_compile_args=['--std=c++11'],
+#        libraries=[boost_python_lib],
+#        undef_macros=['NDEBUG'], # I prefer to keep the assertions in the final code, just in case. Remove it if you want maximum perfs.
+#)
 
-c_leveldb = Extension(
-        name='eleve.c_leveldb.cleveldb',
-        sources=glob.glob('eleve/c_leveldb/*.cpp'),
-        extra_compile_args=['--std=c++11'],
-        libraries=[boost_python_lib, 'leveldb', 'boost_filesystem'],
-        language='c++',
-        undef_macros=['NDEBUG'], # I prefer to keep the assertions in the final code, just in case. (',) it if you want maximum perfs.
-)
+#c_leveldb = Extension(
+#        name='eleve.c_leveldb.cleveldb',
+#        sources=glob.glob('eleve/c_leveldb/*.cpp'),
+#        extra_compile_args=['--std=c++11'],
+#        libraries=[boost_python_lib, 'leveldb', 'boost_filesystem'],
+#        language='c++',
+#        undef_macros=['NDEBUG'], # I prefer to keep the assertions in the final code, just in case. (',) it if you want maximum perfs.
+#)
 
 cwd = os.path.abspath(os.path.dirname(__file__))
 readme = open(os.path.join(cwd, 'README.rst')).read()
@@ -74,7 +74,7 @@ setup(
         "Programming Language :: Python :: 3.4",
         "Topic :: Scientific/Engineering",
     ],
-    ext_modules=[c_memory, c_leveldb],
+    #ext_modules=[c_memory, c_leveldb],
     install_requires=['plyvel'],
 )
 
