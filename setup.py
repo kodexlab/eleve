@@ -51,7 +51,7 @@ def get_boost_python_lib():
 #)
 
 cwd = os.path.abspath(os.path.dirname(__file__))
-readme = open(os.path.join(cwd, 'README.rst')).read()
+# readme = open(os.path.join(cwd, 'README.rst')).read()
 
 setup(
     name='eleve',

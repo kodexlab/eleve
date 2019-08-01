@@ -19,13 +19,13 @@ except ImportError as e:
     warnings.warn("Unable to import the C++ memory backend. Eleve will be slower and consume more memory. Error: %s" % e)
 MemoryStorage = CMemoryStorage or PyMemoryStorage
 
-from eleve.leveldb import LeveldbStorage as PyLeveldbStorage
+#from eleve.leveldb import LeveldbStorage as PyLeveldbStorage
 CLeveldbStorage = None
-try:
-    from eleve.c_leveldb.cleveldb import LeveldbStorage as CLeveldbStorage
-except ImportError as e:
-    warnings.warn("Unable to import the C++ leveldb backend. Eleve will be slower. Error: %s" % e)
-LeveldbStorage = CLeveldbStorage or PyLeveldbStorage
+#try:
+#    from eleve.c_leveldb.cleveldb import LeveldbStorage as CLeveldbStorage
+#except ImportError as e:
+#    warnings.warn("Unable to import the C++ leveldb backend. Eleve will be slower. Error: %s" % e)
+#LeveldbStorage = CLeveldbStorage or PyLeveldbStorage
 
 
 #from eleve.kenlm_storage import KenLMStorage
