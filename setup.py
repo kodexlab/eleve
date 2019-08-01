@@ -57,7 +57,7 @@ setup(
     name='eleve',
     version='15.10.r2',
     description="Extraction de LExique par Variation d'Entropie - Lexicon extraction based on the variation of entropy",
-    long_description=readme,
+    #long_description=readme,
     author='KodexLab, Pierre Magistry, Korantin Auguste, Emmanuel Navarro',
     author_email='contact@kodexlab.com',
     url='https://github.com/kodexlab/eleve',
