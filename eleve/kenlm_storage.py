@@ -77,10 +77,23 @@ class KenLMStorage:
         # compute entropies
         for i, probas in enumerate(self.data_fw):
             for ng, nexts in probas.items():
-                self.data_fw[i][ng] = self._entropy(nexts.values())
+                # add weight for </s>
+                values = list(nexts.values())
+                p_end =  10 ** self.fw.score(" ".join(ng), bos=False, eos=True)
+                p_min =  np.min(values)
+                if p_end > p_min:
+                    nb_bnd = int(p_end/p_min)
+                    values.extend([p_min] * nb_bnd)
+                self.data_fw[i][ng] = self._entropy(values)
         for i, probas in enumerate(self.data_bw):
             for ng, nexts in probas.items():
-                self.data_bw[i][ng] = self._entropy(nexts.values())
+                values = list(nexts.values())
+                p_end = 10 ** self.fw.score(" ".join(ng), bos=False, eos=True)
+                p_min = np.min(values)
+                if p_end > p_min:
+                    nb_bnd = int(p_end / p_min)
+                    values.extend([p_min] * nb_bnd)
+                self.data_bw[i][ng] = self._entropy(values)
         # compute vbe
         for i in range(len(self.data_fw)-1, 0, -1):
             for ng,h in self.data_fw[i].items():
