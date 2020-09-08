@@ -66,7 +66,7 @@ class PyLeveldbTrie: public LeveldbTrie
         py::list normalization_list;
         for(auto& norm: normalization)
         {
-            normalization_list.append( py::make_tuple(norm.mean, norm.stdev));
+            normalization_list.append(py::make_tuple(norm.mean, norm.stdev));
         }
         return normalization_list;
     };

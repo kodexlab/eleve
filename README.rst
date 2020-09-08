@@ -42,7 +42,7 @@ Eleve also store n-gram's occurence count::
     >>> storage.query_count(["potatoes"])
     2
 
-Then, you can use it for segmentation, using an algorigthm that look for the solution which maximize nVBE of resulting words::
+Then, you can use it for segmentation, using an algorithm that look for the solution which maximize nVBE of resulting words::
 
     >>> from eleve import Segmenter
     >>> s = Segmenter(storage)
@@ -108,7 +108,7 @@ For that you can install ``eleve`` as a link in local virtualenv::
 
     $ pip install -e .
 
-(Note: this is indicated in pytest `good practice <https://pytest.org/latest/goodpractises.html>`_ )
+(Note: this is indicated in pytest `good practice <https://docs.pytest.org/en/latest/goodpractices.html>`_ )
 
 
 References

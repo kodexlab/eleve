@@ -91,8 +91,7 @@ float LeveldbStorage::query_autonomy(strVec& ngram)
     if(std::isnan(f))
         return NAN;
     float b = bwd.query_autonomy(reverse(ngram));
-    if(std::isnan(b))
-        return NAN;
+    // Notice that the above can be NaN. In which case it's propagated anyway.
     return (f + b) / 2.f;
 };
 
@@ -102,8 +101,7 @@ float LeveldbStorage::query_ev(strVec& ngram)
     if(std::isnan(f))
         return NAN;
     float b = bwd.query_ev(reverse(ngram));
-    if(std::isnan(b))
-        return NAN;
+    // Notice that the above can be NaN. In which case it's propagated anyway.
     return (f + b) / 2.f;
 };
 
@@ -118,8 +116,7 @@ float LeveldbStorage::query_entropy(strVec& ngram)
     if(std::isnan(f))
         return NAN;
     float b = bwd.query_entropy(reverse(ngram));
-    if(std::isnan(b))
-        return NAN;
+    // Notice that the above can be NaN. In which case it's propagated anyway.
     return (f + b) / 2.f;
 };
 

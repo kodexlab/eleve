@@ -3,26 +3,45 @@ from eleve import Segmenter
 
 from conftest import parametrize_storage
 
+
 @parametrize_storage(default_ngram_length=3)
 def test_segmentation_basic(storage):
-    storage.add_sentence('je vous parle de hot dog'.split())
-    storage.add_sentence('j ador les hot dog'.split())
-    storage.add_sentence('hot dog ou pas'.split())
-    storage.add_sentence('hot dog ou sandwich'.split())
+    storage.add_sentence("je vous parle de hot dog".split())
+    storage.add_sentence("j ador les hot dog".split())
+    storage.add_sentence("hot dog ou pas".split())
+    storage.add_sentence("hot dog ou sandwich".split())
 
     segmenter = Segmenter(storage)
-    assert segmenter.segment('je deteste les hot dog'.split()) == [['je'], ['deteste'], ['les'], ['hot', 'dog']]
-    assert segmenter.segment('un chat noir et blanc'.split()) == [['un'], ['chat'], ['noir'], ['et'], ['blanc']]
+    assert segmenter.segment("je deteste les hot dog".split()) == [
+        ["je"],
+        ["deteste"],
+        ["les"],
+        ["hot", "dog"],
+    ]
+    assert segmenter.segment("un chat noir et blanc".split()) == [
+        ["un"],
+        ["chat"],
+        ["noir"],
+        ["et"],
+        ["blanc"],
+    ]
+
 
 @parametrize_storage(default_ngram_length=2)
 def test_segmentation_2grams(storage):
-    storage.add_sentence('je vous parle de hot dog'.split())
-    storage.add_sentence('j ador les hot dog'.split())
-    storage.add_sentence('hot dog ou pas'.split())
-    storage.add_sentence('hot dog ou sandwich'.split())
+    storage.add_sentence("je vous parle de hot dog".split())
+    storage.add_sentence("j ador les hot dog".split())
+    storage.add_sentence("hot dog ou pas".split())
+    storage.add_sentence("hot dog ou sandwich".split())
 
     segmenter = Segmenter(storage)
-    assert segmenter.segment('je deteste les hot dog'.split()) == [['je'], ['deteste'], ['les'], ['hot'], ['dog']]
+    assert segmenter.segment("je deteste les hot dog".split()) == [
+        ["je"],
+        ["deteste"],
+        ["les"],
+        ["hot"],
+        ["dog"],
+    ]
 
 
 """

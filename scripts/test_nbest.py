@@ -9,7 +9,7 @@ with open(corpus_file) as f:
     storage = Storage(10)
     corpus = []
     for line in f:
-        tokens = list(line.strip().replace(" ",""))
+        tokens = list(line.strip().replace(" ", ""))
         storage.add_sentence(tokens)
         corpus.append(tokens)
     seg = Segmenter(storage)

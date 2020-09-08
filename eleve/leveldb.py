@@ -16,14 +16,17 @@ import plyvel
 
 from eleve.memory import MemoryTrie, MemoryStorage
 
-NaN = float('nan')
+NaN = float("nan")
 
-NORMALIZATION_KEY_PREFIX = b'\xff'
-NORMALIZATION_PACKER = struct.Struct('<ff')
+NORMALIZATION_KEY_PREFIX = b"\xff"
+NORMALIZATION_PACKER = struct.Struct("<ff")
 
-PACKER = struct.Struct('<Lf')
-SEPARATOR = b'\x00' # before every word that is inserted we put that byte, so that they are separated.
-SEPARATOR_PLUS_ONE = bytes((SEPARATOR[0]+1,))
+PACKER = struct.Struct("<Lf")
+SEPARATOR = (
+    b"\x00"
+)  # before every word that is inserted we put that byte, so that they are separated.
+SEPARATOR_PLUS_ONE = bytes((SEPARATOR[0] + 1,))
+
 
 def to_bytes(o):
     """ Encode the object as a bytes object:
@@ -32,6 +35,7 @@ def to_bytes(o):
     """
     return o if type(o) == bytes else str(o).encode()
 
+
 def ngram_to_key(ngram):
     """ Convert a ngram to a leveldb key (a bytes object).
 
@@ -39,7 +43,8 @@ def ngram_to_key(ngram):
     and the bytes representation of the token, for each token.
     """
     assert len(ngram) < 256
-    return bytes([len(ngram)]) + b''.join([SEPARATOR + to_bytes(i) for i in ngram])
+    return bytes([len(ngram)]) + b"".join([SEPARATOR + to_bytes(i) for i in ngram])
+
 
 class Node:
     """ Represents a node of the trie in Leveldb. Loaded by its key.
@@ -97,7 +102,9 @@ class Node:
             if child.key.split(SEPARATOR)[-1] in terminals:
                 entropy += (child.count / self.count) * math.log(self.count, 2)
             else:
-                entropy -= (child.count / self.count) * math.log(child.count / self.count, 2)
+                entropy -= (child.count / self.count) * math.log(
+                    child.count / self.count, 2
+                )
         assert entropy >= 0
 
         if not sum_counts:
@@ -105,7 +112,9 @@ class Node:
         else:
             assert sum_counts == self.count
 
-        if self.entropy != entropy and not(math.isnan(self.entropy) and math.isnan(entropy)):
+        if self.entropy != entropy and not (
+            math.isnan(self.entropy) and math.isnan(entropy)
+        ):
             self.entropy = entropy
             self.save()
 
@@ -116,12 +125,13 @@ class LeveldbTrie(MemoryTrie):
         """
         self.path = path
         self.terminals = set(to_bytes(i) for i in terminals)
-        self.db = plyvel.DB(path,
+        self.db = plyvel.DB(
+            path,
             create_if_missing=True,
-            write_buffer_size=32*1024**2,
-            #block_size=16*1024,
-            #lru_cache_size=512*1024**2,
-            #bloom_filter_bits=8,
+            write_buffer_size=32 * 1024 ** 2,
+            # block_size=16*1024,
+            # lru_cache_size=512*1024**2,
+            # bloom_filter_bits=8,
         )
         # retrieve the normalization constants from leveldb
         self.normalization = []
@@ -139,7 +149,7 @@ class LeveldbTrie(MemoryTrie):
     @property
     def root(self):
         """ Returns root node """
-        return Node(self.db, b'\x00')
+        return Node(self.db, b"\x00")
 
     def close(self):
         self.db.close()
@@ -154,7 +164,10 @@ class LeveldbTrie(MemoryTrie):
         super(LeveldbTrie, self).update_stats()
         # store normalization vector in DB
         for pseudo_depth, (mean, stdev) in enumerate(self.normalization):
-            self.db.put(NORMALIZATION_KEY_PREFIX + bytes((pseudo_depth,)), NORMALIZATION_PACKER.pack(mean, stdev))
+            self.db.put(
+                NORMALIZATION_KEY_PREFIX + bytes((pseudo_depth,)),
+                NORMALIZATION_PACKER.pack(mean, stdev),
+            )
         self.db.compact_range()
 
     def _check_dirty(self):
@@ -173,9 +186,9 @@ class LeveldbTrie(MemoryTrie):
 
         if not self.dirty:
             self.dirty = True
-            self.db.delete(b'\xff\x00')
+            self.db.delete(b"\xff\x00")
 
-        b = bytearray(b'\x00')
+        b = bytearray(b"\x00")
         w = self.db.write_batch()
 
         # shortcut : if we encounter a node with a counter to zero, we will
@@ -222,7 +235,7 @@ class LeveldbTrie(MemoryTrie):
         if math.isnan(ev):
             return NaN
         try:
-            mean, stdev = self.normalization[len(ngram)-1]
+            mean, stdev = self.normalization[len(ngram) - 1]
             return (ev - mean) / stdev
         except (ZeroDivisionError, IndexError):
             return NaN
@@ -238,15 +251,14 @@ class LeveldbStorage(MemoryStorage):
           stored. It will equals 5 for a newly created storage. Note that it may
           be overriden in :func:`add_sentence`.
         """
-        self.path = path # store the path, in RAM, usefull at least for test
+        self.path = path  # store the path, in RAM, usefull at least for test
         if not os.path.isdir(path):
             os.makedirs(path)
         config_path = path + "/config"
         new_storage = not os.path.isdir(config_path)
         # create/open Storage config/metadata DB
-        self.config = plyvel.DB(config_path,
-            create_if_missing=True,
-            write_buffer_size=32*1024**2,
+        self.config = plyvel.DB(
+            config_path, create_if_missing=True, write_buffer_size=32 * 1024 ** 2
         )
         if new_storage:
             if default_ngram_length is None:
@@ -256,9 +268,9 @@ class LeveldbStorage(MemoryStorage):
         self._default_ngram_length = int(self.config.get(b"default_ngram_length"))
         # create/open both trie
         terminals = [self.sentence_start, self.sentence_end]
-        self.bwd = LeveldbTrie(path=(path + '/bwd'), terminals=terminals)
-        self.fwd = LeveldbTrie(path=(path + '/fwd'), terminals=terminals)
-        #TODO: if loading (path exist?) then read the default_ngram_length from DD
+        self.bwd = LeveldbTrie(path=(path + "/bwd"), terminals=terminals)
+        self.fwd = LeveldbTrie(path=(path + "/fwd"), terminals=terminals)
+        # TODO: if loading (path exist?) then read the default_ngram_length from DD
 
     @property
     def default_ngram_length(self):
@@ -268,4 +280,3 @@ class LeveldbStorage(MemoryStorage):
         self.config.close()
         self.bwd.close()
         self.fwd.close()
-

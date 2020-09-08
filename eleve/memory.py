@@ -10,17 +10,24 @@ import logging
 
 __all__ = ["MemoryTrie", "MemoryStorage"]
 
-NaN = float('nan')
+NaN = float("nan")
+
+
+def extract_ngrams(token_list, ngram_length):
+    for i in range(len(token_list) - 1):
+        yield token_list[i : i + ngram_length]
+
 
 class MemoryNode(object):
     """ Node used by :class:`MemoryTrie`
     """
+
     # to take a little less memory
-    __slots__ = ['count', 'entropy', 'childs']
+    __slots__ = ["count", "entropy", "childs"]
 
     def __init__(self, count=0):
         self.count = count
-        self.entropy = float('nan')
+        self.entropy = float("nan")
         self.childs = {}
 
     def update_entropy(self, terminals):
@@ -38,12 +45,16 @@ class MemoryNode(object):
             if token in terminals:
                 entropy += (child.count / self.count) * math.log(self.count, 2)
             else:
-                entropy -= (child.count / self.count) * math.log(child.count / self.count, 2)
+                entropy -= (child.count / self.count) * math.log(
+                    child.count / self.count, 2
+                )
         if not sum_counts:
             entropy = NaN
         else:
             assert sum_counts == self.count
-        if self.entropy != entropy and not(math.isnan(self.entropy) and math.isnan(entropy)):
+        if self.entropy != entropy and not (
+            math.isnan(self.entropy) and math.isnan(entropy)
+        ):
             self.entropy = entropy
 
     def iter_childs(self):
@@ -53,23 +64,24 @@ class MemoryNode(object):
 
 
 class MemoryLeaf(object):
-    __slots__ = ['count']
+    __slots__ = ["count"]
 
     def __init__(self, count=0):
         self.count = count
 
     @property
     def entropy(self):
-        return float('nan')
+        return float("nan")
 
     def to_node(self):
         return MemoryNode(count=self.count)
+
 
 class MemoryTrie:
     """ In-memory tree (made to be simple, no specific optimizations)
     """
 
-    def __init__(self, terminals=[]):
+    def __init__(self, terminals=frozenset()):
         """ Constructor
 
         :param terminals: Tokens that are in "terminals" array are counted as
@@ -82,12 +94,12 @@ class MemoryTrie:
         #   * on each level : mean, stdev
         #   * WARNING: self.normalization[0] gives data for depth 1 (depth 0 is root and always NaN, NaN)
         self.normalization = []
-        self.terminals = set(terminals)
+        self.terminals = frozenset(terminals)
         self.dirty = True
 
     def max_depth(self):
         """ Returns the maximum depth of the Trie
-        
+
         >>> trie = MemoryTrie()
         >>> trie.max_depth()
         0
@@ -109,30 +121,37 @@ class MemoryTrie:
         def _rec(ngram, node):
             if node.childs:
                 for token, child in node.childs.items():
-                    for i in _rec(ngram + [token], child): yield i
+                    for i in _rec(ngram + [token], child):
+                        yield i
             elif node is not self.root:
                 yield ngram
-        for i in _rec([], self.root): yield i
+
+        for i in _rec([], self.root):
+            yield i
 
     def _update_stats_rec(self, parent_entropy, depth, node):
         """ Recurively update both entropy and normalization vector
         """
         # extend normalization vector if needed
         while len(self.normalization) < depth:
-            self.normalization.append((0., 0., 0))
+            self.normalization.append((0.0, 0.0, 0))
         # if MemoryLeaf nothing else should be done
         if isinstance(node, MemoryLeaf):
             return
         node.update_entropy(self.terminals)
         # update entropy variation mean and std if possible (not NaN)
-        if depth > 0 and not math.isnan(node.entropy) and (node.entropy or parent_entropy):
+        if (
+            depth > 0
+            and not math.isnan(node.entropy)
+            and (node.entropy or parent_entropy)
+        ):
             ev = node.entropy - parent_entropy
-            mean, stdev, count = self.normalization[depth-1]
+            mean, stdev, count = self.normalization[depth - 1]
             old_mean = mean
             count += 1
             mean += (ev - old_mean) / count
             stdev += (ev - old_mean) * (ev - mean)
-            self.normalization[depth-1] = mean, stdev, count
+            self.normalization[depth - 1] = mean, stdev, count
         # recurifs calls
         for child in node.iter_childs():
             self._update_stats_rec(node.entropy, depth + 1, child)
@@ -154,7 +173,9 @@ class MemoryTrie:
 
     def _check_dirty(self):
         if self.dirty:
-            logging.warning("Updating the tree statistics (update_stats method), as we query it while dirty. This is a slow operation.")
+            logging.warning(
+                "Updating the tree statistics (update_stats method), as we query it while dirty. This is a slow operation."
+            )
             self.update_stats()
 
     def add_ngram(self, ngram, freq=1):
@@ -179,7 +200,7 @@ class MemoryTrie:
                 if depth < len(ngram) - 1 and isinstance(child, MemoryLeaf):
                     child = child.to_node()
                     parent.childs[token] = child
-            except KeyError: #node do not exist yet
+            except KeyError:  # node do not exist yet
                 child = MemoryNode(freq) if depth < len(ngram) - 1 else MemoryLeaf(freq)
                 parent.childs[token] = child
             parent = child
@@ -220,9 +241,9 @@ class MemoryTrie:
         try:
             _, node = self._lookup(ngram)
         except (KeyError, AttributeError):
-            return float('nan')
+            return float("nan")
         return node.entropy
-    
+
     def query_ev(self, ngram):
         """ Query for the branching entropy variation.
 
@@ -231,14 +252,16 @@ class MemoryTrie:
         """
         self._check_dirty()
         if not ngram:
-            return float('nan')
+            return float("nan")
         try:
             last_node, node = self._lookup(ngram)
         except (KeyError, AttributeError):
-            return float('nan')
-        if not math.isnan(node.entropy) and (node.entropy != 0 or last_node.entropy != 0):
+            return float("nan")
+        if not math.isnan(node.entropy) and (
+            node.entropy != 0 or last_node.entropy != 0
+        ):
             return node.entropy - last_node.entropy
-        return float('nan')
+        return float("nan")
 
     def query_autonomy(self, ngram, z_score=True):
         """ Query the autonomy (normalized entropy variation) for the n-gram.
@@ -249,40 +272,40 @@ class MemoryTrie:
         """
         self._check_dirty()
         try:
-            mean, stdev = self.normalization[len(ngram)-1]
+            mean, stdev = self.normalization[len(ngram) - 1]
         except IndexError:
-            return float('nan')
+            return float("nan")
         ev = self.query_ev(ngram)
         if math.isnan(ev):
-            return float('nan')
+            return float("nan")
         nev = ev - mean
         if z_score:
             try:
                 nev /= stdev
             except ZeroDivisionError:
-                return float('nan')
+                return float("nan")
         return nev
 
 
 class MemoryStorage:
     """ Full-Python in-memory storage.
     """
-    # Use PRIVATE_USE_AREA codes
-    sentence_start = "\ue02b" # in utf8 : b"\xee\x80\xab"
-    #  see http://www.fileformat.info/info/unicode/char/e02b/index.htm
-    sentence_end = "\ue02d" # in utf8 : b"\xee\x80\xad"
-    #  see http://www.fileformat.info/info/unicode/char/e02d/index.htm
 
+    # Use PRIVATE_USE_AREA codes
+    sentence_start = "\ue02b"  # in utf8 : b"\xee\x80\xab"
+    #  see http://www.fileformat.info/info/unicode/char/e02b/index.htm
+    sentence_end = "\ue02d"  # in utf8 : b"\xee\x80\xad"
+    #  see http://www.fileformat.info/info/unicode/char/e02d/index.htm
 
     def __init__(self, default_ngram_length=5):
         """ Storage constructor.
-        
+
         :param default_ngram_length: the default maximum length of n-gram beeing
           stored. May be overriden in :func:`add_sentence`.
         """
         assert isinstance(default_ngram_length, int) and default_ngram_length > 0
         self._default_ngram_length = default_ngram_length
-        terminals = [self.sentence_start, self.sentence_end]
+        terminals = frozenset([self.sentence_start, self.sentence_end])
         self.bwd = MemoryTrie(terminals=terminals)
         self.fwd = MemoryTrie(terminals=terminals)
 
@@ -295,7 +318,7 @@ class MemoryStorage:
 
         :param sentence: The sentence to add. Should be a list of tokens.
         :param freq: The number of times to add this sentence. One by default. May be negative to "remove" a sentence.
-        :param ngram_length: The length of n-grams that are stored. If None the 
+        :param ngram_length: The length of n-grams that are stored. If None the
           default value setup in __init__ is used.
         """
         if freq <= 0:
@@ -304,12 +327,13 @@ class MemoryStorage:
             return
         if ngram_length is None:
             ngram_length = self.default_ngram_length
-        token_list = [self.sentence_start] + sentence + [self.sentence_end]
-        for i in range(len(token_list) - 1):
-            self.fwd.add_ngram(token_list[i:i+ngram_length], freq)
-        token_list = token_list[::-1]
-        for i in range(len(token_list) - 1):
-            self.bwd.add_ngram(token_list[i:i+ngram_length], freq)
+        # We add sentence_start and sentence_end at both ends. We cast it to the type of sentence, so it
+        # works whether sentence is a str, tuple, or list.
+        token_list = type(sentence)(self.sentence_start) + sentence + type(sentence)(self.sentence_end)
+        for ngram in extract_ngrams(token_list, ngram_length):
+            self.fwd.add_ngram(ngram, freq)
+        for ngram in extract_ngrams(token_list[::-1], ngram_length):
+            self.bwd.add_ngram(ngram, freq)
 
     def clear(self):
         """ Clear the training data in the model, effectively resetting it.
@@ -331,10 +355,9 @@ class MemoryStorage:
         """
         result_fwd = self.fwd.query_autonomy(ngram)
         result_bwd = self.bwd.query_autonomy(ngram[::-1])
-        if math.isnan(result_fwd) or math.isnan(result_bwd):
-            return float('nan')
+        # Notice that the above can be NaN. In which case it's propagated anyway.
         return (result_fwd + result_bwd) / 2
-     
+
     def query_ev(self, ngram):
         """ Query the entropy variation for a ngram.
 
@@ -343,8 +366,7 @@ class MemoryStorage:
         """
         result_fwd = self.fwd.query_ev(ngram)
         result_bwd = self.bwd.query_ev(ngram[::-1])
-        if math.isnan(result_fwd) or math.isnan(result_bwd):
-            return float('nan')
+        # Notice that the above can be NaN. In which case it's propagated anyway.
         return (result_fwd + result_bwd) / 2
 
     def query_count(self, ngram):
@@ -363,7 +385,5 @@ class MemoryStorage:
         """
         entropy_fwd = self.fwd.query_entropy(ngram)
         entropy_bwd = self.bwd.query_entropy(ngram[::-1])
-        if math.isnan(entropy_fwd) or math.isnan(entropy_bwd):
-            return float('nan')
+        # Notice that the above can be NaN. In which case it's propagated anyway.
         return (entropy_fwd + entropy_bwd) / 2
-
