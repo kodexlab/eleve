@@ -2,18 +2,31 @@ from typing import List
 import unicodedata as ud
 
 from eleve import Segmenter
+from functools import lru_cache
 
 def normalize(s: str) -> str:
     return ud.normalize("NFC", s)
+
+@lru_cache(maxsize=10000)
+def getCategory(c: str) -> str:
+    cat = ud.category(c)
+    if cat == "Ll" or cat == "Lu":
+        cat = "latin"
+    return cat
+
+@lru_cache(maxsize=10000)
+def isCJK(tok: str) -> bool:
+    try:
+        return ud.name(tok[0]).startswith("CJK")
+    except:
+        return False
 
 
 def tokenize_by_unicode_category(s: str) -> List[str]:
     buf = []
     prev_cat = None
     for c in s:
-        cat = ud.category(c)
-        if cat == "Ll" or cat == "Lu":
-            cat = "latin"
+        cat = getCategory(c)
         if cat == prev_cat:
             buf[-1] = buf[-1] + c
         else:
@@ -23,12 +36,9 @@ def tokenize_by_unicode_category(s: str) -> List[str]:
 
 def filter_cjk(toks: List[str]) -> List[str]:
     for tok in toks:
-        try:
-            if ud.name(tok[0]).startswith("CJK"):
-                yield tok
-            else:
-                pass
-        except:
+        if isCJK(tok):
+            yield tok
+        else:
             pass
 
 def add_bies(s: str) -> List[str]:
@@ -45,13 +55,13 @@ def segment_with_preprocessing(seg: Segmenter, sent:str) -> str:
     tokens = []
     for group in tokenize_by_unicode_category(sent):
         try:
-            if ud.name(group[0]).startswith("CJK"):
-                words = seg.segment(group)
+            if isCJK(group[0]):
+                words = ["".join(w) for w in seg.segment(list(group))]
                 for w in words:
                     tokens.extend(add_bies(w))
             else:
                 tokens.extend(add_bies(group))
         except:
             tokens.extend(add_bies(group))
-    return "\n".join(tokens)
+    return " ".join(tokens)
 

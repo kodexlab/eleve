@@ -79,9 +79,9 @@ class Segmenter:
 
         # keep the best segmentation and remove the None
         best_segmentation = best_segmentation[len(sentence)]
-        # best_segmentation[0].pop(0)
-        # best_segmentation[-1].pop()
         best_segmentation = list(filter(None, best_segmentation))
+        best_segmentation.pop(0)
+        best_segmentation.pop()
 
         return best_segmentation
 

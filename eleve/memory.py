@@ -387,3 +387,45 @@ class MemoryStorage:
         entropy_bwd = self.bwd.query_entropy(ngram[::-1])
         # Notice that the above can be NaN. In which case it's propagated anyway.
         return (entropy_fwd + entropy_bwd) / 2
+
+
+class CSVStorage:
+    """
+    This is a non-trainable storage.
+    It relies on a CSV dump from a MemoryStorage and can only be used to
+    perform segmentation and autonomy query
+    """
+    # Use PRIVATE_USE_AREA codes
+    sentence_start = "\ue02b"  # in utf8 : b"\xee\x80\xab"
+    #  see http://www.fileformat.info/info/unicode/char/e02b/index.htm
+    sentence_end = "\ue02d"  # in utf8 : b"\xee\x80\xad"
+
+    #  see http://www.fileformat.info/info/unicode/char/e02d/index.htm
+
+    def __init__(self, path):
+        self.data = {}
+        lmax = 0
+        with open(path) as f:
+            for line in f:
+                fields = line.strip().split("\t")
+                self.data[fields[0]] = (float(fields[1]), int(fields[2]))
+                if len(fields[0]) > lmax:
+                    lmax = len(fields[0])
+        self._ngram_length = lmax + 1
+        print(lmax)
+
+    def query_autonomy(self, ngram):
+        try:
+            return self.data["".join(ngram)][0]
+        except:
+            return float("nan")
+
+    def query_count(self, ngram):
+        try:
+            return self.data["".join(ngram)][1]
+        except:
+            return 0
+
+    @property
+    def default_ngram_length(self):
+        return self._ngram_length
