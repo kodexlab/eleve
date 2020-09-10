@@ -8,6 +8,8 @@ from __future__ import division
 import math
 import logging
 
+import pickle
+
 __all__ = ["MemoryTrie", "MemoryStorage"]
 
 NaN = float("nan")
@@ -429,3 +431,24 @@ class CSVStorage:
     @property
     def default_ngram_length(self):
         return self._ngram_length
+
+    @staticmethod
+    def writeCSV(storage,voc,  path):
+        with open(path, "w") as f:
+            for w in voc:
+                wl = list(w)
+                e = storage.query_autonomy(wl)
+                if not math.isnan(e):
+                    f.write("\t".join([w, str(e), str(storage.query_count(wl))]) + "\n")
+
+    @staticmethod
+    def writePickle(storage, voc, path):
+        data = {}
+        for w in voc:
+            wl = list(w)
+            e = storage.query_autonomy(wl)
+            if not math.isnan(e):
+                data[w] = (e,storage.query_count(wl))
+                #f.write("\t".join([w, str(e), str(storage.query_count(wl))]) + "\n")
+        with open(path,"wb") as f:
+            pickle.dump(data,f)
