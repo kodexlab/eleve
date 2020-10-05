@@ -131,6 +131,27 @@ class MemoryTrie:
         for i in _rec([], self.root):
             yield i
 
+
+    def prune(self, minus=1):
+        """"Recursively remove <minus> occurrence of all ngrams
+        """
+        self.dirty = True
+        def rec(node):
+            n = 0
+            if hasattr(node, "childs"):
+                for _, child in node.childs.items():
+                    n += rec(child)
+                node.childs = {tok: c for tok, c in node.childs.items() if c.count > 0}
+                node.count -= n
+            else:
+                n = min(minus, node.count)
+                node.count -= minus
+            return n
+        n = rec(self.root)
+        print(n)
+        #self.root.count -= n
+
+
     def _update_stats_rec(self, parent_entropy, depth, node):
         """ Recurively update both entropy and normalization vector
         """
@@ -288,6 +309,7 @@ class MemoryTrie:
                 return float("nan")
         return nev
 
+from .cython_storage import CythonTrie
 
 class MemoryStorage:
     """ Full-Python in-memory storage.
@@ -308,6 +330,8 @@ class MemoryStorage:
         assert isinstance(default_ngram_length, int) and default_ngram_length > 0
         self._default_ngram_length = default_ngram_length
         terminals = frozenset([self.sentence_start, self.sentence_end])
+        #self.bwd = CythonTrie(terminals=terminals) # MemoryTrie(terminals=terminals)
+        #self.fwd = CythonTrie(terminals=terminals) # MemoryTrie(terminals=terminals)
         self.bwd = MemoryTrie(terminals=terminals)
         self.fwd = MemoryTrie(terminals=terminals)
 
@@ -342,6 +366,10 @@ class MemoryStorage:
         """
         self.bwd.clear()
         self.fwd.clear()
+
+    def prune(self, minus=1):
+        self.bwd.prune(minus)
+        self.fwd.prune(minus)
 
     def update_stats(self):
         """ Update the entropies and normalization factors. This function is called automatically when you modify the model and then query it.

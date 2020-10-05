@@ -3,6 +3,8 @@
 import os, sys
 import glob
 from setuptools import setup, Extension
+from Cython.Build import cythonize
+
 
 assert sys.version_info[0] >= 3, "For python >= 3 only"
 
@@ -85,6 +87,6 @@ setup(
         "Programming Language :: Python :: 3.7",
         "Topic :: Scientific/Engineering",
     ],
-    ext_modules=[c_memory, c_leveldb],
+    ext_modules=cythonize("eleve/cython_storage.pyx", compiler_directives={'language_level' : "3"}),
     install_requires=["plyvel"],
 )

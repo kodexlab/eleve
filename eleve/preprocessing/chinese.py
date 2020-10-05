@@ -51,17 +51,26 @@ def add_bies(s: str) -> List[str]:
         bies.append(s[-1] + "-E")
         return bies
 
-def segment_with_preprocessing(seg: Segmenter, sent:str) -> str:
+def segment_with_preprocessing(seg: Segmenter, sent:str, bies:bool=True) -> str:
     tokens = []
     for group in tokenize_by_unicode_category(sent):
         try:
             if isCJK(group[0]):
                 words = ["".join(w) for w in seg.segment(list(group))]
                 for w in words:
-                    tokens.extend(add_bies(w))
+                    if bies:
+                        tokens.extend(add_bies(w))
+                    else:
+                        tokens.append(w)
             else:
-                tokens.extend(add_bies(group))
+                if bies:
+                    tokens.extend(add_bies(group))
+                else:
+                    tokens.append(group)
         except:
-            tokens.extend(add_bies(group))
+            if bies:
+                tokens.extend(add_bies(group))
+            else:
+                tokens.append(group)
     return " ".join(tokens)
 
