@@ -330,10 +330,10 @@ class MemoryStorage:
         assert isinstance(default_ngram_length, int) and default_ngram_length > 0
         self._default_ngram_length = default_ngram_length
         terminals = frozenset([self.sentence_start, self.sentence_end])
-        #self.bwd = CythonTrie(terminals=terminals) # MemoryTrie(terminals=terminals)
-        #self.fwd = CythonTrie(terminals=terminals) # MemoryTrie(terminals=terminals)
-        self.bwd = MemoryTrie(terminals=terminals)
-        self.fwd = MemoryTrie(terminals=terminals)
+        self.bwd = CythonTrie(terminals=terminals) # MemoryTrie(terminals=terminals)
+        self.fwd = CythonTrie(terminals=terminals) # MemoryTrie(terminals=terminals)
+        #self.bwd = MemoryTrie(terminals=terminals)
+        #self.fwd = MemoryTrie(terminals=terminals)
 
     @property
     def default_ngram_length(self):

@@ -4,6 +4,7 @@ import os, sys
 import glob
 from setuptools import setup, Extension
 from Cython.Build import cythonize
+from Cython.Distutils import build_ext
 
 
 assert sys.version_info[0] >= 3, "For python >= 3 only"
@@ -87,6 +88,13 @@ setup(
         "Programming Language :: Python :: 3.7",
         "Topic :: Scientific/Engineering",
     ],
-    ext_modules=cythonize("eleve/cython_storage.pyx", compiler_directives={'language_level' : "3"}),
+    ext_modules=cythonize(["eleve/cython_storage.pyx", "eleve/essais.pyx"],
+                          compiler_directives={'language_level' : "3"},
+                          annotate=True),
+    # ext_modules = [
+    #     Extension("eleve/essais", ["eleve/essais.pyx"]),
+    #     Extension("eleve/cython_storage", ["eleve/cython_storage.pyx"])
+    # ],
+    # cmdclass = {'build_ext': build_ext},
     install_requires=["plyvel"],
 )

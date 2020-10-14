@@ -2,86 +2,161 @@
 import math
 import logging
 
+from libc.math cimport log2
 from libcpp.unordered_map cimport unordered_map
+from libcpp.set cimport set as cset
+from libcpp.vector cimport vector
+from libcpp.utility cimport pair
+
+from libc.stdlib cimport malloc, free
+from cython.operator import postincrement, dereference
 
 import pickle
 
 NaN = float("nan")
 
-cdef class Node:
-    cdef int count
-    cdef float entropy
-    cdef dict children # todo: try with unordered_map
+cdef struct node:
+    int count
+    float entropy
+    unordered_map[int, node*] *children
 
-    __slots__ = ["count", "entropy", "children"]
 
-    def __init__(self):
-        self.children = {}
-        self.count = 0
-        self.entropy = -100.0
+cdef node* createNode():
+    cdef node* r = <node*> malloc(sizeof(node))
+    r.count = 0
+    r.children = new unordered_map[int, node*]()
+    return r
 
-    def getCount(self):
-        return self.count
 
-    def update_entropy(self, terminals: frozenset):
-        """ Update the entropy of the node.
+cdef void freeNodeRec(node* n):
+    cdef node *c
+    cdef unordered_map[int,node*].iterator it = n.children.begin()
+    while it != n.children.end():
+        freeNodeRec(dereference(it).second)
+        it = n.children.erase(it)
+    free(n.children)
+    free(n)
 
-        :param terminals: a set of bytes. If a token is inside that set, it will
-         count as N different tokens instead of a token with count N.
-        """
-        cdef Node child;
-        cdef float entropy;
-        cdef int sum_counts;
-
-        entropy = 0
-        sum_counts = 0
-        for token, child in self.children.items():
-            if child.getCount() == 0:
-                continue
-            sum_counts += child.getCount()
-            if token in terminals:
-                entropy += (child.getCount() / self.count) * math.log(self.count, 2)
-            else:
-                entropy -= (child.getCount() / self.count) * math.log(
-                    child.getCount() / self.count, 2
-                )
-        if not sum_counts:
-            entropy = NaN
+cdef void updateEntropy(node* n, cset[int] breaks):
+    cdef float entropy = 0.0
+    cdef float total = 0 #n.count
+    cdef float c
+    cdef int token
+    cdef node* child
+    cdef unordered_map[int,node*].iterator it = n.children.begin()
+    while it != n.children.end():
+        total += dereference(it).second.count
+        postincrement(it)
+    it = n.children.begin()
+    while it != n.children.end():
+        token = dereference(it).first
+        child = dereference(it).second
+        c = child.count
+        if breaks.count(token) > 0:
+            entropy += (c/total) * log2(total)
         else:
-            assert sum_counts == self.count
-        self.entropy = entropy
+            entropy -= (c / total) * log2(c / total)
+        postincrement(it)
+    n.entropy = entropy
+
+cdef int pruneNodeHappax(node* n):
+    cdef int sum = 0
+    cdef node* child
+    cdef unordered_map[int,node*].iterator it = n.children.begin()
+    while it != n.children.end():
+        child = dereference(it).second
+        if child.count == 1:
+            freeNodeRec(child)
+            it = n.children.erase(it)
+            sum += 1
+        else:
+            sum += pruneNodeHappax(child)
+            if child.count == 0:
+                freeNodeRec(child)
+                it = n.children.erase(it)
+            else:
+                postincrement(it)
+    n.count -= sum
+    return sum
+
+cdef int pruneNode(node* n):
+    cdef int sum = 0
+    cdef node* child
+    cdef unordered_map[int,node*].iterator it = n.children.begin()
+    while it != n.children.end():
+        child = dereference(it).second
+        child.count -= 1
+        if child.count == 0:
+            freeNodeRec(child)
+            it = n.children.erase(it)
+            sum += 1
+        else:
+            pruneNode(child)
+            postincrement(it)
+    return sum
 
 
-class CythonTrie:
-    __slots__ = ["root", "vbe", "normalization", "terminals", "dirty"]
+
+cdef void updateEntropyRec(node* n, cset[int] breaks):
+    cdef unordered_map[int,node*].iterator it = n.children.begin()
+    updateEntropy(n, breaks)
+    while it != n.children.end():
+        child = dereference(it).second
+        updateEntropyRec(child, breaks)
+        postincrement(it)
+
+
+
+cdef class CythonTrie:
+    cdef node *root;
+    cdef cset[int] breaks;
+    cdef dict vbe
+    cdef list normalization
+    cdef bint dirty
+    cdef dict encoder
+
+    __slots__ = ["root", "vbe", "normalization", "dirty", "encoder"]
 
     def __init__(self, terminals=frozenset()):
-        self.root = Node()
+        self.root = createNode()
         self.vbe = {}
         self.normalization = []
-        self.terminals = frozenset(terminals)
+        #self.terminals = frozenset(terminals)
+        self.encoder = {}
         self.dirty = True
+        self.fill_breaks(terminals)
+
+    cdef fill_breaks(self, terminals):
+        for t in terminals:
+            self.breaks.insert(self.encode_token(t))
+
 
     def prune(self, minus=1):
-        pass
+        pruneNode(self.root)
+        self.dirty = True
 
-    def _update_stats_rec(self, parent_entropy, depth, node: Node):
+
+    cdef _update_stats_rec(self, parent_entropy, depth, node* currentNode):
         """ Recurively update both entropy and normalization vector
         """
         # extend normalization vector if needed
+        cdef unordered_map[int,node*].iterator it
+        cdef node *child
+
         while len(self.normalization) < depth:
             self.normalization.append((0.0, 0.0, 0))
         # if MemoryLeaf nothing else should be done
-        if len(node.children) == 0:
+        if currentNode.children.size() == 0:
             return
-        node.update_entropy(self.terminals)
+        updateEntropy(currentNode, self.breaks)
+        #node.update_entropy(self.terminals)
         # update entropy variation mean and std if possible (not NaN)
         if (
             depth > 0
-            and not math.isnan(node.entropy)
-            and (node.entropy or parent_entropy)
+            and not math.isnan(currentNode.entropy)
+            and (currentNode.entropy or parent_entropy)
         ):
-            ev = node.entropy - parent_entropy
+            ev = currentNode.entropy - parent_entropy
             mean, stdev, count = self.normalization[depth - 1]
             old_mean = mean
             count += 1
@@ -89,8 +164,11 @@ class CythonTrie:
             stdev += (ev - old_mean) * (ev - mean)
             self.normalization[depth - 1] = mean, stdev, count
         # recurifs calls
-        for child in node.children.values():
-            self._update_stats_rec(node.entropy, depth + 1, child)
+        it = currentNode.children.begin()
+        while it != currentNode.children.end():
+            child = dereference(it).second
+            self._update_stats_rec(currentNode.entropy, depth + 1, child)
+            postincrement(it)
 
     def update_stats(self):
         if not self.dirty:
@@ -102,44 +180,63 @@ class CythonTrie:
             self.normalization[pseudo_depth] = (mean, stdev)
         self.dirty = False
 
-    def _rec_add_ngram(self, node: Node, ngram, freq):
-        node.count += freq
+    cdef _rec_add_ngram(self, node* n, ngram, int freq):
+        cdef node* child
+        n.count += freq
         if len(ngram) > 0 :
             head = ngram[0]
             tail = ngram[1:]
-            if head not in node.children:
-                node.children[head] = Node()
-            self._rec_add_ngram(node.children[head], tail, freq)
+            if n.children.count(head) == 0:
+                child = createNode()
+                dereference(n.children)[head] = child
+            else:
+                child = n.children.at(head)
+            self._rec_add_ngram(child, tail, freq)
 
+
+    def encode_token(self, tok):
+        if tok in self.encoder:
+            return self.encoder[tok]
+        else:
+            code = len(self.encoder)
+            self.encoder[tok] = code
+            return code
+
+    def encode_ngram(self, ngram):
+        encoded = []
+        return [self.encode_token(tok) for tok in ngram]
 
     def add_ngram(self, ngram, freq=1):
-        self._rec_add_ngram(self.root, ngram, freq)
+        self._rec_add_ngram(self.root, self.encode_ngram(ngram), freq)
 
 
-    def _lookup(self, ngram, current_node: Node):
+    cdef node* _lookup(self, ngram, node* current_node):
         if len(ngram) == 0:
             return current_node
         else:
             head = ngram[0]
             tail = ngram[1:]
-            if head not in current_node.children:
-                return None
+            if current_node.children.count(head) == 0:
+                return NULL
             else:
-                return self._lookup(tail, current_node.children[head])
+                return self._lookup(tail, current_node.children.at(head))
 
-    def _lookup2(self, ngram):
-        cdef Node node;
-        cdef Node last_node;
-        node = self.root
-        last_node = node
+    cdef (node*, node*) _lookup2(self, ngram):
+        cdef node* n;
+        cdef node* last_node;
+        n = self.root
+        last_node = n
         while ngram:
-            last_node = node
-            node = node.children[ngram[0]]
+            last_node = n
+            if n.children.count(ngram[0]) == 0:
+                return (NULL, NULL)
+            n = n.children.at(ngram[0])
             ngram = ngram[1:]
-        return (last_node, node)
+        return (last_node, n)
 
     def query_count(self, ngram):
-        cdef Node node;
+        cdef node *node;
+        ngram = self.encode_ngram(ngram)
         node = self._lookup(ngram, self.root)
         if node:
             return node.count
@@ -152,19 +249,19 @@ class CythonTrie:
         :param ngram: A list of tokens.
         :returns: A float, that can be NaN if it is not defined.
         """
-        cdef Node node;
-        cdef Node last_node;
+        #ngram = self.encode_ngram(ngram)
+        cdef node *n;
+        cdef node *last_node;
         self._check_dirty()
         if not ngram:
             return float("nan")
-        try:
-            last_node, node = self._lookup2(ngram)
-        except (KeyError, AttributeError):
+        last_node, n = self._lookup2(ngram)
+        if (not last_node) or (not n):
             return float("nan")
-        if not math.isnan(node.entropy) and (
-                node.entropy != 0 or last_node.entropy != 0
+        if not math.isnan(n.entropy) and (
+                n.entropy != 0 or last_node.entropy != 0
         ):
-            return node.entropy - last_node.entropy
+            return n.entropy - last_node.entropy
         return float("nan")
 
     def _check_dirty(self):
@@ -182,6 +279,7 @@ class CythonTrie:
                 :returns: A float, that can be NaN if it is not defined.
                 """
         self._check_dirty()
+        ngram = self.encode_ngram(ngram)
         try:
             mean, stdev = self.normalization[len(ngram) - 1]
         except IndexError:
