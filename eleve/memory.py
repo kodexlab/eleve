@@ -335,6 +335,9 @@ class MemoryStorage:
         #self.bwd = MemoryTrie(terminals=terminals)
         #self.fwd = MemoryTrie(terminals=terminals)
 
+    def get_voc(self):
+        return self.fwd.get_voc()
+
     @property
     def default_ngram_length(self):
         return self._default_ngram_length
@@ -432,13 +435,13 @@ class CSVStorage:
 
     #  see http://www.fileformat.info/info/unicode/char/e02d/index.htm
 
-    def __init__(self, path):
+    def __init__(self, path, delim=""):
         self.data = {}
         lmax = 0
         with open(path) as f:
             for line in f:
                 fields = line.strip().split("\t")
-                self.data[fields[0]] = (float(fields[1]), int(fields[2]))
+                self.data[delim.join(fields[0])] = (float(fields[1]), int(fields[2]))
                 if len(fields[0]) > lmax:
                     lmax = len(fields[0])
         self._ngram_length = lmax + 1
@@ -461,13 +464,13 @@ class CSVStorage:
         return self._ngram_length
 
     @staticmethod
-    def writeCSV(storage,voc,  path):
+    def writeCSV(storage,voc,  path, delim=''):
         with open(path, "w") as f:
             for w in voc:
                 wl = list(w)
                 e = storage.query_autonomy(wl)
                 if not math.isnan(e):
-                    f.write("\t".join([w, str(e), str(storage.query_count(wl))]) + "\n")
+                    f.write("\t".join([delim.join(w), str(e), str(storage.query_count(wl))]) + "\n")
 
     @staticmethod
     def writePickle(storage, voc, path):

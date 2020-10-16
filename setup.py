@@ -88,7 +88,7 @@ setup(
         "Programming Language :: Python :: 3.7",
         "Topic :: Scientific/Engineering",
     ],
-    ext_modules=cythonize(["eleve/cython_storage.pyx", "eleve/essais.pyx"],
+    ext_modules=cythonize(["eleve/cython_storage.pyx"],
                           compiler_directives={'language_level' : "3"},
                           annotate=True),
     # ext_modules = [

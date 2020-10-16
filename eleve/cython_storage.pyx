@@ -131,6 +131,23 @@ cdef class CythonTrie:
             self.breaks.insert(self.encode_token(t))
 
 
+    cdef _get_voc_rec(self, node* n, prefix, decoder, acc):
+        cdef unordered_map[int,node*].iterator it = n.children.begin()
+        cdef node *child
+        while it != n.children.end():
+            token = dereference(it).first
+            child = dereference(it).second
+            count = child.count
+            ngram = prefix + [decoder[token]]
+            acc.append(ngram)
+            acc = self._get_voc_rec(child, ngram, decoder, acc)
+            postincrement(it)
+        return acc
+
+    def get_voc(self):
+        decoder = {v:k for k,v in self.encoder.items()}
+        return self._get_voc_rec(self.root, [], decoder, [])
+
     def prune(self, minus=1):
         pruneNode(self.root)
         self.dirty = True
