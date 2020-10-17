@@ -437,11 +437,12 @@ class CSVStorage:
 
     def __init__(self, path, delim=""):
         self.data = {}
+        self.delim = delim
         lmax = 0
         with open(path) as f:
             for line in f:
                 fields = line.strip().split("\t")
-                self.data[delim.join(fields[0])] = (float(fields[1]), int(fields[2]))
+                self.data[tuple(fields[0].split(delim))] = (float(fields[1]), int(fields[2]))
                 if len(fields[0]) > lmax:
                     lmax = len(fields[0])
         self._ngram_length = lmax + 1
@@ -449,13 +450,13 @@ class CSVStorage:
 
     def query_autonomy(self, ngram):
         try:
-            return self.data["".join(ngram)][0]
+            return self.data[tuple(ngram)][0]
         except:
             return float("nan")
 
     def query_count(self, ngram):
         try:
-            return self.data["".join(ngram)][1]
+            return self.data[tuple(ngram)][1]
         except:
             return 0
 

@@ -50,9 +50,9 @@ class Segmenter:
                 "The sentence you want to segment is HUGE. This will take a lot of memory."
             )
 
-        sentence = (
-            [self.storage.sentence_start] + sentence + [self.storage.sentence_end]
-        )
+        # sentence = (
+        #     [self.storage.sentence_start] + sentence + [self.storage.sentence_end]
+        # )
 
         # dynamic programming to segment the sentence
         best_segmentation = [[]] * (len(sentence) + 1)
@@ -80,8 +80,8 @@ class Segmenter:
         # keep the best segmentation and remove the None
         best_segmentation = best_segmentation[len(sentence)]
         best_segmentation = list(filter(None, best_segmentation))
-        best_segmentation.pop(0)
-        best_segmentation.pop()
+        # best_segmentation.pop(0)
+        # best_segmentation.pop()
 
         return best_segmentation
 
