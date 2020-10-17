@@ -23,17 +23,18 @@ def segment_file(storage, input_file: Path, output_file: Path, bies:bool=True):
                 if line.strip() != "":
                     out.write(chinese.segment_with_preprocessing(segmenter, line, bies) + "\n")
 
-
-storage = Storage()
-for l in open(CORPUS):
-    for chunk in preproc(l):
-        storage.add_sentence(chunk)
+def train(corpus) -> Storage:
+    storage = Storage()
+    for l in open(corpus):
+        for chunk in preproc(l):
+            storage.add_sentence(chunk)
+    return storage
 
 #print(storage.get_voc())
 
-
-CSVStorage.writeCSV(storage, storage.get_voc(),"/tmp/test.csv", 'à')
-storage2 = CSVStorage("/tmp/test.csv", "à")
-
-segment_file(storage, CORPUS, Path("/tmp/out.txt"), bies=False)
-segment_file(storage2, CORPUS, Path("/tmp/out2.txt"), bies=False)
+if __name__ == "__main__":
+    storage = train(CORPUS)
+    for i in range(4):
+        CSVStorage.writeCSV(storage, storage.get_voc(),f"/tmp/lex-{i}.csv", ' ')
+        segment_file(storage, CORPUS, Path(f"/tmp/text-{i}.txt"), bies=False)
+        storage.prune()
