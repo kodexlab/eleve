@@ -5,7 +5,7 @@ from eleve.preprocessing import chinese
 from eleve import Segmenter
 
 
-CORPUS = Path('/home/pierre/Corpora/PKU/small.raw.u8')
+CORPUS = Path('/home/pierre/Corpora/PKU/all.raw.u8')
 
 
 def preproc(l: str) -> List[str]:
@@ -34,7 +34,7 @@ def train(corpus) -> Storage:
 
 if __name__ == "__main__":
     storage = train(CORPUS)
-    for i in range(4):
+    for i in range(10):
         CSVStorage.writeCSV(storage, storage.get_voc(),f"/tmp/lex-{i}.csv", ' ')
         segment_file(storage, CORPUS, Path(f"/tmp/text-{i}.txt"), bies=False)
         storage.prune()
