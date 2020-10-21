@@ -263,11 +263,11 @@ cdef class CythonTrie:
     def query_entropy(self, ngram):
         cdef node *n;
         ngram = self.encode_ngram(ngram)
-        node = self._lookup(ngram, self.root)
+        n = self._lookup(ngram, self.root)
         if n:
             return n.entropy
         else:
-            return 0
+            return float("nan")
 
     def query_ev(self, ngram):
         """ Query for the branching entropy variation.
