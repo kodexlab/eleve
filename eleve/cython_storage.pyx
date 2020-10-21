@@ -79,19 +79,19 @@ cdef int pruneNodeHappax(node* n):
     n.count -= sum
     return sum
 
-cdef int pruneNode(node* n):
+cdef int pruneNode(node* n,int qnt=1):
     cdef int sum = 0
     cdef node* child
     cdef unordered_map[int,node*].iterator it = n.children.begin()
     while it != n.children.end():
         child = dereference(it).second
-        child.count -= 1
-        if child.count == 0:
+        child.count -= qnt
+        if child.count <= 0:
             freeNodeRec(child)
             it = n.children.erase(it)
             sum += 1
         else:
-            pruneNode(child)
+            pruneNode(child, qnt)
             postincrement(it)
     return sum
 
@@ -148,8 +148,8 @@ cdef class CythonTrie:
         decoder = {v:k for k,v in self.encoder.items()}
         return self._get_voc_rec(self.root, [], decoder, [])
 
-    def prune(self, minus=1):
-        pruneNode(self.root)
+    def prune(self, qnt=1):
+        pruneNode(self.root, qnt)
         self.dirty = True
 
 
@@ -252,11 +252,11 @@ cdef class CythonTrie:
         return (last_node, n)
 
     def query_count(self, ngram):
-        cdef node *node;
+        cdef node *n;
         ngram = self.encode_ngram(ngram)
-        node = self._lookup(ngram, self.root)
+        n = self._lookup(ngram, self.root)
         if node:
-            return node.count
+            return n.count
         else:
             return 0
 
@@ -275,9 +275,9 @@ cdef class CythonTrie:
         :param ngram: A list of tokens.
         :returns: A float, that can be NaN if it is not defined.
         """
-        #ngram = self.encode_ngram(ngram)
         cdef node *n;
         cdef node *last_node;
+        ngram = self.encode_ngram(ngram)
         self._check_dirty()
         if not ngram:
             return float("nan")
@@ -305,7 +305,6 @@ cdef class CythonTrie:
                 :returns: A float, that can be NaN if it is not defined.
                 """
         self._check_dirty()
-        ngram = self.encode_ngram(ngram)
         try:
             mean, stdev = self.normalization[len(ngram) - 1]
         except IndexError:

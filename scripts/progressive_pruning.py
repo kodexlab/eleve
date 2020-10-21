@@ -34,9 +34,8 @@ def train(corpus) -> Storage:
 
 if __name__ == "__main__":
     storage = train(CORPUS)
-    for i in range(100):
+    for i in range(10):
         print(i)
         #CSVStorage.writeCSV(storage, storage.get_voc(),f"/tmp/lex-{i}.csv", ' ')
-        if i >= 50:
-            segment_file(storage, CORPUS, Path(f"/tmp/text-{i}.txt"), bies=False)
-        storage.prune()
+        segment_file(storage, CORPUS, Path(f"/tmp/text-{i}.txt"), bies=False)
+        storage.prune(50)
