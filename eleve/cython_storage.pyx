@@ -255,7 +255,7 @@ cdef class CythonTrie:
         cdef node *n;
         ngram = self.encode_ngram(ngram)
         n = self._lookup(ngram, self.root)
-        if node:
+        if n:
             return n.count
         else:
             return 0
