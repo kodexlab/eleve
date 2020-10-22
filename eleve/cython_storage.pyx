@@ -79,7 +79,7 @@ cdef int pruneNodeHappax(node* n):
     n.count -= sum
     return sum
 
-cdef int pruneNode(node* n,int qnt=1):
+cdef int pruneNode(node* n,int qnt):
     cdef int sum = 0
     cdef node* child
     cdef unordered_map[int,node*].iterator it = n.children.begin()
@@ -219,6 +219,7 @@ cdef class CythonTrie:
             self.encoder[tok] = code
             return code
 
+    # todo: encode ngram into a C array or C++ vector
     def encode_ngram(self, ngram):
         encoded = []
         return [self.encode_token(tok) for tok in ngram]

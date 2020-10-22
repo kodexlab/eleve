@@ -442,8 +442,9 @@ class CSVStorage:
         with open(path) as f:
             for line in f:
                 fields = line.strip().split("\t")
-                self.data[tuple(fields[0].split(delim))] = (float(fields[1]), int(fields[2]))
-                if len(fields[0]) > lmax:
+                ng = tuple(fields[0]) if delim == '' else tuple(fields[0].split(delim))
+                self.data[ng] = (float(fields[1]), int(fields[2]))
+                if len(ng) > lmax:
                     lmax = len(fields[0])
         self._ngram_length = lmax + 1
         print(lmax)

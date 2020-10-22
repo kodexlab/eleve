@@ -3,6 +3,7 @@ import unicodedata as ud
 
 from eleve import Segmenter
 from functools import lru_cache
+from multiprocessing import Pool
 
 def normalize(s: str) -> str:
     return ud.normalize("NFC", s)
@@ -74,3 +75,30 @@ def segment_with_preprocessing(seg: Segmenter, sent:str, bies:bool=True) -> str:
                 tokens.append(group)
     return " ".join(tokens)
 
+def segment_with_preprocessing_pool(seg: Segmenter, sentences:List[str], bies:bool=True) -> List[str]:
+    pool = Pool()
+    tokenized_sentences = pool.map(tokenize_by_unicode_category, sentences)
+    for sent in tokenized_sentences :
+        tokens = []
+        for group in sent:
+            try:
+                if isCJK(group[0]):
+                    words = ["".join(w) for w in seg.segment(list(group))]
+                    for w in words:
+                        if bies:
+                            tokens.extend(add_bies(w))
+                        else:
+                            tokens.append(w)
+                else:
+                    if bies:
+                        tokens.extend(add_bies(group))
+                    else:
+                        tokens.append(group)
+            except:
+                if bies:
+                    tokens.extend(add_bies(group))
+                else:
+                    tokens.append(group)
+        yield " ".join(tokens)
+    pool.terminate()
+    pool.close()

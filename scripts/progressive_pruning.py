@@ -24,7 +24,7 @@ def segment_file(storage, input_file: Path, output_file: Path, bies:bool=True):
                     out.write(chinese.segment_with_preprocessing(segmenter, line, bies) + "\n")
 
 def train(corpus) -> Storage:
-    storage = Storage()
+    storage = Storage(6)
     for l in open(corpus):
         for chunk in preproc(l):
             storage.add_sentence(chunk)
@@ -34,8 +34,8 @@ def train(corpus) -> Storage:
 
 if __name__ == "__main__":
     storage = train(CORPUS)
-    for i in range(10):
+    for i in range(1):
         print(i)
-        #CSVStorage.writeCSV(storage, storage.get_voc(),f"/tmp/lex-{i}.csv", ' ')
-        segment_file(storage, CORPUS, Path(f"/tmp/text-{i}.txt"), bies=False)
+        #segment_file(storage, CORPUS, Path(f"/tmp/text-{i}.txt"), bies=False)
         storage.prune(50)
+        CSVStorage.writeCSV(storage, storage.get_voc(),f"/tmp/lex-{i}.csv", ' ')
