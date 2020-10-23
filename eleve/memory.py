@@ -8,6 +8,8 @@ from __future__ import division
 import math
 import logging
 
+import pickle
+
 __all__ = ["MemoryTrie", "MemoryStorage"]
 
 NaN = float("nan")
@@ -128,6 +130,27 @@ class MemoryTrie:
 
         for i in _rec([], self.root):
             yield i
+
+
+    def prune(self, minus=1):
+        """"Recursively remove <minus> occurrence of all ngrams
+        """
+        self.dirty = True
+        def rec(node):
+            n = 0
+            if hasattr(node, "childs"):
+                for _, child in node.childs.items():
+                    n += rec(child)
+                node.childs = {tok: c for tok, c in node.childs.items() if c.count > 0}
+                node.count -= n
+            else:
+                n = min(minus, node.count)
+                node.count -= minus
+            return n
+        n = rec(self.root)
+        print(n)
+        #self.root.count -= n
+
 
     def _update_stats_rec(self, parent_entropy, depth, node):
         """ Recurively update both entropy and normalization vector
@@ -286,6 +309,7 @@ class MemoryTrie:
                 return float("nan")
         return nev
 
+from .cython_storage import CythonTrie
 
 class MemoryStorage:
     """ Full-Python in-memory storage.
@@ -306,8 +330,13 @@ class MemoryStorage:
         assert isinstance(default_ngram_length, int) and default_ngram_length > 0
         self._default_ngram_length = default_ngram_length
         terminals = frozenset([self.sentence_start, self.sentence_end])
-        self.bwd = MemoryTrie(terminals=terminals)
-        self.fwd = MemoryTrie(terminals=terminals)
+        self.bwd = CythonTrie(terminals=terminals) # MemoryTrie(terminals=terminals)
+        self.fwd = CythonTrie(terminals=terminals) # MemoryTrie(terminals=terminals)
+        #self.bwd = MemoryTrie(terminals=terminals)
+        #self.fwd = MemoryTrie(terminals=terminals)
+
+    def get_voc(self):
+        return self.fwd.get_voc()
 
     @property
     def default_ngram_length(self):
@@ -340,6 +369,10 @@ class MemoryStorage:
         """
         self.bwd.clear()
         self.fwd.clear()
+
+    def prune(self, minus=1):
+        self.bwd.prune(minus)
+        self.fwd.prune(minus)
 
     def update_stats(self):
         """ Update the entropies and normalization factors. This function is called automatically when you modify the model and then query it.
@@ -387,3 +420,68 @@ class MemoryStorage:
         entropy_bwd = self.bwd.query_entropy(ngram[::-1])
         # Notice that the above can be NaN. In which case it's propagated anyway.
         return (entropy_fwd + entropy_bwd) / 2
+
+
+class CSVStorage:
+    """
+    This is a non-trainable storage.
+    It relies on a CSV dump from a MemoryStorage and can only be used to
+    perform segmentation and autonomy query
+    """
+    # Use PRIVATE_USE_AREA codes
+    sentence_start = "\ue02b"  # in utf8 : b"\xee\x80\xab"
+    #  see http://www.fileformat.info/info/unicode/char/e02b/index.htm
+    sentence_end = "\ue02d"  # in utf8 : b"\xee\x80\xad"
+
+    #  see http://www.fileformat.info/info/unicode/char/e02d/index.htm
+
+    def __init__(self, path, delim=""):
+        self.data = {}
+        self.delim = delim
+        lmax = 0
+        with open(path) as f:
+            for line in f:
+                fields = line.strip().split("\t")
+                ng = tuple(fields[0]) if delim == '' else tuple(fields[0].split(delim))
+                self.data[ng] = (float(fields[1]), int(fields[2]))
+                if len(ng) > lmax:
+                    lmax = len(fields[0])
+        self._ngram_length = lmax + 1
+        print(lmax)
+
+    def query_autonomy(self, ngram):
+        try:
+            return self.data[tuple(ngram)][0]
+        except:
+            return float("nan")
+
+    def query_count(self, ngram):
+        try:
+            return self.data[tuple(ngram)][1]
+        except:
+            return 0
+
+    @property
+    def default_ngram_length(self):
+        return self._ngram_length
+
+    @staticmethod
+    def writeCSV(storage,voc,  path, delim=''):
+        with open(path, "w") as f:
+            for w in voc:
+                wl = list(w)
+                e = storage.query_autonomy(wl)
+                if not math.isnan(e):
+                    f.write("\t".join([delim.join(w), str(e), str(storage.query_count(wl))]) + "\n")
+
+    @staticmethod
+    def writePickle(storage, voc, path):
+        data = {}
+        for w in voc:
+            wl = list(w)
+            e = storage.query_autonomy(wl)
+            if not math.isnan(e):
+                data[w] = (e,storage.query_count(wl))
+                #f.write("\t".join([w, str(e), str(storage.query_count(wl))]) + "\n")
+        with open(path,"wb") as f:
+            pickle.dump(data,f)

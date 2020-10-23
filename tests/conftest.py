@@ -7,12 +7,7 @@ import shutil
 from copy import copy
 
 from eleve.memory import MemoryTrie
-from eleve.leveldb import LeveldbTrie as PyLeveldbTrie
-from eleve.c_memory.cmemory import MemoryTrie as CMemoryTrie
-from eleve.c_leveldb.cleveldb import LeveldbTrie as CLeveldbTrie
-
-from eleve import PyMemoryStorage, CMemoryStorage
-from eleve import PyLeveldbStorage, CLeveldbStorage
+from eleve import MemoryStorage
 
 ## Trie fixture
 def parametrize_trie(**kwargs):
@@ -48,26 +43,6 @@ def trie(request):
     backend = request.param["name"]
     if backend == "pyram":
         trie = MemoryTrie()
-    elif backend == "cram":
-        trie = CMemoryTrie()
-    elif backend == "pyleveldb":
-        fs_path = tempfile.mkdtemp(prefix="tmp_eleve_pyldb_")
-        trie = PyLeveldbTrie(path=fs_path)
-
-        def fin():
-            """teardown pyleveldb"""
-            shutil.rmtree(fs_path)
-
-        request.addfinalizer(fin)
-    elif backend == "cleveldb":
-        fs_path = tempfile.mkdtemp(prefix="tmp_eleve_cldb_")
-        trie = CLeveldbTrie(path=fs_path)
-
-        def fin():
-            """teardown cleveldb"""
-            shutil.rmtree(fs_path)
-
-        request.addfinalizer(fin)
     else:
         raise ValueError("Invalid `trie` fixture param")
     return trie
@@ -165,33 +140,7 @@ def storage(request):
         init_params["default_ngram_length"] = default_ngram_length
 
     if backend == "pyram":
-        storage = PyMemoryStorage(**init_params)
-    elif backend == "cram":
-        storage = CMemoryStorage(**init_params)
-    elif backend == "pyleveldb":
-        fs_path = tempfile.mkdtemp(prefix="tmp_eleve_strg_pyldb_")
-        if not create_dir:
-            fs_path = os.path.join(fs_path, "new_dir")
-        storage = PyLeveldbStorage(path=fs_path, **init_params)
-
-        def fin():
-            """teardown pyleveldb"""
-            storage.close()
-            shutil.rmtree(fs_path)
-
-        request.addfinalizer(fin)
-    elif backend == "cleveldb":
-        fs_path = tempfile.mkdtemp(prefix="tmp_eleve_strg_cldb_")
-        if not create_dir:
-            fs_path = os.path.join(fs_path, "new_dir")
-        storage = CLeveldbStorage(path=fs_path, **init_params)
-
-        def fin():
-            """teardown cleveldb"""
-            storage.close()
-            shutil.rmtree(fs_path)
-
-        request.addfinalizer(fin)
+        storage = MemoryStorage(**init_params)
     else:
         raise ValueError("Invalid `storage` fixture param, got: %s" % backend)
     return storage

@@ -3,16 +3,13 @@ import datetime
 from test_trie import generate_random_ngrams
 
 from eleve.memory import MemoryTrie
-from eleve.leveldb import LeveldbTrie
-from eleve.c_leveldb.cleveldb import LeveldbTrie as CLeveldbTrie
-from eleve.c_memory.cmemory import MemoryTrie as CMemoryTrie
 
 import random
 
 random.seed("palkeo")
 
 
-def benchmark_trie_class(trie_class, reference_class=CMemoryTrie):
+def benchmark_trie_class(trie_class, reference_class=MemoryTrie):
     ngrams = generate_random_ngrams()
     print("{} ngrams.".format(len(ngrams)))
     test_trie = trie_class("/tmp/test_trie")

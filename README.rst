@@ -123,9 +123,11 @@ If you use ``eleve`` for an academic publication, please cite this paper:
 Copyright, license and authors
 ==============================
 
-Copyright (C) 2014-2015 Kodex⋅Lab.
+Copyright (C) 2014-2015 Kodex⋅Lab., 2020 Pierre Magistry
+
 
 ``eleve`` is available under the `LGPL Version 3 <http://www.gnu.org/licenses/lgpl.txt>`_ license.
 
 ``eleve`` was originaly designed and prototyped by `Pierre Magistry <http://magistry.fr/>`_ during its PhD. It then has been completly rewriten by  `Korantin Auguste <http://www.palkeo.com/>`_ and `Emmanuel Navarro <http://enavarro.me/>`_ (with the help of Pierre).
 
+For the sake of easier installation and evolution, it was later refactored in Cython by Pierre Magistry.
