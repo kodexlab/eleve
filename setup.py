@@ -21,7 +21,7 @@ setup(
     author_email="contact@kodexlab.com",
     url="https://github.com/kodexlab/eleve",
     packages=["eleve"],
-    scripts=["scripts/eleve-train"],
+    scripts=["scripts/eleve-train", "scripts/eleve-chinese"],
     classifiers=[
         "Programming Language :: Python",
         "Development Status :: 5 - Production/Stable",
