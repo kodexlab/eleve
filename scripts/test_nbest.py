@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 from eleve import CMemoryStorage as Storage
 from eleve import Segmenter
 
